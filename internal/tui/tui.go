@@ -59,12 +59,16 @@ type (
 	errMsg          struct{ err error }
 )
 
+const contentWidth = 90
+
 var (
 	titleStyle    = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("12"))
 	selectedStyle = lipgloss.NewStyle().Background(lipgloss.Color("236")).Bold(true)
 	dimStyle      = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
 	errorStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("9"))
 	headerStyle   = lipgloss.NewStyle().Bold(true).Underline(true)
+	keyStyle      = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("12"))
+	footerSep     = lipgloss.NewStyle().Foreground(lipgloss.Color("238"))
 )
 
 func New(s store.Store, ip provider.IssueProvider, p *pricing.Loader, authToken string) Model {
@@ -230,26 +234,76 @@ func (m *Model) chartIssueNum() *int {
 }
 
 func (m Model) View() string {
+	var body string
+
 	if m.authErr {
-		return errorStyle.Render("Not authenticated. Run: tokenpile auth login --provider github")
+		body = errorStyle.Render("Not authenticated. Run: tokenpile auth login --provider github")
+	} else if m.err != nil {
+		body = errorStyle.Render("Error: " + m.err.Error())
+	} else {
+		switch m.activeView {
+		case viewList:
+			body = m.viewIssueList()
+		case viewDetail:
+			body = m.viewIssueDetail()
+		case viewChart:
+			body = m.viewChart()
+		case viewHelp:
+			body = m.viewHelp()
+		}
 	}
 
-	if m.err != nil {
-		return errorStyle.Render("Error: " + m.err.Error())
+	w := contentWidth
+	if m.width > 0 && m.width < w {
+		w = m.width
 	}
+
+	content := lipgloss.NewStyle().Width(w).MarginTop(3).Render(body + "\n" + m.renderFooter())
+
+	if m.width == 0 || m.height == 0 {
+		return content
+	}
+
+	return lipgloss.Place(m.width, m.height, lipgloss.Center, lipgloss.Top, content)
+}
+
+func (m Model) renderFooter() string {
+	sep := footerSep.Render(strings.Repeat("─", contentWidth))
+
+	var keys []string
 
 	switch m.activeView {
 	case viewList:
-		return m.viewIssueList()
+		keys = []string{
+			keyStyle.Render("j/k") + " navigate",
+			keyStyle.Render("enter") + " detail",
+			keyStyle.Render("c") + " chart",
+			keyStyle.Render("?") + " help",
+			keyStyle.Render("q") + " quit",
+		}
 	case viewDetail:
-		return m.viewIssueDetail()
+		keys = []string{
+			keyStyle.Render("c") + " chart",
+			keyStyle.Render("esc") + " back",
+			keyStyle.Render("?") + " help",
+			keyStyle.Render("q") + " quit",
+		}
 	case viewChart:
-		return m.viewChart()
+		keys = []string{
+			keyStyle.Render("d") + " day",
+			keyStyle.Render("w") + " week",
+			keyStyle.Render("esc") + " back",
+			keyStyle.Render("?") + " help",
+			keyStyle.Render("q") + " quit",
+		}
 	case viewHelp:
-		return m.viewHelp()
+		keys = []string{
+			keyStyle.Render("?") + " close help",
+			keyStyle.Render("q") + " quit",
+		}
 	}
 
-	return ""
+	return sep + "\n" + dimStyle.Render(strings.Join(keys, "   "))
 }
 
 func (m Model) viewIssueList() string {
@@ -279,8 +333,6 @@ func (m Model) viewIssueList() string {
 			fmt.Fprintln(&b, line)
 		}
 	}
-
-	fmt.Fprintln(&b, dimStyle.Render("\nenter: detail  c: chart  ?: help  q: quit"))
 
 	return b.String()
 }
@@ -320,8 +372,6 @@ func (m Model) viewIssueDetail() string {
 		m.report.TotalCost,
 		formatDuration(m.report.TotalTime),
 	)
-
-	fmt.Fprintln(&b, dimStyle.Render("\nc: chart  esc: back  ?: help  q: quit"))
 
 	return b.String()
 }
@@ -376,7 +426,6 @@ func (m Model) viewChart() string {
 	}
 
 	fmt.Fprintf(&b, "\nTotal: in %dk  out %dk  cost $%.4f\n", totalIn/1000, totalOut/1000, totalCost)
-	fmt.Fprintln(&b, dimStyle.Render("d: day  w: week  esc: back  ?: help  q: quit"))
 
 	return b.String()
 }
