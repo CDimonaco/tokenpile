@@ -23,9 +23,10 @@ import (
 )
 
 const (
-	keychainService = "tokenpile"
-	keychainKey     = "github-token"
-	oauthTimeout    = 2 * time.Minute
+	keychainService   = "tokenpile"
+	keychainKey       = "github-token"
+	oauthTimeout      = 2 * time.Minute
+	oauthCallbackPort = 9876
 )
 
 type GitHubAuthProvider struct {
@@ -50,13 +51,12 @@ func NewGitHubAuthProvider(clientID, clientSecret, credPath string) *GitHubAuthP
 }
 
 func (p *GitHubAuthProvider) Login(ctx context.Context) error {
-	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	listener, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", oauthCallbackPort))
 	if err != nil {
-		return fmt.Errorf("start callback server: %w", err)
+		return fmt.Errorf("start callback server on port %d: %w", oauthCallbackPort, err)
 	}
 
-	port := listener.Addr().(*net.TCPAddr).Port
-	redirectURL := fmt.Sprintf("http://127.0.0.1:%d/callback", port)
+	redirectURL := fmt.Sprintf("http://127.0.0.1:%d/callback", oauthCallbackPort)
 
 	p.oauthCfg.RedirectURL = redirectURL
 
