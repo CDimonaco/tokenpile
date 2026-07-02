@@ -285,15 +285,18 @@ func (s *SQLiteStore) GetReport(ctx context.Context, repo string, issueNum int) 
 }
 
 func (s *SQLiteStore) ListUsageOverTime(ctx context.Context, filter usage.OverTimeFilter) ([]usage.Point, error) {
-	granFmt := "%Y-%m-%d"
+	// For week granularity, compute the Monday of each week as YYYY-MM-DD so
+	// we can always parse with the same "2006-01-02" layout. SQLite's %Y-W%W
+	// produces strings like "2026-W26" which Go's time package cannot parse.
+	periodExpr := "strftime('%Y-%m-%d', at)"
 	if filter.Granularity == usage.Week {
-		granFmt = "%Y-W%W"
+		periodExpr = "date(at, '-' || cast((cast(strftime('%w', at) as integer) + 6) % 7 as text) || ' days')"
 	}
 
 	query := fmt.Sprintf(`
-		SELECT strftime('%s', at) as period, SUM(tokens_in), SUM(tokens_out)
+		SELECT %s as period, model, SUM(tokens_in), SUM(tokens_out)
 		FROM usage_entries
-		WHERE 1=1`, granFmt)
+		WHERE 1=1`, periodExpr)
 	args := []any{}
 
 	if filter.Repo != "" {
@@ -326,7 +329,7 @@ func (s *SQLiteStore) ListUsageOverTime(ctx context.Context, filter usage.OverTi
 		args = append(args, filter.To.UTC().Format(time.RFC3339))
 	}
 
-	query += " GROUP BY period ORDER BY period"
+	query += " GROUP BY period, model ORDER BY period"
 
 	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
@@ -334,35 +337,55 @@ func (s *SQLiteStore) ListUsageOverTime(ctx context.Context, filter usage.OverTi
 	}
 	defer rows.Close()
 
-	var points []usage.Point
+	// Aggregate rows by period, computing cost per model then summing.
+	type periodKey = string
+	type periodData struct {
+		date      time.Time
+		tokensIn  int
+		tokensOut int
+		cost      float64
+	}
+
+	periodMap := make(map[periodKey]*periodData)
+	var periodOrder []string
 
 	for rows.Next() {
-		var period string
+		var period, model string
 		var tokensIn, tokensOut int
 
-		if err = rows.Scan(&period, &tokensIn, &tokensOut); err != nil {
+		if err = rows.Scan(&period, &model, &tokensIn, &tokensOut); err != nil {
 			return nil, fmt.Errorf("scan usage point: %w", err)
 		}
 
-		dateFmt := "2006-01-02"
-		if filter.Granularity == usage.Week {
-			dateFmt = "2006-W01"
+		if _, exists := periodMap[period]; !exists {
+			t, parseErr := time.Parse("2006-01-02", period)
+			if parseErr != nil {
+				t = time.Time{}
+			}
+
+			periodMap[period] = &periodData{date: t}
+			periodOrder = append(periodOrder, period)
 		}
 
-		t, err := time.Parse(dateFmt, period)
-		if err != nil {
-			t = time.Time{}
-		}
-
-		points = append(points, usage.Point{
-			Date:      t,
-			TokensIn:  tokensIn,
-			TokensOut: tokensOut,
-		})
+		cost, _ := s.pricing.ComputeCost(model, tokensIn, tokensOut)
+		periodMap[period].tokensIn += tokensIn
+		periodMap[period].tokensOut += tokensOut
+		periodMap[period].cost += cost
 	}
 
 	if err = rows.Err(); err != nil {
 		return nil, fmt.Errorf("iterate usage points: %w", err)
+	}
+
+	points := make([]usage.Point, 0, len(periodOrder))
+	for _, period := range periodOrder {
+		d := periodMap[period]
+		points = append(points, usage.Point{
+			Date:      d.date,
+			TokensIn:  d.tokensIn,
+			TokensOut: d.tokensOut,
+			Cost:      d.cost,
+		})
 	}
 
 	return points, nil

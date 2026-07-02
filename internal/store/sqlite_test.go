@@ -187,6 +187,61 @@ func TestSQLiteStore_ListUsageOverTime_DayGranularity(t *testing.T) {
 	}
 }
 
+func TestSQLiteStore_ListUsageOverTime_WeekGranularity(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	// Two entries in the same week (Monday + Wednesday), one in the next week
+	monday := time.Date(2026, 6, 29, 12, 0, 0, 0, time.UTC) // Monday
+	wednesday := time.Date(2026, 7, 1, 12, 0, 0, 0, time.UTC)
+	nextMonday := time.Date(2026, 7, 6, 12, 0, 0, 0, time.UTC)
+
+	for _, at := range []time.Time{monday, wednesday} {
+		require.NoError(t, s.LogUsage(ctx, usage.Entry{
+			Repo: "o/r", IssueNum: 1, Agent: "a", Model: "m",
+			TokensIn: 100, TokensOut: 50, At: at,
+		}))
+	}
+	require.NoError(t, s.LogUsage(ctx, usage.Entry{
+		Repo: "o/r", IssueNum: 1, Agent: "a", Model: "m",
+		TokensIn: 200, TokensOut: 80, At: nextMonday,
+	}))
+
+	points, err := s.ListUsageOverTime(ctx, usage.OverTimeFilter{
+		Repo:        "o/r",
+		Granularity: usage.Week,
+	})
+	require.NoError(t, err)
+	require.Len(t, points, 2)
+
+	// No zero dates
+	for _, p := range points {
+		assert.False(t, p.Date.IsZero(), "date must not be zero")
+		assert.Equal(t, 1, int(p.Date.Weekday()), "week point must be a Monday")
+	}
+
+	assert.Equal(t, 200, points[0].TokensIn)  // monday + wednesday
+	assert.Equal(t, 200, points[1].TokensIn)  // next monday
+}
+
+func TestSQLiteStore_ListUsageOverTime_CostPopulated(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	require.NoError(t, s.LogUsage(ctx, usage.Entry{
+		Repo: "o/r", IssueNum: 1, Agent: "a", Model: "m",
+		TokensIn: 1_000_000, TokensOut: 1_000_000, At: time.Now(),
+	}))
+
+	points, err := s.ListUsageOverTime(ctx, usage.OverTimeFilter{
+		Repo:        "o/r",
+		Granularity: usage.Day,
+	})
+	require.NoError(t, err)
+	require.Len(t, points, 1)
+	assert.Greater(t, points[0].Cost, 0.0, "cost must be non-zero when tokens are logged")
+}
+
 func TestSQLiteStore_ListTrackedIssueRefs(t *testing.T) {
 	s := newTestStore(t)
 	ctx := context.Background()
