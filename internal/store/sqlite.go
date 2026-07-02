@@ -1,0 +1,409 @@
+package store
+
+import (
+	"context"
+	"database/sql"
+	"errors"
+	"fmt"
+	"time"
+
+	"github.com/cdimonaco/tokenpile/internal/domain"
+	"github.com/google/uuid"
+	_ "modernc.org/sqlite"
+)
+
+var ErrSessionNotFound = errors.New("session not found")
+
+const schema = `
+CREATE TABLE IF NOT EXISTS usage_entries (
+    id          TEXT PRIMARY KEY,
+    repo        TEXT NOT NULL,
+    issue_num   INTEGER NOT NULL,
+    agent       TEXT NOT NULL,
+    model       TEXT NOT NULL,
+    tokens_in   INTEGER NOT NULL,
+    tokens_out  INTEGER NOT NULL,
+    session_id  TEXT,
+    at          TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS sessions (
+    id          TEXT PRIMARY KEY,
+    repo        TEXT NOT NULL,
+    issue_num   INTEGER NOT NULL,
+    started_at  TEXT NOT NULL,
+    ended_at    TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_usage_entries_repo_issue ON usage_entries (repo, issue_num);
+CREATE INDEX IF NOT EXISTS idx_usage_entries_at ON usage_entries (at);
+CREATE INDEX IF NOT EXISTS idx_sessions_repo_issue ON sessions (repo, issue_num);
+`
+
+type SQLiteStore struct {
+	db      *sql.DB
+	pricing Pricer
+}
+
+type Pricer interface {
+	ComputeCost(model string, tokensIn, tokensOut int) (float64, bool)
+}
+
+func NewSQLiteStore(dbPath string, pricer Pricer) (*SQLiteStore, error) {
+	db, err := sql.Open("sqlite", dbPath)
+	if err != nil {
+		return nil, fmt.Errorf("open sqlite: %w", err)
+	}
+
+	db.SetMaxOpenConns(1)
+
+	if _, err = db.Exec(schema); err != nil {
+		_ = db.Close()
+		return nil, fmt.Errorf("apply schema: %w", err)
+	}
+
+	return &SQLiteStore{db: db, pricing: pricer}, nil
+}
+
+func (s *SQLiteStore) Close() error {
+	return s.db.Close()
+}
+
+func (s *SQLiteStore) LogUsage(ctx context.Context, entry domain.UsageEntry) error {
+	if entry.ID == "" {
+		entry.ID = uuid.New().String()
+	}
+
+	if entry.At.IsZero() {
+		entry.At = time.Now().UTC()
+	}
+
+	_, err := s.db.ExecContext(ctx,
+		`INSERT INTO usage_entries (id, repo, issue_num, agent, model, tokens_in, tokens_out, session_id, at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		entry.ID, entry.Repo, entry.IssueNum, entry.Agent, entry.Model,
+		entry.TokensIn, entry.TokensOut, entry.SessionID, entry.At.UTC().Format(time.RFC3339),
+	)
+	if err != nil {
+		return fmt.Errorf("insert usage entry: %w", err)
+	}
+
+	return nil
+}
+
+func (s *SQLiteStore) StartSession(ctx context.Context, repo string, issueNum int) (*domain.Session, error) {
+	sess := domain.Session{
+		ID:        uuid.New().String(),
+		Repo:      repo,
+		IssueNum:  issueNum,
+		StartedAt: time.Now().UTC(),
+	}
+
+	_, err := s.db.ExecContext(ctx,
+		`INSERT INTO sessions (id, repo, issue_num, started_at) VALUES (?, ?, ?, ?)`,
+		sess.ID, sess.Repo, sess.IssueNum, sess.StartedAt.Format(time.RFC3339),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("insert session: %w", err)
+	}
+
+	return &sess, nil
+}
+
+func (s *SQLiteStore) EndSession(ctx context.Context, sessionID string) error {
+	now := time.Now().UTC().Format(time.RFC3339)
+
+	res, err := s.db.ExecContext(ctx,
+		`UPDATE sessions SET ended_at = ? WHERE id = ? AND ended_at IS NULL`,
+		now, sessionID,
+	)
+	if err != nil {
+		return fmt.Errorf("end session: %w", err)
+	}
+
+	n, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("end session rows affected: %w", err)
+	}
+
+	if n == 0 {
+		return ErrSessionNotFound
+	}
+
+	return nil
+}
+
+func (s *SQLiteStore) ListSessions(ctx context.Context, repo string, issueNum int) ([]domain.Session, error) {
+	rows, err := s.db.QueryContext(ctx,
+		`SELECT id, repo, issue_num, started_at, ended_at FROM sessions WHERE repo = ? AND issue_num = ? ORDER BY started_at`,
+		repo, issueNum,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("list sessions: %w", err)
+	}
+	defer rows.Close()
+
+	var sessions []domain.Session
+
+	for rows.Next() {
+		var sess domain.Session
+		var startedAt string
+		var endedAt sql.NullString
+
+		if err = rows.Scan(&sess.ID, &sess.Repo, &sess.IssueNum, &startedAt, &endedAt); err != nil {
+			return nil, fmt.Errorf("scan session: %w", err)
+		}
+
+		sess.StartedAt, err = time.Parse(time.RFC3339, startedAt)
+		if err != nil {
+			return nil, fmt.Errorf("parse session started_at: %w", err)
+		}
+
+		if endedAt.Valid {
+			t, err := time.Parse(time.RFC3339, endedAt.String)
+			if err != nil {
+				return nil, fmt.Errorf("parse session ended_at: %w", err)
+			}
+
+			sess.EndedAt = &t
+		}
+
+		sessions = append(sessions, sess)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate sessions: %w", err)
+	}
+
+	return sessions, nil
+}
+
+func (s *SQLiteStore) ListIssues(ctx context.Context, filter domain.IssueFilter) ([]domain.TrackedIssue, error) {
+	query := `
+		SELECT repo, issue_num, SUM(tokens_in), SUM(tokens_out)
+		FROM usage_entries
+		WHERE 1=1`
+	args := []any{}
+
+	if filter.Repo != "" {
+		query += " AND repo = ?"
+		args = append(args, filter.Repo)
+	}
+
+	if filter.Agent != "" {
+		query += " AND agent = ?"
+		args = append(args, filter.Agent)
+	}
+
+	if filter.Model != "" {
+		query += " AND model = ?"
+		args = append(args, filter.Model)
+	}
+
+	if filter.From != nil {
+		query += " AND at >= ?"
+		args = append(args, filter.From.UTC().Format(time.RFC3339))
+	}
+
+	if filter.To != nil {
+		query += " AND at <= ?"
+		args = append(args, filter.To.UTC().Format(time.RFC3339))
+	}
+
+	query += " GROUP BY repo, issue_num ORDER BY repo, issue_num"
+
+	rows, err := s.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("list issues: %w", err)
+	}
+	defer rows.Close()
+
+	var issues []domain.TrackedIssue
+
+	for rows.Next() {
+		var issue domain.TrackedIssue
+		if err = rows.Scan(&issue.Repo, &issue.IssueNum, &issue.TotalTokensIn, &issue.TotalTokensOut); err != nil {
+			return nil, fmt.Errorf("scan issue: %w", err)
+		}
+
+		issues = append(issues, issue)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate issues: %w", err)
+	}
+
+	for i := range issues {
+		issues[i].TotalTime = s.totalTime(ctx, issues[i].Repo, issues[i].IssueNum)
+	}
+
+	return issues, nil
+}
+
+func (s *SQLiteStore) GetReport(ctx context.Context, repo string, issueNum int) (*domain.Report, error) {
+	rows, err := s.db.QueryContext(ctx,
+		`SELECT agent, model, COUNT(*), SUM(tokens_in), SUM(tokens_out)
+		 FROM usage_entries
+		 WHERE repo = ? AND issue_num = ?
+		 GROUP BY agent, model
+		 ORDER BY agent, model`,
+		repo, issueNum,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("get report: %w", err)
+	}
+	defer rows.Close()
+
+	report := &domain.Report{
+		IssueNum: issueNum,
+		Repo:     repo,
+	}
+
+	for rows.Next() {
+		var row domain.ReportRow
+		if err = rows.Scan(&row.Agent, &row.Model, &row.Calls, &row.TokensIn, &row.TokensOut); err != nil {
+			return nil, fmt.Errorf("scan report row: %w", err)
+		}
+
+		cost, _ := s.pricing.ComputeCost(row.Model, row.TokensIn, row.TokensOut)
+		row.Cost = cost
+
+		report.Rows = append(report.Rows, row)
+		report.TotalTokensIn += row.TokensIn
+		report.TotalTokensOut += row.TokensOut
+		report.TotalCost += cost
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate report rows: %w", err)
+	}
+
+	report.TotalTime = s.totalTime(ctx, repo, issueNum)
+
+	return report, nil
+}
+
+func (s *SQLiteStore) ListUsageOverTime(ctx context.Context, filter domain.UsageOverTimeFilter) ([]domain.UsagePoint, error) {
+	granFmt := "%Y-%m-%d"
+	if filter.Granularity == domain.GranularityWeek {
+		granFmt = "%Y-W%W"
+	}
+
+	query := fmt.Sprintf(`
+		SELECT strftime('%s', at) as period, SUM(tokens_in), SUM(tokens_out)
+		FROM usage_entries
+		WHERE 1=1`, granFmt)
+	args := []any{}
+
+	if filter.Repo != "" {
+		query += " AND repo = ?"
+		args = append(args, filter.Repo)
+	}
+
+	if filter.IssueNum != nil {
+		query += " AND issue_num = ?"
+		args = append(args, *filter.IssueNum)
+	}
+
+	if filter.Agent != "" {
+		query += " AND agent = ?"
+		args = append(args, filter.Agent)
+	}
+
+	if filter.Model != "" {
+		query += " AND model = ?"
+		args = append(args, filter.Model)
+	}
+
+	if filter.From != nil {
+		query += " AND at >= ?"
+		args = append(args, filter.From.UTC().Format(time.RFC3339))
+	}
+
+	if filter.To != nil {
+		query += " AND at <= ?"
+		args = append(args, filter.To.UTC().Format(time.RFC3339))
+	}
+
+	query += " GROUP BY period ORDER BY period"
+
+	rows, err := s.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("list usage over time: %w", err)
+	}
+	defer rows.Close()
+
+	var points []domain.UsagePoint
+
+	for rows.Next() {
+		var period string
+		var tokensIn, tokensOut int
+
+		if err = rows.Scan(&period, &tokensIn, &tokensOut); err != nil {
+			return nil, fmt.Errorf("scan usage point: %w", err)
+		}
+
+		dateFmt := "2006-01-02"
+		if filter.Granularity == domain.GranularityWeek {
+			dateFmt = "2006-W01"
+		}
+
+		t, err := time.Parse(dateFmt, period)
+		if err != nil {
+			t = time.Time{}
+		}
+
+		points = append(points, domain.UsagePoint{
+			Date:      t,
+			TokensIn:  tokensIn,
+			TokensOut: tokensOut,
+		})
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate usage points: %w", err)
+	}
+
+	return points, nil
+}
+
+func (s *SQLiteStore) totalTime(ctx context.Context, repo string, issueNum int) time.Duration {
+	rows, err := s.db.QueryContext(ctx,
+		`SELECT started_at, ended_at FROM sessions WHERE repo = ? AND issue_num = ?`,
+		repo, issueNum,
+	)
+	if err != nil {
+		return 0
+	}
+	defer rows.Close()
+
+	var total time.Duration
+	now := time.Now().UTC()
+
+	for rows.Next() {
+		var startedAtStr string
+		var endedAtNull sql.NullString
+
+		if err = rows.Scan(&startedAtStr, &endedAtNull); err != nil {
+			continue
+		}
+
+		startedAt, err := time.Parse(time.RFC3339, startedAtStr)
+		if err != nil {
+			continue
+		}
+
+		if endedAtNull.Valid {
+			endedAt, err := time.Parse(time.RFC3339, endedAtNull.String)
+			if err != nil {
+				continue
+			}
+
+			total += endedAt.Sub(startedAt)
+		} else {
+			total += now.Sub(startedAt)
+		}
+	}
+
+	return total
+}
