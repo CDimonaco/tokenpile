@@ -27,7 +27,8 @@ builds:
 archives:
   - id: tokenpile
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
-    format: tar.gz
+    formats:
+      - tar.gz
     files:
       - README.md
       - LICENSE
@@ -41,16 +42,3 @@ release:
     owner: cdimonaco
     name: tokenpile
 
-brews:
-  - name: tokenpile
-    repository:
-      owner: cdimonaco
-      name: homebrew-tokenpile
-      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
-    homepage: "https://github.com/cdimonaco/tokenpile"
-    description: "Track LLM token usage and cost per GitHub issue"
-    license: "MIT"
-    test: |
-      system "#{bin}/tokenpile", "--version"
-    install: |
-      bin.install "tokenpile"
