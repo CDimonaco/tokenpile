@@ -1,0 +1,121 @@
+package export_test
+
+import (
+	"crypto/ed25519"
+	"crypto/rand"
+	"encoding/base64"
+	"testing"
+	"time"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/cdimonaco/tokenpile/internal/domain"
+	"github.com/cdimonaco/tokenpile/internal/export"
+)
+
+func TestExport_RoundTrip_EmptyEntries(t *testing.T) {
+	_, priv, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+
+	doc, err := export.Build(nil, priv, "test")
+	require.NoError(t, err)
+
+	assert.Equal(t, export.SchemaVersion, doc.SchemaVersion)
+	assert.Empty(t, doc.Entries)
+	require.NoError(t, export.Verify(doc))
+}
+
+func TestExport_RoundTrip_WithEntries(t *testing.T) {
+	_, priv, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+
+	entries := []domain.UsageEntry{
+		{
+			ID:        "e1",
+			Repo:      "owner/repo",
+			IssueNum:  42,
+			Agent:     "claude-code",
+			Model:     "claude-sonnet-4-6",
+			TokensIn:  1000,
+			TokensOut: 500,
+			SessionID: "s1",
+			At:        time.Now().UTC().Truncate(time.Second),
+		},
+		{
+			ID:        "e2",
+			Repo:      "owner/repo",
+			IssueNum:  43,
+			Agent:     "opencode",
+			Model:     "gpt-4o",
+			TokensIn:  200,
+			TokensOut: 100,
+			At:        time.Now().UTC().Truncate(time.Second),
+		},
+	}
+
+	doc, err := export.Build(entries, priv, "1.0.0")
+	require.NoError(t, err)
+	require.Len(t, doc.Entries, 2)
+	require.NoError(t, export.Verify(doc))
+}
+
+func TestExport_Verify_TamperedEntries(t *testing.T) {
+	_, priv, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+
+	entries := []domain.UsageEntry{
+		{ID: "e1", Repo: "o/r", IssueNum: 1, Agent: "a", Model: "m", TokensIn: 100, TokensOut: 50, At: time.Now()},
+	}
+
+	doc, err := export.Build(entries, priv, "test")
+	require.NoError(t, err)
+
+	doc.Entries[0].TokensIn = 99999
+
+	assert.Error(t, export.Verify(doc))
+}
+
+func TestExport_Verify_InvalidPublicKey(t *testing.T) {
+	_, priv, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+
+	doc, err := export.Build(nil, priv, "test")
+	require.NoError(t, err)
+
+	doc.PublicKey = "not!valid!base64!!!"
+
+	assert.Error(t, export.Verify(doc))
+}
+
+func TestExport_Verify_WrongPublicKey(t *testing.T) {
+	_, priv1, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+
+	pub2, _, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+
+	entries := []domain.UsageEntry{
+		{ID: "e1", Repo: "o/r", IssueNum: 1, Agent: "a", Model: "m", TokensIn: 100, TokensOut: 50, At: time.Now()},
+	}
+
+	doc, err := export.Build(entries, priv1, "test")
+	require.NoError(t, err)
+
+	// replace the embedded public key with a different key — signature won't match
+	doc.PublicKey = base64.StdEncoding.EncodeToString(pub2)
+
+	assert.Error(t, export.Verify(doc))
+}
+
+func TestExport_Verify_CorruptedSignature(t *testing.T) {
+	_, priv, err := ed25519.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+
+	doc, err := export.Build(nil, priv, "test")
+	require.NoError(t, err)
+
+	doc.Signature = base64.StdEncoding.EncodeToString(make([]byte, 64))
+
+	assert.Error(t, export.Verify(doc))
+}
