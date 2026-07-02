@@ -6,13 +6,13 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/cdimonaco/tokenpile/internal/domain"
+	"github.com/cdimonaco/tokenpile/internal/usage"
 )
 
 func baseModel() Model {
 	return Model{
 		activeView:  viewList,
-		granularity: domain.GranularityDay,
+		granularity: usage.Day,
 		authToken:   "tok",
 	}
 }
@@ -60,7 +60,7 @@ func TestHandleKey_HelpToggle(t *testing.T) {
 
 func TestHandleKey_ListNavigation(t *testing.T) {
 	m := baseModel()
-	m.issues = []domain.TrackedIssue{
+	m.issues = []usage.TrackedIssue{
 		{IssueNum: 1, Repo: "o/a"},
 		{IssueNum: 2, Repo: "o/b"},
 		{IssueNum: 3, Repo: "o/c"},
@@ -87,7 +87,7 @@ func TestHandleKey_ListNavigation(t *testing.T) {
 
 func TestHandleKey_EnterDetail(t *testing.T) {
 	m := baseModel()
-	m.issues = []domain.TrackedIssue{{IssueNum: 5, Repo: "o/r"}}
+	m.issues = []usage.TrackedIssue{{IssueNum: 5, Repo: "o/r"}}
 	m.store = nil // loadReport will be called but we only test state transition
 
 	next, _ := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
@@ -126,16 +126,16 @@ func TestHandleKey_GranularityToggle(t *testing.T) {
 
 	next, _ := m.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("w")})
 	m2 := next.(Model)
-	assert.Equal(t, domain.GranularityWeek, m2.granularity)
+	assert.Equal(t, usage.Week, m2.granularity)
 
 	next2, _ := m2.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("d")})
 	m3 := next2.(Model)
-	assert.Equal(t, domain.GranularityDay, m3.granularity)
+	assert.Equal(t, usage.Day, m3.granularity)
 }
 
 func TestIssuesLoaded_UpdatesModel(t *testing.T) {
 	m := baseModel()
-	issues := []domain.TrackedIssue{{IssueNum: 1, Repo: "o/r"}}
+	issues := []usage.TrackedIssue{{IssueNum: 1, Repo: "o/r"}}
 
 	next, _ := m.Update(issuesLoadedMsg{issues: issues})
 	m2 := next.(Model)
@@ -164,7 +164,7 @@ func TestViewList_EmptyState(t *testing.T) {
 
 func TestViewList_ShowsIssues(t *testing.T) {
 	m := baseModel()
-	m.issues = []domain.TrackedIssue{
+	m.issues = []usage.TrackedIssue{
 		{IssueNum: 42, Repo: "owner/repo", TotalTokensIn: 1000, TotalTokensOut: 500, TotalCost: 0.01},
 	}
 

@@ -10,10 +10,10 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
-	"github.com/cdimonaco/tokenpile/internal/domain"
 	"github.com/cdimonaco/tokenpile/internal/pricing"
 	"github.com/cdimonaco/tokenpile/internal/provider"
 	"github.com/cdimonaco/tokenpile/internal/store"
+	"github.com/cdimonaco/tokenpile/internal/usage"
 )
 
 type view int
@@ -33,13 +33,13 @@ type Model struct {
 
 	activeView  view
 	prevView    view
-	issues      []domain.TrackedIssue
-	selected    *domain.TrackedIssue
-	report      *domain.Report
-	chartPoints []domain.UsagePoint
+	issues      []usage.TrackedIssue
+	selected    *usage.TrackedIssue
+	report      *usage.Report
+	chartPoints []usage.Point
 	chartScope  string
 
-	granularity domain.Granularity
+	granularity usage.Granularity
 	filterAgent string
 	filterModel string
 	filterFrom  *time.Time
@@ -53,9 +53,9 @@ type Model struct {
 }
 
 type (
-	issuesLoadedMsg struct{ issues []domain.TrackedIssue }
-	reportLoadedMsg struct{ report *domain.Report }
-	chartLoadedMsg  struct{ points []domain.UsagePoint }
+	issuesLoadedMsg struct{ issues []usage.TrackedIssue }
+	reportLoadedMsg struct{ report *usage.Report }
+	chartLoadedMsg  struct{ points []usage.Point }
 	errMsg          struct{ err error }
 )
 
@@ -74,7 +74,7 @@ func New(s store.Store, ip provider.IssueProvider, p *pricing.Loader, authToken 
 		pricer:        p,
 		authToken:     authToken,
 		activeView:    viewList,
-		granularity:   domain.GranularityDay,
+		granularity:   usage.Day,
 	}
 }
 
@@ -209,11 +209,11 @@ func (m Model) handleDetailKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 func (m Model) handleChartKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	case "d":
-		m.granularity = domain.GranularityDay
+		m.granularity = usage.Day
 
 		return m, m.loadChart(m.chartIssueNum())
 	case "w":
-		m.granularity = domain.GranularityWeek
+		m.granularity = usage.Week
 
 		return m, m.loadChart(m.chartIssueNum())
 	}
@@ -407,7 +407,7 @@ func (m Model) loadIssues() tea.Cmd {
 	return func() tea.Msg {
 		ctx := context.Background()
 
-		issues, err := m.store.ListIssues(ctx, domain.IssueFilter{})
+		issues, err := m.store.ListIssues(ctx, usage.Filter{})
 		if err != nil {
 			slog.Error("load issues", "err", err)
 			return errMsg{err: err}
@@ -434,7 +434,7 @@ func (m Model) loadChart(issueNum *int) tea.Cmd {
 	return func() tea.Msg {
 		ctx := context.Background()
 
-		filter := domain.UsageOverTimeFilter{
+		filter := usage.OverTimeFilter{
 			Granularity: m.granularity,
 			Agent:       m.filterAgent,
 			Model:       m.filterModel,
