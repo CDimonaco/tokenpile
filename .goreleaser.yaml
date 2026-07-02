@@ -1,0 +1,53 @@
+version: 2
+
+project_name: tokenpile
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: tokenpile
+    main: ./cmd/tokenpile
+    binary: tokenpile
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X main.version={{.Version}}
+
+archives:
+  - id: tokenpile
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    format: tar.gz
+    files:
+      - README.md
+      - LICENSE
+
+checksum:
+  name_template: "{{ .ProjectName }}_{{ .Version }}_SHA256SUMS"
+  algorithm: sha256
+
+release:
+  github:
+    owner: cdimonaco
+    name: tokenpile
+
+brews:
+  - name: tokenpile
+    repository:
+      owner: cdimonaco
+      name: homebrew-tokenpile
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    homepage: "https://github.com/cdimonaco/tokenpile"
+    description: "Track LLM token usage and cost per GitHub issue"
+    license: "MIT"
+    test: |
+      system "#{bin}/tokenpile", "--version"
+    install: |
+      bin.install "tokenpile"
