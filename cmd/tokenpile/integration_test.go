@@ -11,9 +11,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli/v2"
 
-	"github.com/cdimonaco/tokenpile/internal/domain"
 	"github.com/cdimonaco/tokenpile/internal/pricing"
 	"github.com/cdimonaco/tokenpile/internal/store"
+	"github.com/cdimonaco/tokenpile/internal/usage"
 )
 
 func newTestStore(t *testing.T) *store.SQLiteStore {
@@ -159,7 +159,7 @@ func TestIntegration_Log_MultipleIssues(t *testing.T) {
 	runLogCmd(t, s, "log", "--issue", "100", "--agent", "a", "--model", "gpt-4o", "--tokens-in", "10", "--tokens-out", "5", "--repo", "o/r")  //nolint:errcheck
 	runLogCmd(t, s, "log", "--issue", "101", "--agent", "a", "--model", "gpt-4o", "--tokens-in", "20", "--tokens-out", "10", "--repo", "o/r") //nolint:errcheck
 
-	issues, err := s.ListIssues(ctx, domain.IssueFilter{})
+	issues, err := s.ListIssues(ctx, usage.Filter{})
 	require.NoError(t, err)
 	assert.Len(t, issues, 2)
 }

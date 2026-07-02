@@ -9,9 +9,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/urfave/cli/v2"
 
-	"github.com/cdimonaco/tokenpile/internal/domain"
 	"github.com/cdimonaco/tokenpile/internal/provider"
 	"github.com/cdimonaco/tokenpile/internal/store"
+	"github.com/cdimonaco/tokenpile/internal/usage"
 )
 
 const sessionIdleTimeout = 30 * time.Minute
@@ -82,7 +82,7 @@ func logCommand(s store.Store) *cli.Command {
 				return fmt.Errorf("resolve session: %w", err)
 			}
 
-			entry := domain.UsageEntry{
+			entry := usage.Entry{
 				ID:        uuid.NewString(),
 				Repo:      repo,
 				IssueNum:  issueNum,

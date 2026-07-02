@@ -11,8 +11,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli/v2"
 
-	"github.com/cdimonaco/tokenpile/internal/domain"
 	"github.com/cdimonaco/tokenpile/internal/mocks"
+	"github.com/cdimonaco/tokenpile/internal/usage"
 )
 
 func runLogApp(t *testing.T, storeMock *mocks.Store, args ...string) (string, error) {
@@ -41,16 +41,16 @@ func TestLog_MissingRequiredFlags(t *testing.T) {
 func TestLog_NoActiveSession_StartsNew(t *testing.T) {
 	s := &mocks.Store{}
 
-	sess := &domain.Session{
+	sess := &usage.Session{
 		ID:        "sess-1",
 		Repo:      "owner/repo",
 		IssueNum:  42,
 		StartedAt: time.Now(),
 	}
 
-	s.On("ListSessions", mock.Anything, "owner/repo", 42).Return([]domain.Session{}, nil)
+	s.On("ListSessions", mock.Anything, "owner/repo", 42).Return([]usage.Session{}, nil)
 	s.On("StartSession", mock.Anything, "owner/repo", 42).Return(sess, nil)
-	s.On("LogUsage", mock.Anything, mock.MatchedBy(func(e domain.UsageEntry) bool {
+	s.On("LogUsage", mock.Anything, mock.MatchedBy(func(e usage.Entry) bool {
 		return e.Repo == "owner/repo" && e.IssueNum == 42 && e.SessionID == "sess-1"
 	})).Return(nil)
 
@@ -74,15 +74,15 @@ func TestLog_ReuseActiveSession(t *testing.T) {
 	s := &mocks.Store{}
 
 	recentTime := time.Now().Add(-5 * time.Minute)
-	activeSess := domain.Session{
+	activeSess := usage.Session{
 		ID:        "sess-active",
 		Repo:      "owner/repo",
 		IssueNum:  7,
 		StartedAt: recentTime,
 	}
 
-	s.On("ListSessions", mock.Anything, "owner/repo", 7).Return([]domain.Session{activeSess}, nil)
-	s.On("LogUsage", mock.Anything, mock.MatchedBy(func(e domain.UsageEntry) bool {
+	s.On("ListSessions", mock.Anything, "owner/repo", 7).Return([]usage.Session{activeSess}, nil)
+	s.On("LogUsage", mock.Anything, mock.MatchedBy(func(e usage.Entry) bool {
 		return e.SessionID == "sess-active"
 	})).Return(nil)
 
@@ -104,24 +104,24 @@ func TestLog_ClosesIdleSession_StartsNew(t *testing.T) {
 	s := &mocks.Store{}
 
 	idleTime := time.Now().Add(-45 * time.Minute)
-	idleSess := domain.Session{
+	idleSess := usage.Session{
 		ID:        "sess-idle",
 		Repo:      "owner/repo",
 		IssueNum:  99,
 		StartedAt: idleTime,
 	}
 
-	newSess := &domain.Session{
+	newSess := &usage.Session{
 		ID:        "sess-new",
 		Repo:      "owner/repo",
 		IssueNum:  99,
 		StartedAt: time.Now(),
 	}
 
-	s.On("ListSessions", mock.Anything, "owner/repo", 99).Return([]domain.Session{idleSess}, nil)
+	s.On("ListSessions", mock.Anything, "owner/repo", 99).Return([]usage.Session{idleSess}, nil)
 	s.On("EndSession", mock.Anything, "sess-idle").Return(nil)
 	s.On("StartSession", mock.Anything, "owner/repo", 99).Return(newSess, nil)
-	s.On("LogUsage", mock.Anything, mock.MatchedBy(func(e domain.UsageEntry) bool {
+	s.On("LogUsage", mock.Anything, mock.MatchedBy(func(e usage.Entry) bool {
 		return e.SessionID == "sess-new"
 	})).Return(nil)
 

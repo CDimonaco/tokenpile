@@ -9,9 +9,9 @@ import (
 
 	"github.com/urfave/cli/v2"
 
-	"github.com/cdimonaco/tokenpile/internal/domain"
 	"github.com/cdimonaco/tokenpile/internal/export"
 	"github.com/cdimonaco/tokenpile/internal/store"
+	"github.com/cdimonaco/tokenpile/internal/usage"
 )
 
 func exportCommands(s store.Store, priv ed25519.PrivateKey, version string) *cli.Command {
@@ -88,7 +88,7 @@ func exportCommands(s store.Store, priv ed25519.PrivateKey, version string) *cli
 		},
 		Action: func(c *cli.Context) error {
 			ctx := c.Context
-			filter := domain.IssueFilter{
+			filter := usage.Filter{
 				Repo:  c.String("repo"),
 				Agent: c.String("agent"),
 				Model: c.String("model"),
@@ -117,7 +117,7 @@ func exportCommands(s store.Store, priv ed25519.PrivateKey, version string) *cli
 				return fmt.Errorf("list issues: %w", err)
 			}
 
-			var entries []domain.UsageEntry
+			var entries []usage.Entry
 
 			for _, issue := range issues {
 				if c.Int("issue") != 0 && issue.IssueNum != c.Int("issue") {
@@ -130,7 +130,7 @@ func exportCommands(s store.Store, priv ed25519.PrivateKey, version string) *cli
 				}
 
 				for _, row := range report.Rows {
-					entries = append(entries, domain.UsageEntry{
+					entries = append(entries, usage.Entry{
 						Repo:      issue.Repo,
 						IssueNum:  issue.IssueNum,
 						Agent:     row.Agent,
