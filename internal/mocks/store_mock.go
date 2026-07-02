@@ -6,7 +6,7 @@ package mocks
 import (
 	"context"
 
-	"github.com/cdimonaco/tokenpile/internal/domain"
+	"github.com/cdimonaco/tokenpile/internal/usage"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -14,45 +14,45 @@ type Store struct {
 	mock.Mock
 }
 
-func (_m *Store) LogUsage(ctx context.Context, entry domain.UsageEntry) error {
+func (_m *Store) LogUsage(ctx context.Context, entry usage.Entry) error {
 	ret := _m.Called(ctx, entry)
 	return ret.Error(0)
 }
 
-func (_m *Store) ListIssues(ctx context.Context, filter domain.IssueFilter) ([]domain.TrackedIssue, error) {
+func (_m *Store) ListIssues(ctx context.Context, filter usage.Filter) ([]usage.TrackedIssue, error) {
 	ret := _m.Called(ctx, filter)
 
-	var r0 []domain.TrackedIssue
-	if rf, ok := ret.Get(0).(func(context.Context, domain.IssueFilter) []domain.TrackedIssue); ok {
+	var r0 []usage.TrackedIssue
+	if rf, ok := ret.Get(0).(func(context.Context, usage.Filter) []usage.TrackedIssue); ok {
 		r0 = rf(ctx, filter)
 	} else if ret.Get(0) != nil {
-		r0 = ret.Get(0).([]domain.TrackedIssue)
+		r0 = ret.Get(0).([]usage.TrackedIssue)
 	}
 
 	return r0, ret.Error(1)
 }
 
-func (_m *Store) GetReport(ctx context.Context, repo string, issueNum int) (*domain.Report, error) {
+func (_m *Store) GetReport(ctx context.Context, repo string, issueNum int) (*usage.Report, error) {
 	ret := _m.Called(ctx, repo, issueNum)
 
-	var r0 *domain.Report
-	if rf, ok := ret.Get(0).(func(context.Context, string, int) *domain.Report); ok {
+	var r0 *usage.Report
+	if rf, ok := ret.Get(0).(func(context.Context, string, int) *usage.Report); ok {
 		r0 = rf(ctx, repo, issueNum)
 	} else if ret.Get(0) != nil {
-		r0 = ret.Get(0).(*domain.Report)
+		r0 = ret.Get(0).(*usage.Report)
 	}
 
 	return r0, ret.Error(1)
 }
 
-func (_m *Store) StartSession(ctx context.Context, repo string, issueNum int) (*domain.Session, error) {
+func (_m *Store) StartSession(ctx context.Context, repo string, issueNum int) (*usage.Session, error) {
 	ret := _m.Called(ctx, repo, issueNum)
 
-	var r0 *domain.Session
-	if rf, ok := ret.Get(0).(func(context.Context, string, int) *domain.Session); ok {
+	var r0 *usage.Session
+	if rf, ok := ret.Get(0).(func(context.Context, string, int) *usage.Session); ok {
 		r0 = rf(ctx, repo, issueNum)
 	} else if ret.Get(0) != nil {
-		r0 = ret.Get(0).(*domain.Session)
+		r0 = ret.Get(0).(*usage.Session)
 	}
 
 	return r0, ret.Error(1)
@@ -63,27 +63,27 @@ func (_m *Store) EndSession(ctx context.Context, sessionID string) error {
 	return ret.Error(0)
 }
 
-func (_m *Store) ListSessions(ctx context.Context, repo string, issueNum int) ([]domain.Session, error) {
+func (_m *Store) ListSessions(ctx context.Context, repo string, issueNum int) ([]usage.Session, error) {
 	ret := _m.Called(ctx, repo, issueNum)
 
-	var r0 []domain.Session
-	if rf, ok := ret.Get(0).(func(context.Context, string, int) []domain.Session); ok {
+	var r0 []usage.Session
+	if rf, ok := ret.Get(0).(func(context.Context, string, int) []usage.Session); ok {
 		r0 = rf(ctx, repo, issueNum)
 	} else if ret.Get(0) != nil {
-		r0 = ret.Get(0).([]domain.Session)
+		r0 = ret.Get(0).([]usage.Session)
 	}
 
 	return r0, ret.Error(1)
 }
 
-func (_m *Store) ListUsageOverTime(ctx context.Context, filter domain.UsageOverTimeFilter) ([]domain.UsagePoint, error) {
+func (_m *Store) ListUsageOverTime(ctx context.Context, filter usage.OverTimeFilter) ([]usage.Point, error) {
 	ret := _m.Called(ctx, filter)
 
-	var r0 []domain.UsagePoint
-	if rf, ok := ret.Get(0).(func(context.Context, domain.UsageOverTimeFilter) []domain.UsagePoint); ok {
+	var r0 []usage.Point
+	if rf, ok := ret.Get(0).(func(context.Context, usage.OverTimeFilter) []usage.Point); ok {
 		r0 = rf(ctx, filter)
 	} else if ret.Get(0) != nil {
-		r0 = ret.Get(0).([]domain.UsagePoint)
+		r0 = ret.Get(0).([]usage.Point)
 	}
 
 	return r0, ret.Error(1)

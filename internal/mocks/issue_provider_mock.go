@@ -6,7 +6,8 @@ package mocks
 import (
 	"context"
 
-	"github.com/cdimonaco/tokenpile/internal/domain"
+	"github.com/cdimonaco/tokenpile/internal/provider"
+	"github.com/cdimonaco/tokenpile/internal/usage"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -14,27 +15,27 @@ type IssueProvider struct {
 	mock.Mock
 }
 
-func (_m *IssueProvider) ListIssues(ctx context.Context, filter domain.IssueFilter) ([]domain.Issue, error) {
+func (_m *IssueProvider) ListIssues(ctx context.Context, filter usage.Filter) ([]provider.Issue, error) {
 	ret := _m.Called(ctx, filter)
 
-	var r0 []domain.Issue
-	if rf, ok := ret.Get(0).(func(context.Context, domain.IssueFilter) []domain.Issue); ok {
+	var r0 []provider.Issue
+	if rf, ok := ret.Get(0).(func(context.Context, usage.Filter) []provider.Issue); ok {
 		r0 = rf(ctx, filter)
 	} else if ret.Get(0) != nil {
-		r0 = ret.Get(0).([]domain.Issue)
+		r0 = ret.Get(0).([]provider.Issue)
 	}
 
 	return r0, ret.Error(1)
 }
 
-func (_m *IssueProvider) GetIssue(ctx context.Context, repo string, number int) (*domain.Issue, error) {
+func (_m *IssueProvider) GetIssue(ctx context.Context, repo string, number int) (*provider.Issue, error) {
 	ret := _m.Called(ctx, repo, number)
 
-	var r0 *domain.Issue
-	if rf, ok := ret.Get(0).(func(context.Context, string, int) *domain.Issue); ok {
+	var r0 *provider.Issue
+	if rf, ok := ret.Get(0).(func(context.Context, string, int) *provider.Issue); ok {
 		r0 = rf(ctx, repo, number)
 	} else if ret.Get(0) != nil {
-		r0 = ret.Get(0).(*domain.Issue)
+		r0 = ret.Get(0).(*provider.Issue)
 	}
 
 	return r0, ret.Error(1)
