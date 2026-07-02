@@ -16,15 +16,23 @@ Never use emojis anywhere in code, comments, commit messages, or output strings.
 ```
 cmd/tokenpile/        main.go — composition root only
 internal/
-  domain/             shared types: UsageEntry, Issue, Session, Report, IssueFilter
+  usage/              shared types: Entry, Session, Filter, Report, TrackedIssue, Point
   store/              Store interface + SQLite adapter
-  provider/           AuthProvider, IssueProvider interfaces + GitHub implementations
+  provider/           AuthProvider, IssueProvider interfaces + Issue type + GitHub implementations
   pricing/            two-layer pricing config, cost computation
   export/             JSON marshaling, Ed25519 signing, schema validation
   skill/              embedded skill templates, install logic
   tui/                Bubble Tea app, views (list, detail, charts)
   config/             XDG-compliant path resolution, Ed25519 identity management
 ```
+
+## Package naming
+
+Name packages after what they contain, not architectural layers. No `domain`, `model`, or `dto` packages — those are Java patterns and add indirection without meaning.
+
+- Shared types that describe the application's core data live in `internal/usage` — named after the concept, not the layer.
+- Types that originate from a specific provider live in that provider's package (e.g. `provider.Issue`).
+- When a type name would repeat the package name, drop the prefix: `usage.Entry` not `usage.UsageEntry`, `usage.Point` not `usage.UsagePoint`.
 
 ## Dependency injection
 
