@@ -17,13 +17,29 @@ func baseModel() Model {
 	}
 }
 
-func TestView_AuthError_WhenNoToken(t *testing.T) {
-	m := Model{activeView: viewList}
-	m.authErr = true
+func TestView_Unauthenticated_ShowsLocalIssues(t *testing.T) {
+	m := Model{
+		activeView:      viewList,
+		unauthenticated: true,
+		issues: []usage.TrackedIssue{
+			{IssueNum: 7, Repo: "owner/repo"},
+		},
+	}
 
 	v := m.View()
 
-	assert.Contains(t, v, "Not authenticated")
+	assert.Contains(t, v, "not authenticated")
+	assert.Contains(t, v, "7")
+}
+
+func TestView_Unauthenticated_EmptyDB_ShowsEmptyState(t *testing.T) {
+	m := Model{activeView: viewList, unauthenticated: true}
+
+	v := m.View()
+
+	assert.Contains(t, v, "not authenticated")
+	assert.Contains(t, v, "No usage tracked yet")
+	assert.NotContains(t, v, "Not authenticated. Run:")
 }
 
 func TestView_ErrorMessage(t *testing.T) {
@@ -32,7 +48,47 @@ func TestView_ErrorMessage(t *testing.T) {
 
 	v := m.View()
 
-	assert.Contains(t, v, "Error")
+	assert.Contains(t, v, "error")
+}
+
+func TestIssuesLoaded_UnauthenticatedFlag(t *testing.T) {
+	m := baseModel()
+	issues := []usage.TrackedIssue{{IssueNum: 3, Repo: "o/r"}}
+
+	next, _ := m.Update(issuesLoadedMsg{issues: issues, unauthenticated: true})
+	m2 := next.(Model)
+
+	assert.True(t, m2.unauthenticated)
+	assert.Equal(t, issues, m2.issues)
+}
+
+func TestIssuesLoaded_Dedup(t *testing.T) {
+	m := baseModel()
+
+	// Simulate a merge where the same issue appears in both sources
+	merged := []usage.TrackedIssue{
+		{IssueNum: 1, Repo: "o/r", Title: "from github"},
+		{IssueNum: 2, Repo: "o/r", Title: "db only"},
+	}
+
+	next, _ := m.Update(issuesLoadedMsg{issues: merged})
+	m2 := next.(Model)
+
+	assert.Len(t, m2.issues, 2)
+}
+
+func TestIssuesLoaded_StubTitleForInaccessible(t *testing.T) {
+	m := baseModel()
+
+	merged := []usage.TrackedIssue{
+		{IssueNum: 99, Repo: "o/r", Title: "[not found on GitHub]"},
+	}
+
+	next, _ := m.Update(issuesLoadedMsg{issues: merged})
+	m2 := next.(Model)
+
+	v := m2.View()
+	assert.Contains(t, v, "[not found on GitHub]")
 }
 
 func TestHandleKey_Quit(t *testing.T) {

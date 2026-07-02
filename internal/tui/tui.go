@@ -31,13 +31,14 @@ type Model struct {
 	pricer        *pricing.Loader
 	authToken     string
 
-	activeView  view
-	prevView    view
-	issues      []usage.TrackedIssue
-	selected    *usage.TrackedIssue
-	report      *usage.Report
-	chartPoints []usage.Point
-	chartScope  string
+	activeView    view
+	prevView      view
+	issues        []usage.TrackedIssue
+	selected      *usage.TrackedIssue
+	report        *usage.Report
+	chartPoints   []usage.Point
+	chartScope    string
+	unauthenticated bool
 
 	granularity usage.Granularity
 	filterAgent string
@@ -45,15 +46,17 @@ type Model struct {
 	filterFrom  *time.Time
 	filterTo    *time.Time
 
-	width   int
-	height  int
-	cursor  int
-	err     error
-	authErr bool
+	width  int
+	height int
+	cursor int
+	err    error
 }
 
 type (
-	issuesLoadedMsg struct{ issues []usage.TrackedIssue }
+	issuesLoadedMsg struct {
+		issues          []usage.TrackedIssue
+		unauthenticated bool
+	}
 	reportLoadedMsg struct{ report *usage.Report }
 	chartLoadedMsg  struct{ points []usage.Point }
 	errMsg          struct{ err error }
@@ -83,12 +86,6 @@ func New(s store.Store, ip provider.IssueProvider, p *pricing.Loader, authToken 
 }
 
 func (m Model) Init() tea.Cmd {
-	if m.authToken == "" {
-		m.authErr = true //nolint:govet
-
-		return nil
-	}
-
 	return m.loadIssues()
 }
 
@@ -105,6 +102,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case issuesLoadedMsg:
 		m.issues = msg.issues
+		m.unauthenticated = msg.unauthenticated
 		m.err = nil
 
 		return m, nil
@@ -236,10 +234,8 @@ func (m *Model) chartIssueNum() *int {
 func (m Model) View() string {
 	var body string
 
-	if m.authErr {
-		body = errorStyle.Render("Not authenticated. Run: tokenpile auth login --provider github")
-	} else if m.err != nil {
-		body = errorStyle.Render("Error: " + m.err.Error())
+	if m.err != nil {
+		body = errorStyle.Render("error: " + m.err.Error())
 	} else {
 		switch m.activeView {
 		case viewList:
@@ -310,7 +306,12 @@ func (m Model) viewIssueList() string {
 	var b strings.Builder
 
 	fmt.Fprintln(&b, titleStyle.Render("tokenpile"))
-	fmt.Fprintln(&b, headerStyle.Render(fmt.Sprintf("%-8s %-20s %-12s %-12s %s", "Issue", "Repo", "Tokens", "Cost", "Time")))
+
+	if m.unauthenticated {
+		fmt.Fprintln(&b, dimStyle.Render("(not authenticated — showing local issues only)"))
+	}
+
+	fmt.Fprintln(&b, headerStyle.Render(fmt.Sprintf("%-8s %-18s %-26s %-10s %-10s %s", "Issue", "Repo", "Title", "Tokens", "Cost", "Time")))
 
 	if len(m.issues) == 0 {
 		fmt.Fprintln(&b, dimStyle.Render("No usage tracked yet. Run tokenpile log to get started."))
@@ -319,9 +320,15 @@ func (m Model) viewIssueList() string {
 	}
 
 	for i, issue := range m.issues {
-		line := fmt.Sprintf("#%-7d %-20s %-12s %-12s %s",
+		title := issue.Title
+		if title == "" {
+			title = "-"
+		}
+
+		line := fmt.Sprintf("#%-7d %-18s %-26s %-10s %-10s %s",
 			issue.IssueNum,
-			truncate(issue.Repo, 20),
+			truncate(issue.Repo, 18),
+			truncate(title, 26),
 			fmt.Sprintf("%dk", (issue.TotalTokensIn+issue.TotalTokensOut)/1000),
 			fmt.Sprintf("$%.2f", issue.TotalCost),
 			formatDuration(issue.TotalTime),
@@ -456,14 +463,68 @@ func (m Model) loadIssues() tea.Cmd {
 	return func() tea.Msg {
 		ctx := context.Background()
 
-		issues, err := m.store.ListIssues(ctx, usage.Filter{})
+		dbIssues, err := m.store.ListIssues(ctx, usage.Filter{})
 		if err != nil {
 			slog.Error("load issues", "err", err)
 			return errMsg{err: err}
 		}
 
-		return issuesLoadedMsg{issues: issues}
+		if m.authToken == "" {
+			return issuesLoadedMsg{issues: dbIssues, unauthenticated: true}
+		}
+
+		// Build dedup index keyed by "repo#issueNum"
+		result := make([]usage.TrackedIssue, len(dbIssues))
+		copy(result, dbIssues)
+		inResult := make(map[string]int, len(result))
+		for i, ti := range result {
+			inResult[issueKey(ti.Repo, ti.IssueNum)] = i
+		}
+
+		repo, repoErr := provider.InferRepo()
+		if repoErr == nil {
+			ghIssues, ghErr := m.issueProvider.ListIssues(ctx, usage.Filter{
+				Repo:     repo,
+				Assignee: "@me",
+			})
+			if ghErr == nil {
+				for _, gi := range ghIssues {
+					k := issueKey(gi.Repo, gi.Number)
+					if idx, ok := inResult[k]; ok {
+						result[idx].Title = gi.Title
+					} else {
+						idx = len(result)
+						result = append(result, usage.TrackedIssue{
+							IssueNum: gi.Number,
+							Repo:     gi.Repo,
+							Title:    gi.Title,
+						})
+						inResult[k] = idx
+					}
+				}
+			}
+		}
+
+		// Enrich DB issues still missing a title via GetIssue
+		for i := range result {
+			if result[i].Title != "" {
+				continue
+			}
+
+			gi, getErr := m.issueProvider.GetIssue(ctx, result[i].Repo, result[i].IssueNum)
+			if getErr != nil {
+				result[i].Title = "[not found on GitHub]"
+			} else {
+				result[i].Title = gi.Title
+			}
+		}
+
+		return issuesLoadedMsg{issues: result}
 	}
+}
+
+func issueKey(repo string, num int) string {
+	return fmt.Sprintf("%s#%d", repo, num)
 }
 
 func (m Model) loadReport(repo string, issueNum int) tea.Cmd {
