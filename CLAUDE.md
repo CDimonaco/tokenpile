@@ -3,6 +3,7 @@
 ## Commits
 
 - Conventional commits: `feat:`, `fix:`, `chore:`, `docs:`, `test:`, `refactor:`, `ci:`
+- Atomic commits: one logical change per commit; never batch unrelated work into a single commit.
 - Never add AI agent co-author trailers. Commits carry only the human author's identity.
 - No "Co-Authored-By" lines of any kind.
 
