@@ -62,6 +62,11 @@ type TrackedIssue struct {
 	TotalTime      time.Duration
 }
 
+type TrackedIssueRef struct {
+	Repo     string
+	IssueNum int
+}
+
 type Granularity string
 
 const (

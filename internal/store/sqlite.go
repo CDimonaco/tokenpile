@@ -368,6 +368,33 @@ func (s *SQLiteStore) ListUsageOverTime(ctx context.Context, filter usage.OverTi
 	return points, nil
 }
 
+func (s *SQLiteStore) ListTrackedIssueRefs(ctx context.Context) ([]usage.TrackedIssueRef, error) {
+	rows, err := s.db.QueryContext(ctx,
+		`SELECT DISTINCT repo, issue_num FROM usage_entries ORDER BY repo, issue_num`,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("list tracked issue refs: %w", err)
+	}
+	defer rows.Close()
+
+	var refs []usage.TrackedIssueRef
+
+	for rows.Next() {
+		var ref usage.TrackedIssueRef
+		if err = rows.Scan(&ref.Repo, &ref.IssueNum); err != nil {
+			return nil, fmt.Errorf("scan tracked issue ref: %w", err)
+		}
+
+		refs = append(refs, ref)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate tracked issue refs: %w", err)
+	}
+
+	return refs, nil
+}
+
 func (s *SQLiteStore) totalTime(ctx context.Context, repo string, issueNum int) time.Duration {
 	rows, err := s.db.QueryContext(ctx,
 		`SELECT started_at, ended_at FROM sessions WHERE repo = ? AND issue_num = ?`,

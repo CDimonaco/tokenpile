@@ -16,4 +16,5 @@ type Store interface {
 	EndSession(ctx context.Context, sessionID string) error
 	ListSessions(ctx context.Context, repo string, issueNum int) ([]usage.Session, error)
 	ListUsageOverTime(ctx context.Context, filter usage.OverTimeFilter) ([]usage.Point, error)
+	ListTrackedIssueRefs(ctx context.Context) ([]usage.TrackedIssueRef, error)
 }

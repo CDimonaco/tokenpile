@@ -89,6 +89,19 @@ func (_m *Store) ListUsageOverTime(ctx context.Context, filter usage.OverTimeFil
 	return r0, ret.Error(1)
 }
 
+func (_m *Store) ListTrackedIssueRefs(ctx context.Context) ([]usage.TrackedIssueRef, error) {
+	ret := _m.Called(ctx)
+
+	var r0 []usage.TrackedIssueRef
+	if rf, ok := ret.Get(0).(func(context.Context) []usage.TrackedIssueRef); ok {
+		r0 = rf(ctx)
+	} else if ret.Get(0) != nil {
+		r0 = ret.Get(0).([]usage.TrackedIssueRef)
+	}
+
+	return r0, ret.Error(1)
+}
+
 func NewStore(t interface {
 	mock.TestingT
 	Cleanup(func())
