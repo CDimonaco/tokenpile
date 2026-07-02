@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/cdimonaco/tokenpile/schema/export.schema.json",
+  "title": "tokenpile export",
+  "description": "Signed export of LLM token usage data",
+  "type": "object",
+  "required": ["schema_version", "exported_at", "exported_by", "public_key", "entries", "signature"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "description": "Schema version identifier",
+      "enum": ["1.0"]
+    },
+    "exported_at": {
+      "type": "string",
+      "description": "RFC3339 timestamp of export",
+      "format": "date-time"
+    },
+    "exported_by": {
+      "type": "string",
+      "description": "Tool version that produced the export"
+    },
+    "public_key": {
+      "type": "string",
+      "description": "Base64-encoded Ed25519 public key"
+    },
+    "entries": {
+      "type": "array",
+      "description": "Usage entries included in this export",
+      "items": {
+        "$ref": "#/$defs/UsageEntry"
+      }
+    },
+    "signature": {
+      "type": "string",
+      "description": "Base64-encoded Ed25519 signature over SHA-256 of canonical JSON of entries"
+    }
+  },
+  "$defs": {
+    "UsageEntry": {
+      "type": "object",
+      "required": ["id", "repo", "issue_num", "agent", "model", "tokens_in", "tokens_out", "at"],
+      "additionalProperties": false,
+      "properties": {
+        "id":         { "type": "string" },
+        "repo":       { "type": "string" },
+        "issue_num":  { "type": "integer" },
+        "agent":      { "type": "string" },
+        "model":      { "type": "string" },
+        "tokens_in":  { "type": "integer", "minimum": 0 },
+        "tokens_out": { "type": "integer", "minimum": 0 },
+        "session_id": { "type": "string" },
+        "at":         { "type": "string", "format": "date-time" }
+      }
+    }
+  }
+}
