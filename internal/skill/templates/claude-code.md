@@ -1,25 +1,65 @@
-# tokenpile usage tracking
+# tokenpile
 
-After each response where you make significant LLM calls, log usage with the tokenpile CLI:
+tokenpile tracks LLM token usage and cost per GitHub issue. You have two responsibilities: log your own usage, and answer questions about usage data by running CLI commands.
+
+## 1. Logging usage
+
+After each response where substantial work was done, log usage:
 
 ```
 tokenpile log \
   --issue <issue-number> \
   --agent claude-code \
-  --model <current-model-id> \
-  --tokens-in <input-token-count> \
-  --tokens-out <output-token-count> \
+  --model <model-id> \
+  --tokens-in <input-tokens> \
+  --tokens-out <output-tokens> \
   [--repo owner/repo]
 ```
 
-## Notes
+**Parameters:**
+- `--issue`: GitHub issue number for the current task. Ask the user if unknown.
+- `--agent`: always `claude-code`
+- `--model`: current model, e.g. `claude-sonnet-4-6`, `claude-opus-4-8`, `claude-haiku-4-5`
+- `--tokens-in` / `--tokens-out`: token counts for this response. Use the counts shown in the Claude Code UI (bottom status bar or `/usage`). If not visible, estimate from context size.
+- `--repo`: optional if running inside a git repo with a GitHub remote
 
-- `--issue` is the GitHub issue number you are working on (required, ask the user if unknown)
-- `--agent` must be `claude-code` (fixed for this skill)
-- `--model` is the model identifier, e.g. `claude-sonnet-4-6`, `claude-opus-4-7`
-- `--tokens-in` and `--tokens-out` are the token counts for the current session/response
-- `--repo` is optional if you are inside a git repository with a GitHub remote; otherwise pass it explicitly
+**When to log:**
+- At the end of a response where you used tools, wrote code, or did meaningful analysis
+- Once per user turn, not after every tool call
+- Skip for one-liner answers or trivial replies
 
-## When to log
+**Sessions are automatic:** consecutive logs within 30 minutes share the same session. No action needed.
 
-Log once per substantial interaction, not after every tool call. A good trigger is at the end of a user-facing response where meaningful work was done.
+## 2. Answering questions about usage
+
+When the user asks about token usage, cost, or sessions, run the appropriate command and show the output.
+
+**Report for a specific issue:**
+```
+tokenpile report --issue <N> [--repo owner/repo]
+```
+Shows per-agent, per-model breakdown with tokens, cost, and wall-clock time.
+
+**List all tracked issues:**
+```
+tokenpile report --issue <N>
+```
+
+**Export data:**
+```
+tokenpile export [--issue <N>] [--repo owner/repo] [--from <RFC3339>] [--to <RFC3339>]
+```
+
+**Check auth status:**
+```
+tokenpile auth status
+```
+
+**Example questions and how to handle them:**
+
+- "How many tokens did I spend on issue #42?" → run `tokenpile report --issue 42`
+- "What did this session cost?" → run `tokenpile report --issue <current-issue>`
+- "Show me usage for the last week" → run `tokenpile export --from <date>` or open TUI with `tokenpile`
+- "Am I logged in?" → run `tokenpile auth status`
+
+Always run the command and include the output in your response. Do not guess or estimate when real data is available.
