@@ -20,7 +20,7 @@ tokenpile log \
 - `--issue`: GitHub issue number for the current task. Ask the user if unknown.
 - `--agent`: always `claude-code`
 - `--model`: current model, e.g. `claude-sonnet-4-6`, `claude-opus-4-8`, `claude-haiku-4-5`
-- `--tokens-in` / `--tokens-out`: token counts for this response. Use the counts shown in the Claude Code UI (bottom status bar or `/usage`). If not visible, estimate from context size.
+- `--tokens-in` / `--tokens-out`: exact token counts for this response. Before logging, ask the user to run `/usage` in Claude Code and share the output. Parse the input/output token counts from that output. Do not estimate — always wait for the real numbers from `/usage`.
 - `--repo`: optional if running inside a git repo with a GitHub remote
 
 **When to log:**
