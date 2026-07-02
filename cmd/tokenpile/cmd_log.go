@@ -1,0 +1,142 @@
+package main
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"time"
+
+	"github.com/google/uuid"
+	"github.com/urfave/cli/v2"
+
+	"github.com/cdimonaco/tokenpile/internal/domain"
+	"github.com/cdimonaco/tokenpile/internal/provider"
+	"github.com/cdimonaco/tokenpile/internal/store"
+)
+
+const sessionIdleTimeout = 30 * time.Minute
+
+func logCommand(s store.Store) *cli.Command {
+	return &cli.Command{
+		Name:  "log",
+		Usage: "record LLM token usage for a GitHub issue",
+		Flags: []cli.Flag{
+			&cli.IntFlag{
+				Name:     "issue",
+				Aliases:  []string{"i"},
+				Usage:    "GitHub issue number",
+				Required: true,
+			},
+			&cli.StringFlag{
+				Name:     "agent",
+				Aliases:  []string{"a"},
+				Usage:    "agent name (e.g. claude-code, opencode)",
+				Required: true,
+			},
+			&cli.StringFlag{
+				Name:     "model",
+				Aliases:  []string{"m"},
+				Usage:    "model identifier (e.g. claude-sonnet-4-6)",
+				Required: true,
+			},
+			&cli.IntFlag{
+				Name:     "tokens-in",
+				Usage:    "number of input tokens",
+				Required: true,
+			},
+			&cli.IntFlag{
+				Name:     "tokens-out",
+				Usage:    "number of output tokens",
+				Required: true,
+			},
+			&cli.StringFlag{
+				Name:    "repo",
+				Aliases: []string{"r"},
+				Usage:   "repository in owner/repo format (inferred from git remote if absent)",
+			},
+		},
+		Action: func(c *cli.Context) error {
+			repo := c.String("repo")
+			if repo == "" {
+				inferred, err := provider.InferRepo()
+				if err != nil {
+					if errors.Is(err, provider.ErrNoRepo) {
+						return fmt.Errorf("cannot infer repo: pass --repo owner/repo or run from inside a GitHub repository")
+					}
+
+					return fmt.Errorf("infer repo: %w", err)
+				}
+
+				repo = inferred
+			}
+
+			issueNum := c.Int("issue")
+			agent := c.String("agent")
+			model := c.String("model")
+			tokensIn := c.Int("tokens-in")
+			tokensOut := c.Int("tokens-out")
+			ctx := c.Context
+
+			sessionID, err := resolveSession(ctx, s, repo, issueNum)
+			if err != nil {
+				return fmt.Errorf("resolve session: %w", err)
+			}
+
+			entry := domain.UsageEntry{
+				ID:        uuid.NewString(),
+				Repo:      repo,
+				IssueNum:  issueNum,
+				Agent:     agent,
+				Model:     model,
+				TokensIn:  tokensIn,
+				TokensOut: tokensOut,
+				SessionID: sessionID,
+				At:        time.Now().UTC(),
+			}
+
+			if err = s.LogUsage(ctx, entry); err != nil {
+				return fmt.Errorf("log usage: %w", err)
+			}
+
+			fmt.Fprintf(c.App.Writer, "Logged: %s #%d  in=%d out=%d  session=%s\n",
+				repo, issueNum, tokensIn, tokensOut, sessionID)
+
+			return nil
+		},
+	}
+}
+
+func resolveSession(ctx context.Context, s store.Store, repo string, issueNum int) (string, error) {
+	sessions, err := s.ListSessions(ctx, repo, issueNum)
+	if err != nil {
+		return "", fmt.Errorf("list sessions: %w", err)
+	}
+
+	idleThreshold := time.Now().Add(-sessionIdleTimeout)
+	activeID := ""
+
+	for _, sess := range sessions {
+		if sess.EndedAt != nil {
+			continue
+		}
+
+		if sess.StartedAt.Before(idleThreshold) {
+			if endErr := s.EndSession(ctx, sess.ID); endErr != nil {
+				return "", fmt.Errorf("end idle session: %w", endErr)
+			}
+		} else {
+			activeID = sess.ID
+		}
+	}
+
+	if activeID != "" {
+		return activeID, nil
+	}
+
+	newSess, err := s.StartSession(ctx, repo, issueNum)
+	if err != nil {
+		return "", fmt.Errorf("start session: %w", err)
+	}
+
+	return newSess.ID, nil
+}
