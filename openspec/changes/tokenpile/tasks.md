@@ -80,7 +80,7 @@
 - [x] 9.4 Implement Ed25519 sign and verify functions in `internal/export/signing.go` using `crypto/ed25519` from stdlib
 - [x] 9.5 Implement `tokenpile export` command: apply scope and filter flags, query Store, compute costs, build export document, sign entries, write to stdout or `--output` file
 - [x] 9.6 Implement `tokenpile export verify --file <path>`: parse file, validate against embedded JSON Schema, verify Ed25519 signature, print result
-- [ ] 9.7 Write unit tests for canonical JSON, signing, and verification
+- [x] 9.7 Write unit tests for canonical JSON, signing, and verification
 - [x] 9.8 Write integration tests for export + verify round-trip using a real SQLiteStore
 
 ## 10. Agent Skill Integration
@@ -108,7 +108,7 @@
 - [x] 12.2 Implement global flags: `--log-level` (debug/info/warn/error, default info) and `--log-format` (text/json, default text); initialize slog handler before any other setup
 - [x] 12.3 Wire all commands into the urfave/cli app: `log`, `report`, `auth login/logout/status`, `pricing list/set`, `export`, `export verify`, `skill install/list`; default action (no args) launches TUI
 - [x] 12.4 Ensure `TOKENPILE_LOG_LEVEL` and `TOKENPILE_LOG_FORMAT` environment variables override the corresponding flags
-- [ ] 12.5 Write smoke tests for CLI entry points using subprocess invocation
+- [x] 12.5 Write smoke tests for CLI entry points using subprocess invocation
 
 ## 13. CI/CD and Release
 
@@ -116,4 +116,4 @@
 - [x] 13.2 Create `.goreleaser.yaml`: build targets darwin/amd64+arm64 and linux/amd64+arm64, CGO_ENABLED=0, tar.gz archives, SHA256 checksums, Homebrew tap config pointing to `cdimonaco/homebrew-tokenpile`
 - [x] 13.3 Create `.github/workflows/release.yml`: trigger on `v*.*.*` tags; run goreleaser with `GITHUB_TOKEN` and `HOMEBREW_TAP_GITHUB_TOKEN` secrets
 - [ ] 13.4 Create the `cdimonaco/homebrew-tokenpile` GitHub repository with an initial placeholder formula
-- [ ] 13.5 Validate goreleaser config locally with `goreleaser check`
+- [x] 13.5 Validate goreleaser config locally with `goreleaser check`
