@@ -158,8 +158,8 @@ tokenpile skill install --agent claude-code # write skill file for the agent
 | `TOKENPILE_DATA_DIR` | `~/.local/share/tokenpile` | Data directory (overrides XDG) |
 | `TOKENPILE_LOG_LEVEL` | `info` | Log level: `debug`, `info`, `warn`, `error` |
 | `TOKENPILE_LOG_FORMAT` | `text` | Log format: `text` or `json` |
-| `TOKENPILE_GITHUB_CLIENT_ID` | — | GitHub OAuth app client ID |
-| `TOKENPILE_GITHUB_CLIENT_SECRET` | — | GitHub OAuth app client secret |
+| `TOKENPILE_GITHUB_CLIENT_ID` | baked in | Override the built-in GitHub OAuth client ID (development only) |
+| `TOKENPILE_GITHUB_CLIENT_SECRET` | baked in | Override the built-in GitHub OAuth client secret (development only) |
 
 XDG base directories (`XDG_CONFIG_HOME`, `XDG_DATA_HOME`) are respected when the `TOKENPILE_*` overrides are not set.
 
@@ -191,6 +191,15 @@ make clean      # remove build artifacts
 ```
 
 CI runs `fmt` check, `lint`, and `test -race` on every push and pull request.
+
+To test the GitHub auth flow locally, create your own OAuth App (GitHub → Settings → Developer settings → OAuth Apps) and set:
+
+```sh
+export TOKENPILE_GITHUB_CLIENT_ID=your_dev_client_id
+export TOKENPILE_GITHUB_CLIENT_SECRET=your_dev_client_secret
+```
+
+These env vars override the baked-in values. Released binaries have the production credentials injected by goreleaser via ldflags — end users do not need to set anything.
 
 ### Project layout
 
