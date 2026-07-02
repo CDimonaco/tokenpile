@@ -1,0 +1,234 @@
+# tokenpile
+
+Track LLM token usage and cost per GitHub issue. Any agent (Claude Code, OpenCode, Cursor, or your own tooling) calls the CLI to log usage; you browse a TUI to see where time and money went.
+
+## Features
+
+- Log token usage from any LLM agent via a single CLI call
+- Track by agent name and model separately (e.g. `claude-code` running `claude-sonnet-4-6`)
+- Sessions with 30-minute idle auto-close for wall-clock time tracking
+- TUI: issue list, per-issue breakdown, token usage chart over time
+- Ed25519-signed JSON export for auditing
+- Pricing config with built-in defaults and per-model overrides
+- SQLite storage — local, no external services required
+
+## Installation
+
+### From source
+
+Prerequisites: Go 1.25+
+
+```sh
+git clone https://github.com/cdimonaco/tokenpile
+cd tokenpile
+make install
+```
+
+This installs the binary to `$GOPATH/bin`. Make sure that is on your `PATH`.
+
+To build without installing:
+
+```sh
+make build
+# produces ./tokenpile
+```
+
+## Quick start
+
+### 1. Authenticate with GitHub
+
+```sh
+tokenpile auth login --provider github
+```
+
+This opens a browser window for OAuth. The token is stored in your OS keychain (or an encrypted file on headless Linux).
+
+### 2. Install the skill for your agent
+
+```sh
+tokenpile skill install --agent claude-code
+```
+
+After installation, Claude Code will automatically call `tokenpile log` at the end of each response where significant work was done. See `tokenpile skill list` for all supported agents.
+
+### 3. Or log manually
+
+```sh
+tokenpile log \
+  --issue 42 \
+  --agent claude-code \
+  --model claude-sonnet-4-6 \
+  --tokens-in 12000 \
+  --tokens-out 3000
+```
+
+`--repo` is optional if you run from inside a git repository with a GitHub remote. Otherwise pass it explicitly:
+
+```sh
+tokenpile log --issue 42 --agent claude-code --model claude-sonnet-4-6 \
+  --tokens-in 12000 --tokens-out 3000 --repo owner/repo
+```
+
+### 4. Browse the TUI
+
+```sh
+tokenpile
+```
+
+Key bindings:
+
+| Key | Action |
+|-----|--------|
+| `j` / `k` | navigate up/down |
+| `enter` | open issue detail |
+| `c` | open chart view |
+| `d` / `w` | day / week granularity (chart) |
+| `esc` | go back |
+| `?` | toggle help |
+| `q` | quit |
+
+## Commands
+
+### `tokenpile log`
+
+Record token usage for an issue.
+
+```sh
+tokenpile log --issue <num> --agent <name> --model <model> \
+  --tokens-in <n> --tokens-out <n> [--repo owner/repo]
+```
+
+Sessions are managed automatically. The first call for an `(issue, repo)` pair starts a session; subsequent calls within 30 minutes reuse it. After 30 minutes of inactivity the session is closed and a new one starts on the next call.
+
+### `tokenpile report`
+
+Print a per-(agent, model) breakdown for an issue.
+
+```sh
+tokenpile report --issue 42
+tokenpile report --issue 42 --repo owner/repo
+```
+
+### `tokenpile auth`
+
+```sh
+tokenpile auth login  --provider github   # open browser, store token
+tokenpile auth logout --provider github   # remove stored token
+tokenpile auth status                     # show login state
+```
+
+### `tokenpile pricing`
+
+```sh
+tokenpile pricing list                                        # show merged config
+tokenpile pricing set my-model --in 1.50 --out 6.00          # add/override a model
+```
+
+Prices are per million tokens. Built-in defaults cover the most common Claude, GPT, and Gemini models. User overrides are stored at `~/.config/tokenpile/pricing.yaml` and take precedence.
+
+### `tokenpile export`
+
+Export usage data as an Ed25519-signed JSON document.
+
+```sh
+tokenpile export                              # all data, to stdout
+tokenpile export --output data.json          # write to file
+tokenpile export --repo owner/repo --issue 42 --agent claude-code
+tokenpile export --from 2026-01-01T00:00:00Z --to 2026-07-01T00:00:00Z
+```
+
+Verify a previously exported file:
+
+```sh
+tokenpile export verify --file data.json
+```
+
+### `tokenpile skill`
+
+```sh
+tokenpile skill list                        # show agents and install status
+tokenpile skill install --agent claude-code # write skill file for the agent
+```
+
+## Configuration
+
+| Variable | Default | Description |
+|---|---|---|
+| `TOKENPILE_CONFIG_DIR` | `~/.config/tokenpile` | Config directory (overrides XDG) |
+| `TOKENPILE_DATA_DIR` | `~/.local/share/tokenpile` | Data directory (overrides XDG) |
+| `TOKENPILE_LOG_LEVEL` | `info` | Log level: `debug`, `info`, `warn`, `error` |
+| `TOKENPILE_LOG_FORMAT` | `text` | Log format: `text` or `json` |
+| `TOKENPILE_GITHUB_CLIENT_ID` | — | GitHub OAuth app client ID |
+| `TOKENPILE_GITHUB_CLIENT_SECRET` | — | GitHub OAuth app client secret |
+
+XDG base directories (`XDG_CONFIG_HOME`, `XDG_DATA_HOME`) are respected when the `TOKENPILE_*` overrides are not set.
+
+On first run, an Ed25519 signing keypair is generated at `~/.config/tokenpile/identity.{key,pub}` (permissions 0600/0644).
+
+## Contributing
+
+### Prerequisites
+
+Install [asdf](https://asdf-vm.com) and the plugins for Go, golangci-lint, goreleaser, and mockery:
+
+```sh
+asdf plugin add golang
+asdf plugin add golangci-lint
+asdf plugin add goreleaser
+asdf plugin add mockery
+asdf install          # reads .tool-versions and installs all pinned versions
+```
+
+### Build and test
+
+```sh
+make build      # build binary to ./tokenpile
+make test       # run all tests with race detector
+make lint       # run golangci-lint
+make fmt        # format all Go files with gofmt
+make generate   # regenerate mocks (requires mockery from asdf)
+make clean      # remove build artifacts
+```
+
+CI runs `fmt` check, `lint`, and `test -race` on every push and pull request.
+
+### Project layout
+
+```
+cmd/tokenpile/        CLI entry point and composition root
+internal/
+  usage/              shared data types (Entry, Session, Report, ...)
+  store/              Store interface + SQLite adapter
+  provider/           AuthProvider, IssueProvider, Issue type, GitHub implementations
+  pricing/            two-layer pricing config and cost computation
+  export/             Ed25519-signed canonical JSON export
+  skill/              embedded agent skill templates
+  tui/                Bubble Tea TUI
+  config/             XDG path resolution and Ed25519 identity management
+  mocks/              generated mocks for unit tests
+schema/               JSON Schema for the export document
+```
+
+### Conventions
+
+- Conventional commits: `feat:`, `fix:`, `chore:`, `docs:`, `test:`, `refactor:`, `ci:`
+- One logical change per commit.
+- No emojis anywhere.
+- All dependencies injected via constructors. No globals.
+- `context.Context` is the first parameter of every function that does I/O.
+- Package names describe what they contain, not architectural layers. No `domain`, `model`, or `dto`.
+- See [CLAUDE.md](CLAUDE.md) for the full conventions reference.
+
+### Adding a new agent skill
+
+1. Add a template file at `internal/skill/templates/<agent-name>.md`.
+2. Add the agent entry to the `agents` slice in `internal/skill/skill.go` with its `InstallPath` function.
+3. Add tests in `internal/skill/skill_test.go`.
+
+### Running a subset of tests
+
+```sh
+go test ./internal/store/...         # store tests only
+go test -run TestSQLiteStore ./...   # filter by name
+go test -race -count=1 ./...         # disable test cache, enable race detector
+```
