@@ -187,6 +187,28 @@ func TestSQLiteStore_ListUsageOverTime_DayGranularity(t *testing.T) {
 	}
 }
 
+func TestSQLiteStore_ListTrackedIssueRefs(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	refs, err := s.ListTrackedIssueRefs(ctx)
+	require.NoError(t, err)
+	assert.Empty(t, refs)
+
+	_ = s.LogUsage(ctx, usage.Entry{Repo: "owner/a", IssueNum: 1, Agent: "x", Model: "m", At: time.Now()})
+	_ = s.LogUsage(ctx, usage.Entry{Repo: "owner/a", IssueNum: 1, Agent: "x", Model: "m", At: time.Now()})
+	_ = s.LogUsage(ctx, usage.Entry{Repo: "owner/a", IssueNum: 2, Agent: "x", Model: "m", At: time.Now()})
+	_ = s.LogUsage(ctx, usage.Entry{Repo: "owner/b", IssueNum: 5, Agent: "x", Model: "m", At: time.Now()})
+
+	refs, err = s.ListTrackedIssueRefs(ctx)
+	require.NoError(t, err)
+	require.Len(t, refs, 3)
+
+	assert.Equal(t, usage.TrackedIssueRef{Repo: "owner/a", IssueNum: 1}, refs[0])
+	assert.Equal(t, usage.TrackedIssueRef{Repo: "owner/a", IssueNum: 2}, refs[1])
+	assert.Equal(t, usage.TrackedIssueRef{Repo: "owner/b", IssueNum: 5}, refs[2])
+}
+
 func TestSQLiteStore_SchemaIdempotent(t *testing.T) {
 	dbPath := filepath.Join(t.TempDir(), "test.db")
 	pricer := fixedPricer{}
