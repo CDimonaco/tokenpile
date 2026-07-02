@@ -1,0 +1,36 @@
+models:
+  # Anthropic
+  claude-haiku-4-5:
+    input_per_million: 0.80
+    output_per_million: 4.00
+  claude-sonnet-4-6:
+    input_per_million: 3.00
+    output_per_million: 15.00
+  claude-opus-4-7:
+    input_per_million: 15.00
+    output_per_million: 75.00
+
+  # OpenAI
+  gpt-4o:
+    input_per_million: 2.50
+    output_per_million: 10.00
+  gpt-4o-mini:
+    input_per_million: 0.15
+    output_per_million: 0.60
+  gpt-4-turbo:
+    input_per_million: 10.00
+    output_per_million: 30.00
+  o1:
+    input_per_million: 15.00
+    output_per_million: 60.00
+  o3-mini:
+    input_per_million: 1.10
+    output_per_million: 4.40
+
+  # Google
+  gemini-1.5-pro:
+    input_per_million: 1.25
+    output_per_million: 5.00
+  gemini-1.5-flash:
+    input_per_million: 0.075
+    output_per_million: 0.30
