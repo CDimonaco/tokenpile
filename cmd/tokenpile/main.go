@@ -107,16 +107,16 @@ func main() {
 		model := tui.New(sqliteStore, issueProvider, pricingLoader, token)
 		p := tea.NewProgram(model, tea.WithAltScreen())
 
-		if _, err := p.Run(); err != nil {
-			return fmt.Errorf("tui: %w", err)
+		if _, tuiErr := p.Run(); tuiErr != nil {
+			return fmt.Errorf("tui: %w", tuiErr)
 		}
 
 		return nil
 	}
 
-	if err := app.Run(os.Args); err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		os.Exit(1)
+	if runErr := app.Run(os.Args); runErr != nil {
+		fmt.Fprintf(os.Stderr, "error: %v\n", runErr)
+		os.Exit(1) //nolint:gocritic
 	}
 }
 

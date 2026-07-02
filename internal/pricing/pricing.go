@@ -3,6 +3,7 @@ package pricing
 import (
 	_ "embed"
 	"fmt"
+	"maps"
 	"os"
 
 	"gopkg.in/yaml.v3"
@@ -31,25 +32,21 @@ func NewLoader(overridePath string) (*Loader, error) {
 	}
 
 	merged := make(map[string]ModelPrice, len(defaults.Models))
-	for k, v := range defaults.Models {
-		merged[k] = v
-	}
+	maps.Copy(merged, defaults.Models)
 
 	if overridePath != "" {
-		data, err := os.ReadFile(overridePath)
-		if err != nil && !os.IsNotExist(err) {
-			return nil, fmt.Errorf("read pricing override: %w", err)
+		data, readErr := os.ReadFile(overridePath)
+		if readErr != nil && !os.IsNotExist(readErr) {
+			return nil, fmt.Errorf("read pricing override: %w", readErr)
 		}
 
-		if err == nil {
-			overrides, err := parseYAML(data)
-			if err != nil {
-				return nil, fmt.Errorf("parse pricing override: %w", err)
+		if readErr == nil {
+			overrides, parseErr := parseYAML(data)
+			if parseErr != nil {
+				return nil, fmt.Errorf("parse pricing override: %w", parseErr)
 			}
 
-			for k, v := range overrides.Models {
-				merged[k] = v
-			}
+			maps.Copy(merged, overrides.Models)
 		}
 	}
 
@@ -70,9 +67,7 @@ func (l *Loader) ComputeCost(model string, tokensIn, tokensOut int) (float64, bo
 
 func (l *Loader) All() map[string]ModelPrice {
 	out := make(map[string]ModelPrice, len(l.models))
-	for k, v := range l.models {
-		out[k] = v
-	}
+	maps.Copy(out, l.models)
 
 	return out
 }

@@ -37,7 +37,6 @@ type Model struct {
 	selected        *usage.TrackedIssue
 	report          *usage.Report
 	chartPoints     []usage.Point
-	chartScope      string
 	unauthenticated bool
 	loading         bool
 
@@ -154,6 +153,8 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.activeView = m.prevView
 
 			return m, nil
+		case viewList, viewHelp:
+			// nothing to do
 		}
 	}
 
@@ -164,6 +165,8 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m.handleDetailKey(msg)
 	case viewChart:
 		return m.handleChartKey(msg)
+	case viewHelp:
+		// no key bindings beyond the global ones
 	}
 
 	return m, nil
@@ -198,14 +201,11 @@ func (m Model) handleListKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) handleDetailKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	switch msg.String() {
-	case "c":
-		if m.selected != nil {
-			m.prevView = viewDetail
-			m.activeView = viewChart
+	if msg.String() == "c" && m.selected != nil {
+		m.prevView = viewDetail
+		m.activeView = viewChart
 
-			return m, m.loadChart(&m.selected.IssueNum)
-		}
+		return m, m.loadChart(&m.selected.IssueNum)
 	}
 
 	return m, nil
@@ -226,7 +226,7 @@ func (m Model) handleChartKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m *Model) chartIssueNum() *int {
+func (m Model) chartIssueNum() *int {
 	if m.prevView == viewDetail && m.selected != nil {
 		return &m.selected.IssueNum
 	}
@@ -314,7 +314,12 @@ func (m Model) viewIssueList() string {
 		fmt.Fprintln(&b, dimStyle.Render("(not authenticated — showing local issues only)"))
 	}
 
-	fmt.Fprintln(&b, headerStyle.Render(fmt.Sprintf("%-8s %-18s %-26s %-10s %-10s %s", "Issue", "Repo", "Title", "Tokens", "Cost", "Time")))
+	fmt.Fprintln(
+		&b,
+		headerStyle.Render(
+			fmt.Sprintf("%-8s %-18s %-26s %-10s %-10s %s", "Issue", "Repo", "Title", "Tokens", "Cost", "Time"),
+		),
+	)
 
 	if m.loading {
 		fmt.Fprintln(&b, dimStyle.Render("Loading..."))
@@ -368,7 +373,12 @@ func (m Model) viewIssueDetail() string {
 		return b.String()
 	}
 
-	fmt.Fprintln(&b, headerStyle.Render(fmt.Sprintf("%-16s %-24s %-8s %-12s %-12s %s", "Agent", "Model", "Calls", "In", "Out", "Cost")))
+	fmt.Fprintln(
+		&b,
+		headerStyle.Render(
+			fmt.Sprintf("%-16s %-24s %-8s %-12s %-12s %s", "Agent", "Model", "Calls", "In", "Out", "Cost"),
+		),
+	)
 
 	for _, row := range m.report.Rows {
 		fmt.Fprintf(&b, "%-16s %-24s %-8d %-12s %-12s $%.4f\n",
@@ -483,8 +493,8 @@ func (m Model) loadIssues() tea.Cmd {
 		}
 
 		// Build dedup index keyed by "repo#issueNum"
-		result := make([]usage.TrackedIssue, len(dbIssues))
-		copy(result, dbIssues)
+		result := make([]usage.TrackedIssue, 0, len(dbIssues))
+		result = append(result, dbIssues...)
 		inResult := make(map[string]int, len(result))
 		for i, ti := range result {
 			inResult[issueKey(ti.Repo, ti.IssueNum)] = i

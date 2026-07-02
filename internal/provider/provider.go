@@ -11,7 +11,9 @@ import (
 //go:generate mockery --name=IssueProvider --output=../mocks --outpkg=mocks
 
 var (
-	ErrNoRepo          = errors.New("cannot infer repo: not a git repository or no origin remote configured; pass --repo owner/repo")
+	ErrNoRepo = errors.New(
+		"cannot infer repo: not a git repository or no origin remote configured; pass --repo owner/repo",
+	)
 	ErrUnauthenticated = errors.New("not authenticated: run tokenpile auth login")
 )
 

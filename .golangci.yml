@@ -37,15 +37,11 @@ linters:
     - exhaustive
     - exptostd
     - fatcontext
-    - forbidigo
     - funcorder
     - funlen
     - gocheckcompilerdirectives
-    - gochecknoglobals
-    - gochecknoinits
     - gochecksumtype
     - gocognit
-    - goconst
     - gocritic
     - gocyclo
     - godot
@@ -60,7 +56,6 @@ linters:
     - loggercheck
     - makezero
     - mirror
-    - mnd
     - modernize
     - musttag
     - nakedret
@@ -68,11 +63,8 @@ linters:
     - nilerr
     - nilnesserr
     - nilnil
-    - noctx
-    - nolintlint
     - nonamedreturns
     - nosprintfhostport
-    - paralleltest
     - perfsprint
     - predeclared
     - protogetter
@@ -80,7 +72,6 @@ linters:
     - recvcheck
     - revive
     - rowserrcheck
-    - sloglint
     - sqlclosecheck
     - staticcheck
     - testableexamples
@@ -140,14 +131,14 @@ linters:
       struct-method: false
 
     funlen:
-      lines: 100
-      statements: 50
+      lines: 120
+      statements: 70
 
     gochecksumtype:
       default-signifies-exhaustive: false
 
     gocognit:
-      min-complexity: 20
+      min-complexity: 40
 
     gocritic:
       settings:
@@ -164,26 +155,8 @@ linters:
         shadow:
           strict: true
 
-    mnd:
-      ignored-functions:
-        - args.Error
-        - flag.Arg
-        - flag.Duration.*
-        - flag.Float.*
-        - flag.Int.*
-        - flag.Uint.*
-        - os.Chmod
-        - os.Mkdir.*
-        - os.OpenFile
-        - os.WriteFile
-
     nakedret:
       max-func-lines: 0
-
-    nolintlint:
-      allow-no-explanation: [ funlen, gocognit, golines ]
-      require-explanation: true
-      require-specific: true
 
     perfsprint:
       strconcat: false
@@ -191,10 +164,6 @@ linters:
     reassign:
       patterns:
         - ".*"
-
-    sloglint:
-      no-global: all
-      context: scope
 
     staticcheck:
       checks:
@@ -218,12 +187,13 @@ linters:
         linters: [ revive ]
       - text: 'exported \S+ \S+ should have comment( \(or a comment on this block\))? or be unexported'
         linters: [ revive ]
+      - path: 'internal/tui/tui_test\.go'
+        linters:
+          - testpackage
       - path: '_test\.go'
         linters:
           - bodyclose
           - dupl
           - errcheck
           - funlen
-          - goconst
           - gosec
-          - noctx

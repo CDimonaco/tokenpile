@@ -151,8 +151,14 @@ func TestSQLiteStore_ListIssues_FilterByAgent(t *testing.T) {
 	s := newTestStore(t)
 	ctx := context.Background()
 
-	require.NoError(t, s.LogUsage(ctx, usage.Entry{Repo: "o/r", IssueNum: 1, Agent: "claude-code", Model: "m", TokensIn: 100}))
-	require.NoError(t, s.LogUsage(ctx, usage.Entry{Repo: "o/r", IssueNum: 2, Agent: "opencode", Model: "m", TokensIn: 200}))
+	require.NoError(
+		t,
+		s.LogUsage(ctx, usage.Entry{Repo: "o/r", IssueNum: 1, Agent: "claude-code", Model: "m", TokensIn: 100}),
+	)
+	require.NoError(
+		t,
+		s.LogUsage(ctx, usage.Entry{Repo: "o/r", IssueNum: 2, Agent: "opencode", Model: "m", TokensIn: 200}),
+	)
 
 	issues, err := s.ListIssues(ctx, usage.Filter{Repo: "o/r", Agent: "claude-code"})
 	require.NoError(t, err)
@@ -220,8 +226,8 @@ func TestSQLiteStore_ListUsageOverTime_WeekGranularity(t *testing.T) {
 		assert.Equal(t, 1, int(p.Date.Weekday()), "week point must be a Monday")
 	}
 
-	assert.Equal(t, 200, points[0].TokensIn)  // monday + wednesday
-	assert.Equal(t, 200, points[1].TokensIn)  // next monday
+	assert.Equal(t, 200, points[0].TokensIn) // monday + wednesday
+	assert.Equal(t, 200, points[1].TokensIn) // next monday
 }
 
 func TestSQLiteStore_ListUsageOverTime_CostPopulated(t *testing.T) {

@@ -41,7 +41,7 @@ func List() []Agent {
 	return out
 }
 
-func Install(agentName string) (path string, existed bool, err error) {
+func Install(agentName string) (string, bool, error) {
 	agent, found := findAgent(agentName)
 	if !found {
 		return "", false, fmt.Errorf("%w: %s", ErrUnsupportedAgent, agentName)
@@ -52,14 +52,14 @@ func Install(agentName string) (path string, existed bool, err error) {
 		return "", false, fmt.Errorf("cannot determine install path for agent %s", agentName)
 	}
 
-	if err = os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(target), 0o750); err != nil {
 		return "", false, fmt.Errorf("create skill directory: %w", err)
 	}
 
 	_, statErr := os.Stat(target)
-	existed = statErr == nil
+	existed := statErr == nil
 
-	if err = os.WriteFile(target, agent.TemplateData, 0o644); err != nil { //nolint:gosec
+	if err := os.WriteFile(target, agent.TemplateData, 0o644); err != nil { //nolint:gosec
 		return "", false, fmt.Errorf("write skill file: %w", err)
 	}
 

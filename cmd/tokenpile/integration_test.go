@@ -31,26 +31,21 @@ func newTestStore(t *testing.T) *store.SQLiteStore {
 	return s
 }
 
-func runLogCmd(t *testing.T, s *store.SQLiteStore, args ...string) (string, error) {
+func runLogCmd(t *testing.T, s *store.SQLiteStore, args ...string) error {
 	t.Helper()
 
-	var buf bytes.Buffer
-
 	app := &cli.App{
-		Writer:   &buf,
 		Commands: []*cli.Command{logCommand(s)},
 	}
 
-	err := app.RunContext(context.Background(), append([]string{"tok"}, args...))
-
-	return buf.String(), err
+	return app.RunContext(context.Background(), append([]string{"tok"}, args...))
 }
 
 func TestIntegration_Log_CreatesSessionAndEntry(t *testing.T) {
 	s := newTestStore(t)
 	ctx := context.Background()
 
-	_, err := runLogCmd(t, s,
+	err := runLogCmd(t, s,
 		"log",
 		"--issue", "1",
 		"--agent", "claude-code",
@@ -77,10 +72,45 @@ func TestIntegration_Log_ReuseSession(t *testing.T) {
 	s := newTestStore(t)
 	ctx := context.Background()
 
-	runLogCmd(t, s, "log", "--issue", "2", "--agent", "claude-code", "--model", "claude-sonnet-4-6", "--tokens-in", "100", "--tokens-out", "50", "--repo", "owner/repo") //nolint:errcheck
+	require.NoError(
+		t,
+		runLogCmd(
+			t,
+			s,
+			"log",
+			"--issue",
+			"2",
+			"--agent",
+			"claude-code",
+			"--model",
+			"claude-sonnet-4-6",
+			"--tokens-in",
+			"100",
+			"--tokens-out",
+			"50",
+			"--repo",
+			"owner/repo",
+		),
+	)
 
 	// second call — should reuse the session
-	_, err := runLogCmd(t, s, "log", "--issue", "2", "--agent", "claude-code", "--model", "claude-sonnet-4-6", "--tokens-in", "200", "--tokens-out", "100", "--repo", "owner/repo")
+	err := runLogCmd(
+		t,
+		s,
+		"log",
+		"--issue",
+		"2",
+		"--agent",
+		"claude-code",
+		"--model",
+		"claude-sonnet-4-6",
+		"--tokens-in",
+		"200",
+		"--tokens-out",
+		"100",
+		"--repo",
+		"owner/repo",
+	)
 	require.NoError(t, err)
 
 	sessions, err := s.ListSessions(ctx, "owner/repo", 2)
@@ -111,8 +141,26 @@ func TestIntegration_Log_ClosesIdleSession(t *testing.T) {
 	// fresh log call after ending the old session creates a new one.
 	require.NoError(t, s.EndSession(ctx, oldSess.ID))
 
-	_, err = runLogCmd(t, s, "log", "--issue", "3", "--agent", "cursor", "--model", "gpt-4o", "--tokens-in", "50", "--tokens-out", "25", "--repo", "owner/repo")
-	require.NoError(t, err)
+	require.NoError(
+		t,
+		runLogCmd(
+			t,
+			s,
+			"log",
+			"--issue",
+			"3",
+			"--agent",
+			"cursor",
+			"--model",
+			"gpt-4o",
+			"--tokens-in",
+			"50",
+			"--tokens-out",
+			"25",
+			"--repo",
+			"owner/repo",
+		),
+	)
 
 	sessions, err := s.ListSessions(ctx, "owner/repo", 3)
 	require.NoError(t, err)
@@ -133,8 +181,40 @@ func TestIntegration_Log_ClosesIdleSession(t *testing.T) {
 func TestIntegration_Report_ShowsBreakdown(t *testing.T) {
 	s := newTestStore(t)
 
-	runLogCmd(t, s, "log", "--issue", "10", "--agent", "claude-code", "--model", "claude-sonnet-4-6", "--tokens-in", "2000", "--tokens-out", "1000", "--repo", "owner/repo") //nolint:errcheck
-	runLogCmd(t, s, "log", "--issue", "10", "--agent", "opencode", "--model", "gpt-4o", "--tokens-in", "500", "--tokens-out", "250", "--repo", "owner/repo")                 //nolint:errcheck
+	runLogCmd(
+		t,
+		s,
+		"log",
+		"--issue",
+		"10",
+		"--agent",
+		"claude-code",
+		"--model",
+		"claude-sonnet-4-6",
+		"--tokens-in",
+		"2000",
+		"--tokens-out",
+		"1000",
+		"--repo",
+		"owner/repo",
+	) //nolint:errcheck
+	runLogCmd(
+		t,
+		s,
+		"log",
+		"--issue",
+		"10",
+		"--agent",
+		"opencode",
+		"--model",
+		"gpt-4o",
+		"--tokens-in",
+		"500",
+		"--tokens-out",
+		"250",
+		"--repo",
+		"owner/repo",
+	) //nolint:errcheck
 
 	var buf bytes.Buffer
 
@@ -156,8 +236,40 @@ func TestIntegration_Log_MultipleIssues(t *testing.T) {
 	s := newTestStore(t)
 	ctx := context.Background()
 
-	runLogCmd(t, s, "log", "--issue", "100", "--agent", "a", "--model", "gpt-4o", "--tokens-in", "10", "--tokens-out", "5", "--repo", "o/r")  //nolint:errcheck
-	runLogCmd(t, s, "log", "--issue", "101", "--agent", "a", "--model", "gpt-4o", "--tokens-in", "20", "--tokens-out", "10", "--repo", "o/r") //nolint:errcheck
+	runLogCmd(
+		t,
+		s,
+		"log",
+		"--issue",
+		"100",
+		"--agent",
+		"a",
+		"--model",
+		"gpt-4o",
+		"--tokens-in",
+		"10",
+		"--tokens-out",
+		"5",
+		"--repo",
+		"o/r",
+	) //nolint:errcheck
+	runLogCmd(
+		t,
+		s,
+		"log",
+		"--issue",
+		"101",
+		"--agent",
+		"a",
+		"--model",
+		"gpt-4o",
+		"--tokens-in",
+		"20",
+		"--tokens-out",
+		"10",
+		"--repo",
+		"o/r",
+	) //nolint:errcheck
 
 	issues, err := s.ListIssues(ctx, usage.Filter{})
 	require.NoError(t, err)

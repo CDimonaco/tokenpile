@@ -5,9 +5,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/cdimonaco/tokenpile/internal/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/cdimonaco/tokenpile/internal/config"
 )
 
 func TestResolve_UsesEnvOverride(t *testing.T) {

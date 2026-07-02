@@ -3,9 +3,10 @@ package provider_test
 import (
 	"testing"
 
-	"github.com/cdimonaco/tokenpile/internal/provider"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/cdimonaco/tokenpile/internal/provider"
 )
 
 func TestParseRemote_HTTPS(t *testing.T) {

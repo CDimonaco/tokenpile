@@ -25,8 +25,26 @@ func newTestKey(t *testing.T) (ed25519.PrivateKey, ed25519.PublicKey) {
 
 func testEntries() []usage.Entry {
 	return []usage.Entry{
-		{ID: "1", Repo: "o/r", IssueNum: 42, Agent: "claude-code", Model: "claude-sonnet-4-6", TokensIn: 1000, TokensOut: 500, At: time.Date(2026, 7, 1, 10, 0, 0, 0, time.UTC)},
-		{ID: "2", Repo: "o/r", IssueNum: 42, Agent: "opencode", Model: "gpt-4o", TokensIn: 2000, TokensOut: 800, At: time.Date(2026, 7, 1, 11, 0, 0, 0, time.UTC)},
+		{
+			ID:        "1",
+			Repo:      "o/r",
+			IssueNum:  42,
+			Agent:     "claude-code",
+			Model:     "claude-sonnet-4-6",
+			TokensIn:  1000,
+			TokensOut: 500,
+			At:        time.Date(2026, 7, 1, 10, 0, 0, 0, time.UTC),
+		},
+		{
+			ID:        "2",
+			Repo:      "o/r",
+			IssueNum:  42,
+			Agent:     "opencode",
+			Model:     "gpt-4o",
+			TokensIn:  2000,
+			TokensOut: 800,
+			At:        time.Date(2026, 7, 1, 11, 0, 0, 0, time.UTC),
+		},
 	}
 }
 
@@ -62,7 +80,7 @@ func TestVerify_TamperedEntries(t *testing.T) {
 	doc.Entries[0].TokensIn = 9999
 
 	err = export.Verify(doc)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "tampered")
 }
 

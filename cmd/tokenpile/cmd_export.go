@@ -87,84 +87,88 @@ func exportCommands(s store.Store, priv ed25519.PrivateKey, version string) *cli
 			},
 		},
 		Action: func(c *cli.Context) error {
-			ctx := c.Context
-			filter := usage.Filter{
-				Repo:  c.String("repo"),
-				Agent: c.String("agent"),
-				Model: c.String("model"),
-			}
-
-			if fromStr := c.String("from"); fromStr != "" {
-				t, err := time.Parse(time.RFC3339, fromStr)
-				if err != nil {
-					return fmt.Errorf("parse --from: %w", err)
-				}
-
-				filter.From = &t
-			}
-
-			if toStr := c.String("to"); toStr != "" {
-				t, err := time.Parse(time.RFC3339, toStr)
-				if err != nil {
-					return fmt.Errorf("parse --to: %w", err)
-				}
-
-				filter.To = &t
-			}
-
-			issues, err := s.ListIssues(ctx, filter)
-			if err != nil {
-				return fmt.Errorf("list issues: %w", err)
-			}
-
-			var entries []usage.Entry
-
-			for _, issue := range issues {
-				if c.Int("issue") != 0 && issue.IssueNum != c.Int("issue") {
-					continue
-				}
-
-				report, err := s.GetReport(ctx, issue.Repo, issue.IssueNum)
-				if err != nil {
-					return fmt.Errorf("get report for %s#%d: %w", issue.Repo, issue.IssueNum, err)
-				}
-
-				for _, row := range report.Rows {
-					entries = append(entries, usage.Entry{
-						Repo:      issue.Repo,
-						IssueNum:  issue.IssueNum,
-						Agent:     row.Agent,
-						Model:     row.Model,
-						TokensIn:  row.TokensIn,
-						TokensOut: row.TokensOut,
-						At:        time.Now().UTC(),
-					})
-				}
-			}
-
-			doc, err := export.Build(entries, priv, version)
-			if err != nil {
-				return fmt.Errorf("build export: %w", err)
-			}
-
-			data, err := json.MarshalIndent(doc, "", "  ")
-			if err != nil {
-				return fmt.Errorf("marshal export: %w", err)
-			}
-
-			if outPath := c.String("output"); outPath != "" {
-				if err = os.WriteFile(outPath, data, 0o600); err != nil {
-					return fmt.Errorf("write output: %w", err)
-				}
-
-				fmt.Fprintf(c.App.Writer, "Exported %d entries to %s\n", len(entries), outPath)
-
-				return nil
-			}
-
-			fmt.Fprintf(c.App.Writer, "%s\n", data)
-
-			return nil
+			return runExport(c, s, priv, version)
 		},
 	}
+}
+
+func runExport(c *cli.Context, s store.Store, priv ed25519.PrivateKey, version string) error {
+	ctx := c.Context
+	filter := usage.Filter{
+		Repo:  c.String("repo"),
+		Agent: c.String("agent"),
+		Model: c.String("model"),
+	}
+
+	if fromStr := c.String("from"); fromStr != "" {
+		t, err := time.Parse(time.RFC3339, fromStr)
+		if err != nil {
+			return fmt.Errorf("parse --from: %w", err)
+		}
+
+		filter.From = &t
+	}
+
+	if toStr := c.String("to"); toStr != "" {
+		t, err := time.Parse(time.RFC3339, toStr)
+		if err != nil {
+			return fmt.Errorf("parse --to: %w", err)
+		}
+
+		filter.To = &t
+	}
+
+	issues, err := s.ListIssues(ctx, filter)
+	if err != nil {
+		return fmt.Errorf("list issues: %w", err)
+	}
+
+	var entries []usage.Entry
+
+	for _, issue := range issues {
+		if c.Int("issue") != 0 && issue.IssueNum != c.Int("issue") {
+			continue
+		}
+
+		report, reportErr := s.GetReport(ctx, issue.Repo, issue.IssueNum)
+		if reportErr != nil {
+			return fmt.Errorf("get report for %s#%d: %w", issue.Repo, issue.IssueNum, reportErr)
+		}
+
+		for _, row := range report.Rows {
+			entries = append(entries, usage.Entry{
+				Repo:      issue.Repo,
+				IssueNum:  issue.IssueNum,
+				Agent:     row.Agent,
+				Model:     row.Model,
+				TokensIn:  row.TokensIn,
+				TokensOut: row.TokensOut,
+				At:        time.Now().UTC(),
+			})
+		}
+	}
+
+	doc, err := export.Build(entries, priv, version)
+	if err != nil {
+		return fmt.Errorf("build export: %w", err)
+	}
+
+	data, err := json.MarshalIndent(doc, "", "  ")
+	if err != nil {
+		return fmt.Errorf("marshal export: %w", err)
+	}
+
+	if outPath := c.String("output"); outPath != "" {
+		if err = os.WriteFile(outPath, data, 0o600); err != nil {
+			return fmt.Errorf("write output: %w", err)
+		}
+
+		fmt.Fprintf(c.App.Writer, "Exported %d entries to %s\n", len(entries), outPath)
+
+		return nil
+	}
+
+	fmt.Fprintf(c.App.Writer, "%s\n", data)
+
+	return nil
 }

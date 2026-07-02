@@ -59,8 +59,8 @@ func authCommands(auth provider.AuthProvider) *cli.Command {
 				Name:  "status",
 				Usage: "show authentication status",
 				Action: func(c *cli.Context) error {
-					token, err := auth.Token(c.Context)
-					if err != nil || token == "" {
+					token, _ := auth.Token(c.Context)
+					if token == "" {
 						fmt.Fprintln(c.App.Writer, "github: not logged in")
 
 						return nil

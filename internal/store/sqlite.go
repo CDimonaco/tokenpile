@@ -5,10 +5,11 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/google/uuid"
-	_ "modernc.org/sqlite"
+	_ "modernc.org/sqlite" // registers the sqlite3 driver
 
 	"github.com/cdimonaco/tokenpile/internal/usage"
 )
@@ -135,9 +136,11 @@ func (s *SQLiteStore) EndSession(ctx context.Context, sessionID string) error {
 }
 
 func (s *SQLiteStore) ListSessions(ctx context.Context, repo string, issueNum int) ([]usage.Session, error) {
-	rows, err := s.db.QueryContext(ctx,
+	rows, err := s.db.QueryContext(
+		ctx,
 		`SELECT id, repo, issue_num, started_at, ended_at FROM sessions WHERE repo = ? AND issue_num = ? ORDER BY started_at`,
-		repo, issueNum,
+		repo,
+		issueNum,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("list sessions: %w", err)
@@ -161,9 +164,9 @@ func (s *SQLiteStore) ListSessions(ctx context.Context, repo string, issueNum in
 		}
 
 		if endedAt.Valid {
-			t, err := time.Parse(time.RFC3339, endedAt.String)
-			if err != nil {
-				return nil, fmt.Errorf("parse session ended_at: %w", err)
+			t, parseErr := time.Parse(time.RFC3339, endedAt.String)
+			if parseErr != nil {
+				return nil, fmt.Errorf("parse session ended_at: %w", parseErr)
 			}
 
 			sess.EndedAt = &t
@@ -219,7 +222,10 @@ func (s *SQLiteStore) ListIssues(ctx context.Context, filter usage.Filter) ([]us
 	}
 	defer rows.Close()
 
-	type issueKey struct{ repo string; issueNum int }
+	type issueKey struct {
+		repo     string
+		issueNum int
+	}
 	issueMap := make(map[issueKey]*usage.TrackedIssue)
 	var issueOrder []issueKey
 
@@ -455,14 +461,14 @@ func (s *SQLiteStore) totalTime(ctx context.Context, repo string, issueNum int) 
 			continue
 		}
 
-		startedAt, err := time.Parse(time.RFC3339, startedAtStr)
-		if err != nil {
+		startedAt, parseErr := time.Parse(time.RFC3339, startedAtStr)
+		if parseErr != nil {
 			continue
 		}
 
 		if endedAtNull.Valid {
-			endedAt, err := time.Parse(time.RFC3339, endedAtNull.String)
-			if err != nil {
+			endedAt, parseEndErr := time.Parse(time.RFC3339, endedAtNull.String)
+			if parseEndErr != nil {
 				continue
 			}
 
@@ -470,6 +476,10 @@ func (s *SQLiteStore) totalTime(ctx context.Context, repo string, issueNum int) 
 		} else {
 			total += now.Sub(startedAt)
 		}
+	}
+
+	if rowsErr := rows.Err(); rowsErr != nil {
+		slog.Error("iterate sessions for total time", "err", rowsErr)
 	}
 
 	return total

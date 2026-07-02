@@ -5,9 +5,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/cdimonaco/tokenpile/internal/pricing"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/cdimonaco/tokenpile/internal/pricing"
 )
 
 func TestNewLoader_DefaultsLoaded(t *testing.T) {
@@ -73,7 +74,7 @@ func TestComputeCost_UnknownModel(t *testing.T) {
 
 	cost, ok := l.ComputeCost("unknown-model", 1000, 500)
 	assert.False(t, ok)
-	assert.Equal(t, 0.0, cost)
+	assert.InDelta(t, 0.0, cost, 0.0)
 }
 
 func TestComputeCost_InOutSeparate(t *testing.T) {

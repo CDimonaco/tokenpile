@@ -6,6 +6,7 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -91,8 +92,8 @@ func (p *GitHubAuthProvider) Login(ctx context.Context) error {
 	})
 
 	go func() {
-		if err := srv.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			errCh <- err
+		if serveErr := srv.Serve(listener); serveErr != nil && !errors.Is(serveErr, http.ErrServerClosed) {
+			errCh <- serveErr
 		}
 	}()
 
@@ -241,7 +242,7 @@ func randomState() string {
 	b := make([]byte, 16)
 	_, _ = rand.Read(b)
 
-	return fmt.Sprintf("%x", b)
+	return hex.EncodeToString(b)
 }
 
 func openBrowser(url string) error {

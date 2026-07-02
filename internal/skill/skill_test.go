@@ -5,9 +5,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/cdimonaco/tokenpile/internal/skill"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/cdimonaco/tokenpile/internal/skill"
 )
 
 func TestList_ContainsClaudeCode(t *testing.T) {

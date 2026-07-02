@@ -82,7 +82,7 @@ func (p *GitHubIssueProvider) ListIssues(ctx context.Context, filter usage.Filte
 		}
 
 		issues = append(issues, Issue{
-			Number: int(gi.GetNumber()),
+			Number: gi.GetNumber(),
 			Repo:   filter.Repo,
 			Title:  gi.GetTitle(),
 			State:  gi.GetState(),
@@ -112,7 +112,7 @@ func (p *GitHubIssueProvider) GetIssue(ctx context.Context, repo string, number 
 	}
 
 	return &Issue{
-		Number: int(gi.GetNumber()),
+		Number: gi.GetNumber(),
 		Repo:   repo,
 		Title:  gi.GetTitle(),
 		State:  gi.GetState(),

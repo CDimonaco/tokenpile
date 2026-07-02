@@ -61,7 +61,9 @@ func logCommand(s store.Store) *cli.Command {
 				inferred, err := provider.InferRepo()
 				if err != nil {
 					if errors.Is(err, provider.ErrNoRepo) {
-						return fmt.Errorf("cannot infer repo: pass --repo owner/repo or run from inside a GitHub repository")
+						return errors.New(
+							"cannot infer repo: pass --repo owner/repo or run from inside a GitHub repository",
+						)
 					}
 
 					return fmt.Errorf("infer repo: %w", err)

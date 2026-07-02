@@ -4,6 +4,7 @@ import (
 	"crypto/ed25519"
 	"crypto/rand"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"log/slog"
 	"os"
@@ -54,7 +55,7 @@ func loadIdentity(p Paths) (ed25519.PrivateKey, ed25519.PublicKey, error) {
 
 	block, _ := pem.Decode(data)
 	if block == nil {
-		return nil, nil, fmt.Errorf("decode identity key PEM")
+		return nil, nil, errors.New("decode identity key PEM")
 	}
 
 	if len(block.Bytes) != ed25519.SeedSize {
@@ -63,5 +64,10 @@ func loadIdentity(p Paths) (ed25519.PrivateKey, ed25519.PublicKey, error) {
 
 	priv := ed25519.NewKeyFromSeed(block.Bytes)
 
-	return priv, priv.Public().(ed25519.PublicKey), nil
+	pub, ok := priv.Public().(ed25519.PublicKey)
+	if !ok {
+		return nil, nil, errors.New("private key is not ed25519")
+	}
+
+	return priv, pub, nil
 }

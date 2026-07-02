@@ -197,7 +197,7 @@ func TestIssuesLoaded_UpdatesModel(t *testing.T) {
 	m2 := next.(Model)
 
 	assert.Equal(t, issues, m2.issues)
-	assert.Nil(t, m2.err)
+	assert.NoError(t, m2.err)
 }
 
 func TestWindowSize_UpdatesDimensions(t *testing.T) {

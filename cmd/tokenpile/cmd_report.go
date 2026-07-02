@@ -33,7 +33,9 @@ func reportCommand(s store.Store) *cli.Command {
 				inferred, err := provider.InferRepo()
 				if err != nil {
 					if errors.Is(err, provider.ErrNoRepo) {
-						return fmt.Errorf("cannot infer repo: pass --repo owner/repo or run from inside a GitHub repository")
+						return errors.New(
+							"cannot infer repo: pass --repo owner/repo or run from inside a GitHub repository",
+						)
 					}
 
 					return fmt.Errorf("infer repo: %w", err)
@@ -53,14 +55,22 @@ func reportCommand(s store.Store) *cli.Command {
 			fmt.Fprintf(c.App.Writer, "Report: %s #%d\n\n", repo, issueNum)
 			fmt.Fprintf(c.App.Writer, "%-16s %-24s %-8s %-12s %-12s %s\n",
 				"Agent", "Model", "Calls", "Tokens In", "Tokens Out", "Cost")
-			fmt.Fprintf(c.App.Writer, "%s\n", "--------------------------------------------------------------------------------")
+			fmt.Fprintf(
+				c.App.Writer,
+				"%s\n",
+				"--------------------------------------------------------------------------------",
+			)
 
 			for _, row := range report.Rows {
 				fmt.Fprintf(c.App.Writer, "%-16s %-24s %-8d %-12d %-12d $%.6f\n",
 					row.Agent, row.Model, row.Calls, row.TokensIn, row.TokensOut, row.Cost)
 			}
 
-			fmt.Fprintf(c.App.Writer, "%s\n", "--------------------------------------------------------------------------------")
+			fmt.Fprintf(
+				c.App.Writer,
+				"%s\n",
+				"--------------------------------------------------------------------------------",
+			)
 			fmt.Fprintf(c.App.Writer, "%-41s %-12d %-12d $%.6f\n",
 				"Total", report.TotalTokensIn, report.TotalTokensOut, report.TotalCost)
 			fmt.Fprintf(c.App.Writer, "\nWall-clock time: %s\n", report.TotalTime.Round(1000000000))

@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sort"
 	"time"
@@ -62,7 +63,10 @@ func Build(entries []usage.Entry, priv ed25519.PrivateKey, version string) (*Doc
 	digest := sha256.Sum256(canonical)
 	sig := ed25519.Sign(priv, digest[:])
 
-	pub := priv.Public().(ed25519.PublicKey)
+	pub, ok := priv.Public().(ed25519.PublicKey)
+	if !ok {
+		return nil, errors.New("private key is not ed25519")
+	}
 
 	return &Document{
 		SchemaVersion: SchemaVersion,
@@ -99,7 +103,7 @@ func Verify(doc *Document) error {
 	digest := sha256.Sum256(canonical)
 
 	if !ed25519.Verify(pub, digest[:], sigBytes) {
-		return fmt.Errorf("signature invalid: entries have been tampered with")
+		return errors.New("signature invalid: entries have been tampered with")
 	}
 
 	return nil

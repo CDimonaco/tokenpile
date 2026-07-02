@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -46,7 +45,7 @@ func TestAuthLogin_Failure(t *testing.T) {
 
 	_, err := runAuthApp(t, auth, "auth", "login", "--provider", "github")
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	auth.AssertExpectations(t)
 }
 
@@ -68,7 +67,7 @@ func TestAuthStatus_Authenticated(t *testing.T) {
 	out, err := runAuthApp(t, auth, "auth", "status")
 
 	require.NoError(t, err)
-	assert.True(t, strings.Contains(out, "authenticated"), "expected 'authenticated' in %q", out)
+	assert.Contains(t, out, "authenticated")
 	auth.AssertExpectations(t)
 }
 

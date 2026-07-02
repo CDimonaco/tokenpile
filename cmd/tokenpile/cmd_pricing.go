@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 
@@ -28,7 +29,11 @@ func pricingCommands(loader *pricing.Loader, overridePath string) *cli.Command {
 					sort.Strings(names)
 
 					fmt.Fprintf(c.App.Writer, "%-30s %-20s %s\n", "Model", "In ($/M tokens)", "Out ($/M tokens)")
-					fmt.Fprintf(c.App.Writer, "%s\n", "------------------------------------------------------------------------")
+					fmt.Fprintf(
+						c.App.Writer,
+						"%s\n",
+						"------------------------------------------------------------------------",
+					)
 
 					for _, name := range names {
 						p := models[name]
@@ -58,7 +63,7 @@ func pricingCommands(loader *pricing.Loader, overridePath string) *cli.Command {
 				Action: func(c *cli.Context) error {
 					model := c.Args().First()
 					if model == "" {
-						return fmt.Errorf("model name is required")
+						return errors.New("model name is required")
 					}
 
 					inPrice := c.Float64("in")
