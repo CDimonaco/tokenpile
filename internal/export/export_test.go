@@ -3,6 +3,7 @@ package export_test
 import (
 	"crypto/ed25519"
 	"crypto/rand"
+	"encoding/base64"
 	"testing"
 	"time"
 
@@ -88,4 +89,53 @@ func TestCanonicalJSON_DeterministicAcrossBuilds(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, doc1.Signature, doc2.Signature)
+}
+
+func TestBuild_EmptyEntries(t *testing.T) {
+	priv, _ := newTestKey(t)
+
+	doc, err := export.Build(nil, priv, "1.0.0")
+	require.NoError(t, err)
+	assert.Empty(t, doc.Entries)
+	assert.NoError(t, export.Verify(doc))
+}
+
+func TestBuild_SignatureChangesWhenEntriesChange(t *testing.T) {
+	priv, _ := newTestKey(t)
+
+	doc1, err := export.Build(testEntries(), priv, "0.1.0")
+	require.NoError(t, err)
+
+	modified := testEntries()
+	modified[0].TokensIn = 99999
+
+	doc2, err := export.Build(modified, priv, "0.1.0")
+	require.NoError(t, err)
+
+	assert.NotEqual(t, doc1.Signature, doc2.Signature)
+}
+
+func TestVerify_WrongKey(t *testing.T) {
+	priv1, _ := newTestKey(t)
+	_, pub2 := newTestKey(t)
+
+	doc, err := export.Build(testEntries(), priv1, "0.1.0")
+	require.NoError(t, err)
+
+	doc.PublicKey = base64.StdEncoding.EncodeToString(pub2)
+
+	assert.Error(t, export.Verify(doc))
+}
+
+func TestVerify_TruncatedPublicKey(t *testing.T) {
+	priv, _ := newTestKey(t)
+
+	doc, err := export.Build(testEntries(), priv, "0.1.0")
+	require.NoError(t, err)
+
+	doc.PublicKey = base64.StdEncoding.EncodeToString([]byte("tooshort"))
+
+	err = export.Verify(doc)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid public key size")
 }
