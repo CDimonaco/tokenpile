@@ -15,7 +15,11 @@ import (
 	"github.com/cdimonaco/tokenpile/internal/tui"
 )
 
-var version = "dev"
+var (
+	version            = "dev"
+	githubClientID     = ""
+	githubClientSecret = ""
+)
 
 func main() {
 	app := &cli.App{
@@ -73,8 +77,17 @@ func main() {
 		}
 	}()
 
-	clientID := os.Getenv("TOKENPILE_GITHUB_CLIENT_ID")
-	clientSecret := os.Getenv("TOKENPILE_GITHUB_CLIENT_SECRET")
+	// env vars override the baked-in values, useful for development
+	clientID := githubClientID
+	if v := os.Getenv("TOKENPILE_GITHUB_CLIENT_ID"); v != "" {
+		clientID = v
+	}
+
+	clientSecret := githubClientSecret
+	if v := os.Getenv("TOKENPILE_GITHUB_CLIENT_SECRET"); v != "" {
+		clientSecret = v
+	}
+
 	authProvider := provider.NewGitHubAuthProvider(clientID, clientSecret, paths.CredentialsPath)
 	issueProvider := provider.NewGitHubIssueProvider(authProvider)
 
