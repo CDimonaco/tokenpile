@@ -31,14 +31,15 @@ type Model struct {
 	pricer        *pricing.Loader
 	authToken     string
 
-	activeView    view
-	prevView      view
-	issues        []usage.TrackedIssue
-	selected      *usage.TrackedIssue
-	report        *usage.Report
-	chartPoints   []usage.Point
-	chartScope    string
+	activeView      view
+	prevView        view
+	issues          []usage.TrackedIssue
+	selected        *usage.TrackedIssue
+	report          *usage.Report
+	chartPoints     []usage.Point
+	chartScope      string
 	unauthenticated bool
+	loading         bool
 
 	granularity usage.Granularity
 	filterAgent string
@@ -82,6 +83,7 @@ func New(s store.Store, ip provider.IssueProvider, p *pricing.Loader, authToken 
 		authToken:     authToken,
 		activeView:    viewList,
 		granularity:   usage.Day,
+		loading:       true,
 	}
 }
 
@@ -103,6 +105,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case issuesLoadedMsg:
 		m.issues = msg.issues
 		m.unauthenticated = msg.unauthenticated
+		m.loading = false
 		m.err = nil
 
 		return m, nil
@@ -312,6 +315,12 @@ func (m Model) viewIssueList() string {
 	}
 
 	fmt.Fprintln(&b, headerStyle.Render(fmt.Sprintf("%-8s %-18s %-26s %-10s %-10s %s", "Issue", "Repo", "Title", "Tokens", "Cost", "Time")))
+
+	if m.loading {
+		fmt.Fprintln(&b, dimStyle.Render("Loading..."))
+
+		return b.String()
+	}
 
 	if len(m.issues) == 0 {
 		fmt.Fprintln(&b, dimStyle.Render("No usage tracked yet. Run tokenpile log to get started."))

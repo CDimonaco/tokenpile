@@ -242,6 +242,21 @@ func TestSQLiteStore_ListUsageOverTime_CostPopulated(t *testing.T) {
 	assert.Greater(t, points[0].Cost, 0.0, "cost must be non-zero when tokens are logged")
 }
 
+func TestSQLiteStore_ListIssues_CostPopulated(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	require.NoError(t, s.LogUsage(ctx, usage.Entry{
+		Repo: "o/r", IssueNum: 1, Agent: "a", Model: "m",
+		TokensIn: 1_000_000, TokensOut: 1_000_000, At: time.Now(),
+	}))
+
+	issues, err := s.ListIssues(ctx, usage.Filter{Repo: "o/r"})
+	require.NoError(t, err)
+	require.Len(t, issues, 1)
+	assert.Greater(t, issues[0].TotalCost, 0.0, "cost must be non-zero when tokens are logged")
+}
+
 func TestSQLiteStore_ListTrackedIssueRefs(t *testing.T) {
 	s := newTestStore(t)
 	ctx := context.Background()

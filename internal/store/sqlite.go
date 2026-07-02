@@ -181,7 +181,7 @@ func (s *SQLiteStore) ListSessions(ctx context.Context, repo string, issueNum in
 
 func (s *SQLiteStore) ListIssues(ctx context.Context, filter usage.Filter) ([]usage.TrackedIssue, error) {
 	query := `
-		SELECT repo, issue_num, SUM(tokens_in), SUM(tokens_out)
+		SELECT repo, issue_num, model, SUM(tokens_in), SUM(tokens_out)
 		FROM usage_entries
 		WHERE 1=1`
 	args := []any{}
@@ -211,7 +211,7 @@ func (s *SQLiteStore) ListIssues(ctx context.Context, filter usage.Filter) ([]us
 		args = append(args, filter.To.UTC().Format(time.RFC3339))
 	}
 
-	query += " GROUP BY repo, issue_num ORDER BY repo, issue_num"
+	query += " GROUP BY repo, issue_num, model ORDER BY repo, issue_num"
 
 	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
@@ -219,23 +219,39 @@ func (s *SQLiteStore) ListIssues(ctx context.Context, filter usage.Filter) ([]us
 	}
 	defer rows.Close()
 
-	var issues []usage.TrackedIssue
+	type issueKey struct{ repo string; issueNum int }
+	issueMap := make(map[issueKey]*usage.TrackedIssue)
+	var issueOrder []issueKey
 
 	for rows.Next() {
-		var issue usage.TrackedIssue
-		if err = rows.Scan(&issue.Repo, &issue.IssueNum, &issue.TotalTokensIn, &issue.TotalTokensOut); err != nil {
+		var repo, model string
+		var issueNum, tokensIn, tokensOut int
+
+		if err = rows.Scan(&repo, &issueNum, &model, &tokensIn, &tokensOut); err != nil {
 			return nil, fmt.Errorf("scan issue: %w", err)
 		}
 
-		issues = append(issues, issue)
+		k := issueKey{repo, issueNum}
+		if _, ok := issueMap[k]; !ok {
+			issueMap[k] = &usage.TrackedIssue{Repo: repo, IssueNum: issueNum}
+			issueOrder = append(issueOrder, k)
+		}
+
+		cost, _ := s.pricing.ComputeCost(model, tokensIn, tokensOut)
+		issueMap[k].TotalTokensIn += tokensIn
+		issueMap[k].TotalTokensOut += tokensOut
+		issueMap[k].TotalCost += cost
 	}
 
 	if err = rows.Err(); err != nil {
 		return nil, fmt.Errorf("iterate issues: %w", err)
 	}
 
-	for i := range issues {
-		issues[i].TotalTime = s.totalTime(ctx, issues[i].Repo, issues[i].IssueNum)
+	issues := make([]usage.TrackedIssue, 0, len(issueOrder))
+	for _, k := range issueOrder {
+		ti := issueMap[k]
+		ti.TotalTime = s.totalTime(ctx, k.repo, k.issueNum)
+		issues = append(issues, *ti)
 	}
 
 	return issues, nil

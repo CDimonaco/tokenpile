@@ -210,6 +210,26 @@ func TestWindowSize_UpdatesDimensions(t *testing.T) {
 	assert.Equal(t, 40, m2.height)
 }
 
+func TestViewList_LoadingState(t *testing.T) {
+	m := baseModel()
+	m.loading = true
+
+	v := m.View()
+
+	assert.Contains(t, v, "Loading...")
+	assert.NotContains(t, v, "No usage tracked yet")
+}
+
+func TestIssuesLoaded_ClearsLoadingFlag(t *testing.T) {
+	m := baseModel()
+	m.loading = true
+
+	next, _ := m.Update(issuesLoadedMsg{issues: nil})
+	m2 := next.(Model)
+
+	assert.False(t, m2.loading)
+}
+
 func TestViewList_EmptyState(t *testing.T) {
 	m := baseModel()
 
