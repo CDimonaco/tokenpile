@@ -7,9 +7,10 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/cdimonaco/tokenpile/internal/domain"
 	"github.com/google/uuid"
 	_ "modernc.org/sqlite"
+
+	"github.com/cdimonaco/tokenpile/internal/usage"
 )
 
 var ErrSessionNotFound = errors.New("session not found")
@@ -69,7 +70,7 @@ func (s *SQLiteStore) Close() error {
 	return s.db.Close()
 }
 
-func (s *SQLiteStore) LogUsage(ctx context.Context, entry domain.UsageEntry) error {
+func (s *SQLiteStore) LogUsage(ctx context.Context, entry usage.Entry) error {
 	if entry.ID == "" {
 		entry.ID = uuid.New().String()
 	}
@@ -91,8 +92,8 @@ func (s *SQLiteStore) LogUsage(ctx context.Context, entry domain.UsageEntry) err
 	return nil
 }
 
-func (s *SQLiteStore) StartSession(ctx context.Context, repo string, issueNum int) (*domain.Session, error) {
-	sess := domain.Session{
+func (s *SQLiteStore) StartSession(ctx context.Context, repo string, issueNum int) (*usage.Session, error) {
+	sess := usage.Session{
 		ID:        uuid.New().String(),
 		Repo:      repo,
 		IssueNum:  issueNum,
@@ -133,7 +134,7 @@ func (s *SQLiteStore) EndSession(ctx context.Context, sessionID string) error {
 	return nil
 }
 
-func (s *SQLiteStore) ListSessions(ctx context.Context, repo string, issueNum int) ([]domain.Session, error) {
+func (s *SQLiteStore) ListSessions(ctx context.Context, repo string, issueNum int) ([]usage.Session, error) {
 	rows, err := s.db.QueryContext(ctx,
 		`SELECT id, repo, issue_num, started_at, ended_at FROM sessions WHERE repo = ? AND issue_num = ? ORDER BY started_at`,
 		repo, issueNum,
@@ -143,10 +144,10 @@ func (s *SQLiteStore) ListSessions(ctx context.Context, repo string, issueNum in
 	}
 	defer rows.Close()
 
-	var sessions []domain.Session
+	var sessions []usage.Session
 
 	for rows.Next() {
-		var sess domain.Session
+		var sess usage.Session
 		var startedAt string
 		var endedAt sql.NullString
 
@@ -178,7 +179,7 @@ func (s *SQLiteStore) ListSessions(ctx context.Context, repo string, issueNum in
 	return sessions, nil
 }
 
-func (s *SQLiteStore) ListIssues(ctx context.Context, filter domain.IssueFilter) ([]domain.TrackedIssue, error) {
+func (s *SQLiteStore) ListIssues(ctx context.Context, filter usage.Filter) ([]usage.TrackedIssue, error) {
 	query := `
 		SELECT repo, issue_num, SUM(tokens_in), SUM(tokens_out)
 		FROM usage_entries
@@ -218,10 +219,10 @@ func (s *SQLiteStore) ListIssues(ctx context.Context, filter domain.IssueFilter)
 	}
 	defer rows.Close()
 
-	var issues []domain.TrackedIssue
+	var issues []usage.TrackedIssue
 
 	for rows.Next() {
-		var issue domain.TrackedIssue
+		var issue usage.TrackedIssue
 		if err = rows.Scan(&issue.Repo, &issue.IssueNum, &issue.TotalTokensIn, &issue.TotalTokensOut); err != nil {
 			return nil, fmt.Errorf("scan issue: %w", err)
 		}
@@ -240,7 +241,7 @@ func (s *SQLiteStore) ListIssues(ctx context.Context, filter domain.IssueFilter)
 	return issues, nil
 }
 
-func (s *SQLiteStore) GetReport(ctx context.Context, repo string, issueNum int) (*domain.Report, error) {
+func (s *SQLiteStore) GetReport(ctx context.Context, repo string, issueNum int) (*usage.Report, error) {
 	rows, err := s.db.QueryContext(ctx,
 		`SELECT agent, model, COUNT(*), SUM(tokens_in), SUM(tokens_out)
 		 FROM usage_entries
@@ -254,13 +255,13 @@ func (s *SQLiteStore) GetReport(ctx context.Context, repo string, issueNum int) 
 	}
 	defer rows.Close()
 
-	report := &domain.Report{
+	report := &usage.Report{
 		IssueNum: issueNum,
 		Repo:     repo,
 	}
 
 	for rows.Next() {
-		var row domain.ReportRow
+		var row usage.ReportRow
 		if err = rows.Scan(&row.Agent, &row.Model, &row.Calls, &row.TokensIn, &row.TokensOut); err != nil {
 			return nil, fmt.Errorf("scan report row: %w", err)
 		}
@@ -283,9 +284,9 @@ func (s *SQLiteStore) GetReport(ctx context.Context, repo string, issueNum int) 
 	return report, nil
 }
 
-func (s *SQLiteStore) ListUsageOverTime(ctx context.Context, filter domain.UsageOverTimeFilter) ([]domain.UsagePoint, error) {
+func (s *SQLiteStore) ListUsageOverTime(ctx context.Context, filter usage.OverTimeFilter) ([]usage.Point, error) {
 	granFmt := "%Y-%m-%d"
-	if filter.Granularity == domain.GranularityWeek {
+	if filter.Granularity == usage.Week {
 		granFmt = "%Y-W%W"
 	}
 
@@ -333,7 +334,7 @@ func (s *SQLiteStore) ListUsageOverTime(ctx context.Context, filter domain.Usage
 	}
 	defer rows.Close()
 
-	var points []domain.UsagePoint
+	var points []usage.Point
 
 	for rows.Next() {
 		var period string
@@ -344,7 +345,7 @@ func (s *SQLiteStore) ListUsageOverTime(ctx context.Context, filter domain.Usage
 		}
 
 		dateFmt := "2006-01-02"
-		if filter.Granularity == domain.GranularityWeek {
+		if filter.Granularity == usage.Week {
 			dateFmt = "2006-W01"
 		}
 
@@ -353,7 +354,7 @@ func (s *SQLiteStore) ListUsageOverTime(ctx context.Context, filter domain.Usage
 			t = time.Time{}
 		}
 
-		points = append(points, domain.UsagePoint{
+		points = append(points, usage.Point{
 			Date:      t,
 			TokensIn:  tokensIn,
 			TokensOut: tokensOut,
