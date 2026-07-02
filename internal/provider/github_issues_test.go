@@ -10,9 +10,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/cdimonaco/tokenpile/internal/domain"
 	"github.com/cdimonaco/tokenpile/internal/mocks"
 	"github.com/cdimonaco/tokenpile/internal/provider"
+	"github.com/cdimonaco/tokenpile/internal/usage"
 )
 
 func newMockAuthProvider(t *testing.T, token string) *mocks.AuthProvider {
@@ -39,7 +39,7 @@ func TestGitHubIssueProvider_ListIssues(t *testing.T) {
 	auth := newMockAuthProvider(t, "test-token")
 	p := provider.NewGitHubIssueProviderWithURL(auth, srv.URL)
 
-	got, err := p.ListIssues(context.Background(), domain.IssueFilter{Repo: "o/r", State: "open"})
+	got, err := p.ListIssues(context.Background(), usage.Filter{Repo: "o/r", State: "open"})
 	require.NoError(t, err)
 	require.Len(t, got, 2)
 	assert.Equal(t, 1, got[0].Number)
@@ -52,7 +52,7 @@ func TestGitHubIssueProvider_ListIssues_UnauthenticatedError(t *testing.T) {
 
 	p := provider.NewGitHubIssueProvider(m)
 
-	_, err := p.ListIssues(context.Background(), domain.IssueFilter{Repo: "o/r"})
+	_, err := p.ListIssues(context.Background(), usage.Filter{Repo: "o/r"})
 	assert.ErrorIs(t, err, provider.ErrUnauthenticated)
 }
 

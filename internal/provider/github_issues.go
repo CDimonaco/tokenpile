@@ -8,7 +8,7 @@ import (
 	"github.com/google/go-github/v68/github"
 	"golang.org/x/oauth2"
 
-	"github.com/cdimonaco/tokenpile/internal/domain"
+	"github.com/cdimonaco/tokenpile/internal/usage"
 )
 
 type GitHubIssueProvider struct {
@@ -47,7 +47,7 @@ func (p *GitHubIssueProvider) client(ctx context.Context) (*github.Client, error
 	return client, nil
 }
 
-func (p *GitHubIssueProvider) ListIssues(ctx context.Context, filter domain.IssueFilter) ([]domain.Issue, error) {
+func (p *GitHubIssueProvider) ListIssues(ctx context.Context, filter usage.Filter) ([]Issue, error) {
 	client, err := p.client(ctx)
 	if err != nil {
 		return nil, err
@@ -74,14 +74,14 @@ func (p *GitHubIssueProvider) ListIssues(ctx context.Context, filter domain.Issu
 		return nil, fmt.Errorf("list issues: %w", err)
 	}
 
-	issues := make([]domain.Issue, 0, len(ghIssues))
+	issues := make([]Issue, 0, len(ghIssues))
 
 	for _, gi := range ghIssues {
 		if gi.PullRequestLinks != nil {
 			continue
 		}
 
-		issues = append(issues, domain.Issue{
+		issues = append(issues, Issue{
 			Number: int(gi.GetNumber()),
 			Repo:   filter.Repo,
 			Title:  gi.GetTitle(),
@@ -93,7 +93,7 @@ func (p *GitHubIssueProvider) ListIssues(ctx context.Context, filter domain.Issu
 	return issues, nil
 }
 
-func (p *GitHubIssueProvider) GetIssue(ctx context.Context, repo string, number int) (*domain.Issue, error) {
+func (p *GitHubIssueProvider) GetIssue(ctx context.Context, repo string, number int) (*Issue, error) {
 	client, err := p.client(ctx)
 	if err != nil {
 		return nil, err
@@ -111,7 +111,7 @@ func (p *GitHubIssueProvider) GetIssue(ctx context.Context, repo string, number 
 		return nil, fmt.Errorf("get issue: %w", err)
 	}
 
-	return &domain.Issue{
+	return &Issue{
 		Number: int(gi.GetNumber()),
 		Repo:   repo,
 		Title:  gi.GetTitle(),

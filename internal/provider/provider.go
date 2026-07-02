@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/cdimonaco/tokenpile/internal/domain"
+	"github.com/cdimonaco/tokenpile/internal/usage"
 )
 
 //go:generate mockery --name=AuthProvider --output=../mocks --outpkg=mocks
@@ -15,6 +15,14 @@ var (
 	ErrUnauthenticated = errors.New("not authenticated: run tokenpile auth login")
 )
 
+type Issue struct {
+	Number int
+	Repo   string
+	Title  string
+	State  string
+	URL    string
+}
+
 type AuthProvider interface {
 	Login(ctx context.Context) error
 	Token(ctx context.Context) (string, error)
@@ -22,6 +30,6 @@ type AuthProvider interface {
 }
 
 type IssueProvider interface {
-	ListIssues(ctx context.Context, filter domain.IssueFilter) ([]domain.Issue, error)
-	GetIssue(ctx context.Context, repo string, number int) (*domain.Issue, error)
+	ListIssues(ctx context.Context, filter usage.Filter) ([]Issue, error)
+	GetIssue(ctx context.Context, repo string, number int) (*Issue, error)
 }
