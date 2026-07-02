@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/cdimonaco/tokenpile/internal/domain"
 	"github.com/cdimonaco/tokenpile/internal/export"
+	"github.com/cdimonaco/tokenpile/internal/usage"
 )
 
 func TestExport_RoundTrip_EmptyEntries(t *testing.T) {
@@ -30,7 +30,7 @@ func TestExport_RoundTrip_WithEntries(t *testing.T) {
 	_, priv, err := ed25519.GenerateKey(rand.Reader)
 	require.NoError(t, err)
 
-	entries := []domain.UsageEntry{
+	entries := []usage.Entry{
 		{
 			ID:        "e1",
 			Repo:      "owner/repo",
@@ -64,7 +64,7 @@ func TestExport_Verify_TamperedEntries(t *testing.T) {
 	_, priv, err := ed25519.GenerateKey(rand.Reader)
 	require.NoError(t, err)
 
-	entries := []domain.UsageEntry{
+	entries := []usage.Entry{
 		{ID: "e1", Repo: "o/r", IssueNum: 1, Agent: "a", Model: "m", TokensIn: 100, TokensOut: 50, At: time.Now()},
 	}
 
@@ -95,14 +95,13 @@ func TestExport_Verify_WrongPublicKey(t *testing.T) {
 	pub2, _, err := ed25519.GenerateKey(rand.Reader)
 	require.NoError(t, err)
 
-	entries := []domain.UsageEntry{
+	entries := []usage.Entry{
 		{ID: "e1", Repo: "o/r", IssueNum: 1, Agent: "a", Model: "m", TokensIn: 100, TokensOut: 50, At: time.Now()},
 	}
 
 	doc, err := export.Build(entries, priv1, "test")
 	require.NoError(t, err)
 
-	// replace the embedded public key with a different key — signature won't match
 	doc.PublicKey = base64.StdEncoding.EncodeToString(pub2)
 
 	assert.Error(t, export.Verify(doc))

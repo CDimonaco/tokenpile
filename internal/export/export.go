@@ -9,15 +9,13 @@ import (
 	"sort"
 	"time"
 
-	"github.com/cdimonaco/tokenpile/internal/domain"
 	"github.com/cdimonaco/tokenpile/internal/schema"
+	"github.com/cdimonaco/tokenpile/internal/usage"
 )
 
 var Schema = schema.ExportSchema
 
-const (
-	SchemaVersion = "1.0"
-)
+const SchemaVersion = "1.0"
 
 type entryJSON struct {
 	ID        string `json:"id"`
@@ -40,7 +38,7 @@ type Document struct {
 	Signature     string      `json:"signature"`
 }
 
-func Build(entries []domain.UsageEntry, priv ed25519.PrivateKey, version string) (*Document, error) {
+func Build(entries []usage.Entry, priv ed25519.PrivateKey, version string) (*Document, error) {
 	jsonEntries := make([]entryJSON, len(entries))
 	for i, e := range entries {
 		jsonEntries[i] = entryJSON{
