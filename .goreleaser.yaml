@@ -20,9 +20,9 @@ builds:
       - arm64
     ldflags:
       - -s -w
-        -X main.version={{.Version}}
-        -X main.githubClientID={{ .Env.TOKENPILE_GITHUB_CLIENT_ID }}
-        -X main.githubClientSecret={{ .Env.TOKENPILE_GITHUB_CLIENT_SECRET }}
+      - -X main.version={{.Version}}
+      - -X main.githubClientID={{.Env.TOKENPILE_GITHUB_CLIENT_ID}}
+      - -X main.githubClientSecret={{.Env.TOKENPILE_GITHUB_CLIENT_SECRET}}
 
 archives:
   - id: tokenpile
