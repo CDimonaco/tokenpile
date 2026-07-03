@@ -15,6 +15,7 @@ import (
 	"github.com/cdimonaco/tokenpile/internal/usage"
 )
 
+
 func exportCommands(s store.Store, priv ed25519.PrivateKey, version string) *cli.Command {
 	return &cli.Command{
 		Name:  "export",
@@ -96,9 +97,10 @@ func exportCommands(s store.Store, priv ed25519.PrivateKey, version string) *cli
 func runExport(c *cli.Context, s store.Store, priv ed25519.PrivateKey, version string) error {
 	ctx := c.Context
 	filter := usage.Filter{
-		Repo:  strings.ToLower(c.String("repo")),
-		Agent: c.String("agent"),
-		Model: c.String("model"),
+		Repo:     strings.ToLower(c.String("repo")),
+		IssueNum: c.Int("issue"),
+		Agent:    c.String("agent"),
+		Model:    c.String("model"),
 	}
 
 	if fromStr := c.String("from"); fromStr != "" {
@@ -119,34 +121,9 @@ func runExport(c *cli.Context, s store.Store, priv ed25519.PrivateKey, version s
 		filter.To = &t
 	}
 
-	issues, err := s.ListIssues(ctx, filter)
+	entries, err := s.ListEntries(ctx, filter)
 	if err != nil {
-		return fmt.Errorf("list issues: %w", err)
-	}
-
-	var entries []usage.Entry
-
-	for _, issue := range issues {
-		if c.Int("issue") != 0 && issue.IssueNum != c.Int("issue") {
-			continue
-		}
-
-		report, reportErr := s.GetReport(ctx, issue.Repo, issue.IssueNum)
-		if reportErr != nil {
-			return fmt.Errorf("get report for %s#%d: %w", issue.Repo, issue.IssueNum, reportErr)
-		}
-
-		for _, row := range report.Rows {
-			entries = append(entries, usage.Entry{
-				Repo:      issue.Repo,
-				IssueNum:  issue.IssueNum,
-				Agent:     row.Agent,
-				Model:     row.Model,
-				TokensIn:  row.TokensIn,
-				TokensOut: row.TokensOut,
-				At:        time.Now().UTC(),
-			})
-		}
+		return fmt.Errorf("list entries: %w", err)
 	}
 
 	doc, err := export.Build(entries, priv, version)
