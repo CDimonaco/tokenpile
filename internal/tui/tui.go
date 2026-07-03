@@ -226,14 +226,7 @@ func (m Model) handleListKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.detailErr = nil
 			m.report = nil
 
-			cmds := []tea.Cmd{m.loadReport(issue.Repo, issue.IssueNum)}
-
-			if m.authToken != "" {
-				m.refreshing = true
-				cmds = append(cmds, m.refreshIssueCacheCmd())
-			}
-
-			return m, tea.Batch(cmds...)
+			return m, m.loadReport(issue.Repo, issue.IssueNum)
 		}
 	case "o":
 		if len(m.issues) > 0 {
@@ -659,12 +652,14 @@ func (m Model) loadIssues() tea.Cmd {
 					k := issueKey(gi.Repo, gi.Number)
 					if idx, ok := inResult[k]; ok {
 						result[idx].Title = gi.Title
+						result[idx].Labels = gi.Labels
 					} else {
 						idx = len(result)
 						result = append(result, usage.TrackedIssue{
 							IssueNum: gi.Number,
 							Repo:     gi.Repo,
 							Title:    gi.Title,
+							Labels:   gi.Labels,
 						})
 						inResult[k] = idx
 					}
@@ -683,6 +678,7 @@ func (m Model) loadIssues() tea.Cmd {
 				result[i].Title = "[not found on GitHub]"
 			} else {
 				result[i].Title = gi.Title
+				result[i].Labels = gi.Labels
 			}
 		}
 
