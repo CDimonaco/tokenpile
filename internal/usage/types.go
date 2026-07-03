@@ -25,6 +25,7 @@ type Session struct {
 // Filter scopes queries over usage data.
 type Filter struct {
 	Repo     string
+	IssueNum int
 	State    string
 	Assignee string
 	Agent    string

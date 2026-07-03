@@ -19,6 +19,19 @@ func (_m *Store) LogUsage(ctx context.Context, entry usage.Entry) error {
 	return ret.Error(0)
 }
 
+func (_m *Store) ListEntries(ctx context.Context, filter usage.Filter) ([]usage.Entry, error) {
+	ret := _m.Called(ctx, filter)
+
+	var r0 []usage.Entry
+	if rf, ok := ret.Get(0).(func(context.Context, usage.Filter) []usage.Entry); ok {
+		r0 = rf(ctx, filter)
+	} else if ret.Get(0) != nil {
+		r0 = ret.Get(0).([]usage.Entry)
+	}
+
+	return r0, ret.Error(1)
+}
+
 func (_m *Store) ListIssues(ctx context.Context, filter usage.Filter) ([]usage.TrackedIssue, error) {
 	ret := _m.Called(ctx, filter)
 

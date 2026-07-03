@@ -93,6 +93,80 @@ func (s *SQLiteStore) LogUsage(ctx context.Context, entry usage.Entry) error {
 	return nil
 }
 
+func (s *SQLiteStore) ListEntries(ctx context.Context, filter usage.Filter) ([]usage.Entry, error) {
+	query := `SELECT id, repo, issue_num, agent, model, tokens_in, tokens_out, session_id, at
+		FROM usage_entries WHERE 1=1`
+	args := []any{}
+
+	if filter.Repo != "" {
+		query += " AND repo = ?"
+		args = append(args, filter.Repo)
+	}
+
+	if filter.IssueNum != 0 {
+		query += " AND issue_num = ?"
+		args = append(args, filter.IssueNum)
+	}
+
+	if filter.Agent != "" {
+		query += " AND agent = ?"
+		args = append(args, filter.Agent)
+	}
+
+	if filter.Model != "" {
+		query += " AND model = ?"
+		args = append(args, filter.Model)
+	}
+
+	if filter.From != nil {
+		query += " AND at >= ?"
+		args = append(args, filter.From.UTC().Format(time.RFC3339))
+	}
+
+	if filter.To != nil {
+		query += " AND at <= ?"
+		args = append(args, filter.To.UTC().Format(time.RFC3339))
+	}
+
+	query += " ORDER BY at"
+
+	rows, err := s.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("list entries: %w", err)
+	}
+	defer rows.Close()
+
+	var entries []usage.Entry
+
+	for rows.Next() {
+		var e usage.Entry
+		var atStr string
+		var sessionID sql.NullString
+
+		if err = rows.Scan(&e.ID, &e.Repo, &e.IssueNum, &e.Agent, &e.Model,
+			&e.TokensIn, &e.TokensOut, &sessionID, &atStr); err != nil {
+			return nil, fmt.Errorf("scan entry: %w", err)
+		}
+
+		e.At, err = time.Parse(time.RFC3339, atStr)
+		if err != nil {
+			return nil, fmt.Errorf("parse entry at: %w", err)
+		}
+
+		if sessionID.Valid {
+			e.SessionID = sessionID.String
+		}
+
+		entries = append(entries, e)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate entries: %w", err)
+	}
+
+	return entries, nil
+}
+
 func (s *SQLiteStore) StartSession(ctx context.Context, repo string, issueNum int) (*usage.Session, error) {
 	sess := usage.Session{
 		ID:        uuid.New().String(),

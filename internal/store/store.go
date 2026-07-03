@@ -10,6 +10,7 @@ import (
 
 type Store interface {
 	LogUsage(ctx context.Context, entry usage.Entry) error
+	ListEntries(ctx context.Context, filter usage.Filter) ([]usage.Entry, error)
 	ListIssues(ctx context.Context, filter usage.Filter) ([]usage.TrackedIssue, error)
 	GetReport(ctx context.Context, repo string, issueNum int) (*usage.Report, error)
 	StartSession(ctx context.Context, repo string, issueNum int) (*usage.Session, error)
