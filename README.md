@@ -5,9 +5,13 @@ Track LLM token usage and cost per GitHub issue. Any agent (Claude Code, OpenCod
 ## Features
 
 - Log token usage from any LLM agent via a single CLI call
+- Validates the GitHub issue exists before logging — no phantom entries
 - Track by agent name and model separately (e.g. `claude-code` running `claude-sonnet-4-6`)
 - Sessions with 30-minute idle auto-close for wall-clock time tracking
-- TUI: issue list, per-issue breakdown, token usage chart over time
+- GitHub issue metadata (title, labels, URL) cached in the local DB at log time
+- TUI: issue list with clickable `#N` OSC 8 hyperlinks, per-issue detail with title/labels, token usage chart over time
+- Open issues in the browser with `o`, refresh cached metadata with `r`
+- Report and export include issue title and labels
 - Ed25519-signed JSON export for auditing
 - Pricing config with built-in defaults and per-model overrides
 - SQLite storage — local, no external services required
@@ -46,10 +50,16 @@ This opens a browser window for OAuth. The token is stored in your OS keychain (
 ### 2. Install the skill for your agent
 
 ```sh
-tokenpile skill install --agent claude-code
+tokenpile skill install --agent claude-code    # writes ~/.claude/skills/tokenpile.md
+tokenpile skill install --agent codex          # appends a block to ~/.codex/AGENTS.md
+tokenpile skill install --agent opencode       # appends a block to ~/.config/opencode/AGENTS.md
 ```
 
-After installation, Claude Code will automatically call `tokenpile log` at the end of each response where significant work was done. See `tokenpile skill list` for all supported agents.
+After installation, the agent will automatically call `tokenpile log` at the end of each response where significant work was done.
+
+For **codex** and **opencode**, the skill is appended to their shared `AGENTS.md` file using HTML comment markers (`<!-- tokenpile:start -->` / `<!-- tokenpile:end -->`). Your existing instructions are never touched. Running the command again updates only the tokenpile block in place.
+
+See `tokenpile skill list` for supported agents and their installation status.
 
 ### 3. Or log manually
 
@@ -75,16 +85,29 @@ tokenpile log --issue 42 --agent claude-code --model claude-sonnet-4-6 \
 tokenpile
 ```
 
-Key bindings:
+**Issue list**
 
 | Key | Action |
 |-----|--------|
 | `j` / `k` | navigate up/down |
 | `enter` | open issue detail |
+| `o` | open selected issue in browser |
 | `c` | open chart view |
-| `d` / `w` | day / week granularity (chart) |
 | `esc` | go back |
 | `?` | toggle help |
+| `q` | quit |
+
+The list shows a clickable `#N` link for each issue. In terminals that support OSC 8 hyperlinks (iTerm2, Kitty, most modern terminals) clicking the link opens the issue in your browser.
+
+**Issue detail**
+
+| Key | Action |
+|-----|--------|
+| `o` | open issue in browser |
+| `r` | refresh title and labels from GitHub |
+| `c` | open chart view |
+| `esc` | go back |
+| `d` / `w` | day / week granularity (chart) |
 | `q` | quit |
 
 ## Commands
@@ -100,9 +123,11 @@ tokenpile log --issue <num> --agent <name> --model <model> \
 
 Sessions are managed automatically. The first call for an `(issue, repo)` pair starts a session; subsequent calls within 30 minutes reuse it. After 30 minutes of inactivity the session is closed and a new one starts on the next call.
 
+The log command validates that the issue exists on GitHub before inserting the entry. If the issue is not found, the command fails with an error. Issue title and labels are cached in the local DB for use in reports, exports, and the TUI.
+
 ### `tokenpile report`
 
-Print a per-(agent, model) breakdown for an issue.
+Print a per-(agent, model) breakdown for an issue. The header shows the issue title, URL, and labels if they are in the local cache.
 
 ```sh
 tokenpile report --issue 42
@@ -146,9 +171,13 @@ tokenpile export verify --file data.json
 ### `tokenpile skill`
 
 ```sh
-tokenpile skill list                        # show agents and install status
-tokenpile skill install --agent claude-code # write skill file for the agent
+tokenpile skill list                          # show agents and install status
+tokenpile skill install --agent claude-code   # dedicated file: ~/.claude/skills/tokenpile.md
+tokenpile skill install --agent codex         # append/update block in ~/.codex/AGENTS.md
+tokenpile skill install --agent opencode      # append/update block in ~/.config/opencode/AGENTS.md
 ```
+
+For shared AGENTS.md targets (codex, opencode) the command prints a summary of what it did — whether it created the file, appended a new block, or updated an existing one — so you always know exactly what changed.
 
 ## Configuration
 
@@ -231,7 +260,7 @@ schema/               JSON Schema for the export document
 ### Adding a new agent skill
 
 1. Add a template file at `internal/skill/templates/<agent-name>.md`.
-2. Add the agent entry to the `agents` slice in `internal/skill/skill.go` with its `InstallPath` function.
+2. Add the agent entry to the `agents` slice in `internal/skill/skill.go` with its `InstallPath` function. Set `Shared: true` if the target file is shared with other content (e.g. AGENTS.md) — the install will append/update a marker-delimited block instead of overwriting the file.
 3. Add tests in `internal/skill/skill_test.go`.
 
 ### Running a subset of tests
