@@ -21,13 +21,24 @@ func InferRepo() (string, error) {
 	return ParseRemote(strings.TrimSpace(string(out)))
 }
 
+// ResolveRepo returns explicit if non-empty (normalized to lowercase), otherwise
+// infers from git remote. GitHub repo names are case-insensitive; normalizing
+// ensures consistent storage and lookup across all commands.
+func ResolveRepo(explicit string) (string, error) {
+	if explicit != "" {
+		return strings.ToLower(explicit), nil
+	}
+
+	return InferRepo()
+}
+
 func ParseRemote(remote string) (string, error) {
 	if m := sshPattern.FindStringSubmatch(remote); len(m) == 2 {
-		return m[1], nil
+		return strings.ToLower(m[1]), nil
 	}
 
 	if m := httpsPattern.FindStringSubmatch(remote); len(m) == 2 {
-		return m[1], nil
+		return strings.ToLower(m[1]), nil
 	}
 
 	return "", fmt.Errorf("cannot infer repo from remote %q: not a GitHub remote; pass --repo owner/repo", remote)

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/urfave/cli/v2"
@@ -95,7 +96,7 @@ func exportCommands(s store.Store, priv ed25519.PrivateKey, version string) *cli
 func runExport(c *cli.Context, s store.Store, priv ed25519.PrivateKey, version string) error {
 	ctx := c.Context
 	filter := usage.Filter{
-		Repo:  c.String("repo"),
+		Repo:  strings.ToLower(c.String("repo")),
 		Agent: c.String("agent"),
 		Model: c.String("model"),
 	}

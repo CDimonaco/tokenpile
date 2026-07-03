@@ -56,20 +56,15 @@ func logCommand(s store.Store) *cli.Command {
 			},
 		},
 		Action: func(c *cli.Context) error {
-			repo := c.String("repo")
-			if repo == "" {
-				inferred, err := provider.InferRepo()
-				if err != nil {
-					if errors.Is(err, provider.ErrNoRepo) {
-						return errors.New(
-							"cannot infer repo: pass --repo owner/repo or run from inside a GitHub repository",
-						)
-					}
-
-					return fmt.Errorf("infer repo: %w", err)
+			repo, err := provider.ResolveRepo(c.String("repo"))
+			if err != nil {
+				if errors.Is(err, provider.ErrNoRepo) {
+					return errors.New(
+						"cannot infer repo: pass --repo owner/repo or run from inside a GitHub repository",
+					)
 				}
 
-				repo = inferred
+				return fmt.Errorf("infer repo: %w", err)
 			}
 
 			issueNum := c.Int("issue")
