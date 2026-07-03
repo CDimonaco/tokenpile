@@ -49,7 +49,7 @@ func reportCommand(s store.Store) *cli.Command {
 			}
 
 			cached, cacheErr := s.GetIssueCache(ctx, repo, issueNum)
-			if cacheErr != nil {
+			if cacheErr != nil && !errors.Is(cacheErr, store.ErrIssueCacheNotFound) {
 				return fmt.Errorf("get issue cache: %w", cacheErr)
 			}
 

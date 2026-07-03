@@ -60,9 +60,9 @@ type (
 		issues          []usage.TrackedIssue
 		unauthenticated bool
 	}
-	reportLoadedMsg    struct{ report *usage.Report }
-	chartLoadedMsg     struct{ points []usage.Point }
-	issueRefreshedMsg  struct {
+	reportLoadedMsg   struct{ report *usage.Report }
+	chartLoadedMsg    struct{ points []usage.Point }
+	issueRefreshedMsg struct {
 		title  string
 		labels []string
 		err    error

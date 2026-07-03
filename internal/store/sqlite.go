@@ -15,7 +15,10 @@ import (
 	"github.com/cdimonaco/tokenpile/internal/usage"
 )
 
-var ErrSessionNotFound = errors.New("session not found")
+var (
+	ErrSessionNotFound    = errors.New("session not found")
+	ErrIssueCacheNotFound = errors.New("issue not in cache")
+)
 
 const schema = `
 CREATE TABLE IF NOT EXISTS usage_entries (
@@ -144,7 +147,7 @@ func (s *SQLiteStore) GetIssueCache(ctx context.Context, repo string, issueNum i
 	).Scan(&cache.Repo, &cache.IssueNum, &cache.Title, &labelsJSON, &createdAt, &updatedAt)
 
 	if errors.Is(err, sql.ErrNoRows) {
-		return nil, nil
+		return nil, ErrIssueCacheNotFound
 	}
 
 	if err != nil {

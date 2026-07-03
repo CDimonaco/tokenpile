@@ -15,7 +15,6 @@ import (
 	"github.com/cdimonaco/tokenpile/internal/usage"
 )
 
-
 func exportCommands(s store.Store, priv ed25519.PrivateKey, version string) *cli.Command {
 	return &cli.Command{
 		Name:  "export",
