@@ -13,6 +13,8 @@ type Store interface {
 	ListEntries(ctx context.Context, filter usage.Filter) ([]usage.Entry, error)
 	ListIssues(ctx context.Context, filter usage.Filter) ([]usage.TrackedIssue, error)
 	GetReport(ctx context.Context, repo string, issueNum int) (*usage.Report, error)
+	UpsertIssueCache(ctx context.Context, cache *usage.IssueCache) error
+	GetIssueCache(ctx context.Context, repo string, issueNum int) (*usage.IssueCache, error)
 	StartSession(ctx context.Context, repo string, issueNum int) (*usage.Session, error)
 	EndSession(ctx context.Context, sessionID string) error
 	ListSessions(ctx context.Context, repo string, issueNum int) ([]usage.Session, error)

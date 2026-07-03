@@ -19,6 +19,24 @@ func (_m *Store) LogUsage(ctx context.Context, entry usage.Entry) error {
 	return ret.Error(0)
 }
 
+func (_m *Store) UpsertIssueCache(ctx context.Context, cache *usage.IssueCache) error {
+	ret := _m.Called(ctx, cache)
+	return ret.Error(0)
+}
+
+func (_m *Store) GetIssueCache(ctx context.Context, repo string, issueNum int) (*usage.IssueCache, error) {
+	ret := _m.Called(ctx, repo, issueNum)
+
+	var r0 *usage.IssueCache
+	if rf, ok := ret.Get(0).(func(context.Context, string, int) *usage.IssueCache); ok {
+		r0 = rf(ctx, repo, issueNum)
+	} else if ret.Get(0) != nil {
+		r0 = ret.Get(0).(*usage.IssueCache)
+	}
+
+	return r0, ret.Error(1)
+}
+
 func (_m *Store) ListEntries(ctx context.Context, filter usage.Filter) ([]usage.Entry, error) {
 	ret := _m.Called(ctx, filter)
 

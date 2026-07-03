@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -35,6 +36,16 @@ CREATE TABLE IF NOT EXISTS sessions (
     issue_num   INTEGER NOT NULL,
     started_at  TEXT NOT NULL,
     ended_at    TEXT
+);
+
+CREATE TABLE IF NOT EXISTS issue_cache (
+    repo        TEXT NOT NULL,
+    issue_num   INTEGER NOT NULL,
+    title       TEXT NOT NULL DEFAULT '',
+    labels      TEXT NOT NULL DEFAULT '[]',
+    created_at  TEXT NOT NULL,
+    updated_at  TEXT NOT NULL,
+    PRIMARY KEY (repo, issue_num)
 );
 
 CREATE INDEX IF NOT EXISTS idx_usage_entries_repo_issue ON usage_entries (repo, issue_num);
@@ -93,42 +104,103 @@ func (s *SQLiteStore) LogUsage(ctx context.Context, entry usage.Entry) error {
 	return nil
 }
 
+func (s *SQLiteStore) UpsertIssueCache(ctx context.Context, cache *usage.IssueCache) error {
+	labels := cache.Labels
+	if labels == nil {
+		labels = []string{}
+	}
+
+	labelsJSON, err := json.Marshal(labels)
+	if err != nil {
+		return fmt.Errorf("marshal labels: %w", err)
+	}
+
+	now := time.Now().UTC().Format(time.RFC3339)
+
+	_, err = s.db.ExecContext(ctx, `
+		INSERT INTO issue_cache (repo, issue_num, title, labels, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?)
+		ON CONFLICT(repo, issue_num) DO UPDATE SET
+			title = excluded.title,
+			labels = excluded.labels,
+			updated_at = excluded.updated_at`,
+		cache.Repo, cache.IssueNum, cache.Title, string(labelsJSON), now, now,
+	)
+	if err != nil {
+		return fmt.Errorf("upsert issue cache: %w", err)
+	}
+
+	return nil
+}
+
+func (s *SQLiteStore) GetIssueCache(ctx context.Context, repo string, issueNum int) (*usage.IssueCache, error) {
+	var cache usage.IssueCache
+	var labelsJSON, createdAt, updatedAt string
+
+	err := s.db.QueryRowContext(ctx,
+		`SELECT repo, issue_num, title, labels, created_at, updated_at
+		 FROM issue_cache WHERE repo = ? AND issue_num = ?`,
+		repo, issueNum,
+	).Scan(&cache.Repo, &cache.IssueNum, &cache.Title, &labelsJSON, &createdAt, &updatedAt)
+
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("get issue cache: %w", err)
+	}
+
+	if jsonErr := json.Unmarshal([]byte(labelsJSON), &cache.Labels); jsonErr != nil {
+		cache.Labels = nil
+	}
+
+	cache.CreatedAt, _ = time.Parse(time.RFC3339, createdAt)
+	cache.UpdatedAt, _ = time.Parse(time.RFC3339, updatedAt)
+
+	return &cache, nil
+}
+
 func (s *SQLiteStore) ListEntries(ctx context.Context, filter usage.Filter) ([]usage.Entry, error) {
-	query := `SELECT id, repo, issue_num, agent, model, tokens_in, tokens_out, session_id, at
-		FROM usage_entries WHERE 1=1`
+	query := `SELECT ue.id, ue.repo, ue.issue_num, ue.agent, ue.model,
+		ue.tokens_in, ue.tokens_out, ue.session_id, ue.at,
+		COALESCE(ic.title, ''), COALESCE(ic.labels, '[]')
+		FROM usage_entries ue
+		LEFT JOIN issue_cache ic ON ic.repo = ue.repo AND ic.issue_num = ue.issue_num
+		WHERE 1=1`
 	args := []any{}
 
 	if filter.Repo != "" {
-		query += " AND repo = ?"
+		query += " AND ue.repo = ?"
 		args = append(args, filter.Repo)
 	}
 
 	if filter.IssueNum != 0 {
-		query += " AND issue_num = ?"
+		query += " AND ue.issue_num = ?"
 		args = append(args, filter.IssueNum)
 	}
 
 	if filter.Agent != "" {
-		query += " AND agent = ?"
+		query += " AND ue.agent = ?"
 		args = append(args, filter.Agent)
 	}
 
 	if filter.Model != "" {
-		query += " AND model = ?"
+		query += " AND ue.model = ?"
 		args = append(args, filter.Model)
 	}
 
 	if filter.From != nil {
-		query += " AND at >= ?"
+		query += " AND ue.at >= ?"
 		args = append(args, filter.From.UTC().Format(time.RFC3339))
 	}
 
 	if filter.To != nil {
-		query += " AND at <= ?"
+		query += " AND ue.at <= ?"
 		args = append(args, filter.To.UTC().Format(time.RFC3339))
 	}
 
-	query += " ORDER BY at"
+	query += " ORDER BY ue.at"
 
 	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
@@ -140,11 +212,11 @@ func (s *SQLiteStore) ListEntries(ctx context.Context, filter usage.Filter) ([]u
 
 	for rows.Next() {
 		var e usage.Entry
-		var atStr string
+		var atStr, labelsJSON string
 		var sessionID sql.NullString
 
 		if err = rows.Scan(&e.ID, &e.Repo, &e.IssueNum, &e.Agent, &e.Model,
-			&e.TokensIn, &e.TokensOut, &sessionID, &atStr); err != nil {
+			&e.TokensIn, &e.TokensOut, &sessionID, &atStr, &e.IssueTitle, &labelsJSON); err != nil {
 			return nil, fmt.Errorf("scan entry: %w", err)
 		}
 
@@ -155,6 +227,10 @@ func (s *SQLiteStore) ListEntries(ctx context.Context, filter usage.Filter) ([]u
 
 		if sessionID.Valid {
 			e.SessionID = sessionID.String
+		}
+
+		if jsonErr := json.Unmarshal([]byte(labelsJSON), &e.IssueLabels); jsonErr != nil {
+			e.IssueLabels = nil
 		}
 
 		entries = append(entries, e)
@@ -258,37 +334,39 @@ func (s *SQLiteStore) ListSessions(ctx context.Context, repo string, issueNum in
 
 func (s *SQLiteStore) ListIssues(ctx context.Context, filter usage.Filter) ([]usage.TrackedIssue, error) {
 	query := `
-		SELECT repo, issue_num, model, SUM(tokens_in), SUM(tokens_out)
-		FROM usage_entries
+		SELECT ue.repo, ue.issue_num, ue.model, SUM(ue.tokens_in), SUM(ue.tokens_out),
+		       COALESCE(ic.title, ''), COALESCE(ic.labels, '[]')
+		FROM usage_entries ue
+		LEFT JOIN issue_cache ic ON ic.repo = ue.repo AND ic.issue_num = ue.issue_num
 		WHERE 1=1`
 	args := []any{}
 
 	if filter.Repo != "" {
-		query += " AND repo = ?"
+		query += " AND ue.repo = ?"
 		args = append(args, filter.Repo)
 	}
 
 	if filter.Agent != "" {
-		query += " AND agent = ?"
+		query += " AND ue.agent = ?"
 		args = append(args, filter.Agent)
 	}
 
 	if filter.Model != "" {
-		query += " AND model = ?"
+		query += " AND ue.model = ?"
 		args = append(args, filter.Model)
 	}
 
 	if filter.From != nil {
-		query += " AND at >= ?"
+		query += " AND ue.at >= ?"
 		args = append(args, filter.From.UTC().Format(time.RFC3339))
 	}
 
 	if filter.To != nil {
-		query += " AND at <= ?"
+		query += " AND ue.at <= ?"
 		args = append(args, filter.To.UTC().Format(time.RFC3339))
 	}
 
-	query += " GROUP BY repo, issue_num, model ORDER BY repo, issue_num"
+	query += " GROUP BY ue.repo, ue.issue_num, ue.model, ic.title, ic.labels ORDER BY ue.repo, ue.issue_num"
 
 	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
@@ -304,16 +382,21 @@ func (s *SQLiteStore) ListIssues(ctx context.Context, filter usage.Filter) ([]us
 	var issueOrder []issueKey
 
 	for rows.Next() {
-		var repo, model string
+		var repo, model, title, labelsJSON string
 		var issueNum, tokensIn, tokensOut int
 
-		if err = rows.Scan(&repo, &issueNum, &model, &tokensIn, &tokensOut); err != nil {
+		if err = rows.Scan(&repo, &issueNum, &model, &tokensIn, &tokensOut, &title, &labelsJSON); err != nil {
 			return nil, fmt.Errorf("scan issue: %w", err)
 		}
 
 		k := issueKey{repo, issueNum}
 		if _, ok := issueMap[k]; !ok {
-			issueMap[k] = &usage.TrackedIssue{Repo: repo, IssueNum: issueNum}
+			var labels []string
+			if jsonErr := json.Unmarshal([]byte(labelsJSON), &labels); jsonErr != nil {
+				labels = nil
+			}
+
+			issueMap[k] = &usage.TrackedIssue{Repo: repo, IssueNum: issueNum, Title: title, Labels: labels}
 			issueOrder = append(issueOrder, k)
 		}
 
