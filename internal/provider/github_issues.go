@@ -2,7 +2,9 @@ package provider
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/google/go-github/v68/github"
@@ -81,12 +83,18 @@ func (p *GitHubIssueProvider) ListIssues(ctx context.Context, filter usage.Filte
 			continue
 		}
 
+		labels := make([]string, 0, len(gi.Labels))
+		for _, l := range gi.Labels {
+			labels = append(labels, l.GetName())
+		}
+
 		issues = append(issues, Issue{
 			Number: gi.GetNumber(),
 			Repo:   filter.Repo,
 			Title:  gi.GetTitle(),
 			State:  gi.GetState(),
 			URL:    gi.GetHTMLURL(),
+			Labels: labels,
 		})
 	}
 
@@ -108,7 +116,17 @@ func (p *GitHubIssueProvider) GetIssue(ctx context.Context, repo string, number 
 
 	gi, _, err := client.Issues.Get(ctx, owner, repoName, number)
 	if err != nil {
+		var ghErr *github.ErrorResponse
+		if errors.As(err, &ghErr) && ghErr.Response.StatusCode == http.StatusNotFound {
+			return nil, ErrIssueNotFound
+		}
+
 		return nil, fmt.Errorf("get issue: %w", err)
+	}
+
+	labels := make([]string, 0, len(gi.Labels))
+	for _, l := range gi.Labels {
+		labels = append(labels, l.GetName())
 	}
 
 	return &Issue{
@@ -117,5 +135,6 @@ func (p *GitHubIssueProvider) GetIssue(ctx context.Context, repo string, number 
 		Title:  gi.GetTitle(),
 		State:  gi.GetState(),
 		URL:    gi.GetHTMLURL(),
+		Labels: labels,
 	}, nil
 }

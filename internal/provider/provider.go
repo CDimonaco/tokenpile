@@ -15,6 +15,7 @@ var (
 		"cannot infer repo: not a git repository or no origin remote configured; pass --repo owner/repo",
 	)
 	ErrUnauthenticated = errors.New("not authenticated: run tokenpile auth login")
+	ErrIssueNotFound   = errors.New("issue not found")
 )
 
 type Issue struct {
@@ -23,6 +24,7 @@ type Issue struct {
 	Title  string
 	State  string
 	URL    string
+	Labels []string
 }
 
 type AuthProvider interface {
