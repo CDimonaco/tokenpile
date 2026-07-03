@@ -19,15 +19,17 @@ var Schema = schema.ExportSchema
 const SchemaVersion = "1.0"
 
 type entryJSON struct {
-	ID        string `json:"id"`
-	Repo      string `json:"repo"`
-	IssueNum  int    `json:"issue_num"`
-	Agent     string `json:"agent"`
-	Model     string `json:"model"`
-	TokensIn  int    `json:"tokens_in"`
-	TokensOut int    `json:"tokens_out"`
-	SessionID string `json:"session_id,omitempty"`
-	At        string `json:"at"`
+	ID          string   `json:"id"`
+	Repo        string   `json:"repo"`
+	IssueNum    int      `json:"issue_num"`
+	IssueTitle  string   `json:"issue_title,omitempty"`
+	IssueLabels []string `json:"issue_labels,omitempty"`
+	Agent       string   `json:"agent"`
+	Model       string   `json:"model"`
+	TokensIn    int      `json:"tokens_in"`
+	TokensOut   int      `json:"tokens_out"`
+	SessionID   string   `json:"session_id,omitempty"`
+	At          string   `json:"at"`
 }
 
 type Document struct {
@@ -43,15 +45,17 @@ func Build(entries []usage.Entry, priv ed25519.PrivateKey, version string) (*Doc
 	jsonEntries := make([]entryJSON, len(entries))
 	for i, e := range entries {
 		jsonEntries[i] = entryJSON{
-			ID:        e.ID,
-			Repo:      e.Repo,
-			IssueNum:  e.IssueNum,
-			Agent:     e.Agent,
-			Model:     e.Model,
-			TokensIn:  e.TokensIn,
-			TokensOut: e.TokensOut,
-			SessionID: e.SessionID,
-			At:        e.At.UTC().Format(time.RFC3339),
+			ID:          e.ID,
+			Repo:        e.Repo,
+			IssueNum:    e.IssueNum,
+			IssueTitle:  e.IssueTitle,
+			IssueLabels: e.IssueLabels,
+			Agent:       e.Agent,
+			Model:       e.Model,
+			TokensIn:    e.TokensIn,
+			TokensOut:   e.TokensOut,
+			SessionID:   e.SessionID,
+			At:          e.At.UTC().Format(time.RFC3339),
 		}
 	}
 

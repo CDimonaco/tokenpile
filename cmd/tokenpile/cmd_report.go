@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/urfave/cli/v2"
 
@@ -47,7 +48,23 @@ func reportCommand(s store.Store) *cli.Command {
 				return fmt.Errorf("get report: %w", err)
 			}
 
-			fmt.Fprintf(c.App.Writer, "Report: %s #%d\n\n", repo, issueNum)
+			cached, cacheErr := s.GetIssueCache(ctx, repo, issueNum)
+			if cacheErr != nil {
+				return fmt.Errorf("get issue cache: %w", cacheErr)
+			}
+
+			fmt.Fprintf(c.App.Writer, "Report: %s #%d\n", repo, issueNum)
+
+			if cached != nil {
+				fmt.Fprintf(c.App.Writer, "Title:  %s\n", cached.Title)
+				fmt.Fprintf(c.App.Writer, "URL:    https://github.com/%s/issues/%d\n", repo, issueNum)
+
+				if len(cached.Labels) > 0 {
+					fmt.Fprintf(c.App.Writer, "Labels: %s\n", strings.Join(cached.Labels, ", "))
+				}
+			}
+
+			fmt.Fprintln(c.App.Writer)
 			fmt.Fprintf(c.App.Writer, "%-16s %-24s %-8s %-12s %-12s %s\n",
 				"Agent", "Model", "Calls", "Tokens In", "Tokens Out", "Cost")
 			fmt.Fprintf(
