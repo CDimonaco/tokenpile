@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/google/uuid"
@@ -16,7 +17,7 @@ import (
 
 const sessionIdleTimeout = 30 * time.Minute
 
-func logCommand(s store.Store) *cli.Command {
+func logCommand(s store.Store, ip provider.IssueProvider) *cli.Command {
 	return &cli.Command{
 		Name:  "log",
 		Usage: "record LLM token usage for a GitHub issue",
@@ -73,6 +74,28 @@ func logCommand(s store.Store) *cli.Command {
 			tokensIn := c.Int("tokens-in")
 			tokensOut := c.Int("tokens-out")
 			ctx := c.Context
+
+			issue, getErr := ip.GetIssue(ctx, repo, issueNum)
+			if getErr != nil {
+				if errors.Is(getErr, provider.ErrIssueNotFound) {
+					return fmt.Errorf("issue #%d not found in %s", issueNum, repo)
+				}
+
+				if errors.Is(getErr, provider.ErrUnauthenticated) {
+					return errors.New("GitHub authentication required to validate issues: run tokenpile auth login")
+				}
+
+				return fmt.Errorf("validate issue: %w", getErr)
+			}
+
+			if cacheErr := s.UpsertIssueCache(ctx, &usage.IssueCache{
+				Repo:     repo,
+				IssueNum: issueNum,
+				Title:    issue.Title,
+				Labels:   issue.Labels,
+			}); cacheErr != nil {
+				slog.Warn("upsert issue cache", "err", cacheErr)
+			}
 
 			sessionID, err := resolveSession(ctx, s, repo, issueNum)
 			if err != nil {

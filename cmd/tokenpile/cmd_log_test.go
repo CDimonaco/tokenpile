@@ -12,17 +12,18 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/cdimonaco/tokenpile/internal/mocks"
+	"github.com/cdimonaco/tokenpile/internal/provider"
 	"github.com/cdimonaco/tokenpile/internal/usage"
 )
 
-func runLogApp(t *testing.T, storeMock *mocks.Store, args ...string) (string, error) {
+func runLogApp(t *testing.T, storeMock *mocks.Store, ip *mocks.IssueProvider, args ...string) (string, error) {
 	t.Helper()
 
 	var buf bytes.Buffer
 
 	app := &cli.App{
 		Writer:   &buf,
-		Commands: []*cli.Command{logCommand(storeMock)},
+		Commands: []*cli.Command{logCommand(storeMock, ip)},
 	}
 
 	err := app.RunContext(context.Background(), append([]string{"tok"}, args...))
@@ -30,16 +31,29 @@ func runLogApp(t *testing.T, storeMock *mocks.Store, args ...string) (string, er
 	return buf.String(), err
 }
 
+func stubIssue(ip *mocks.IssueProvider, repo string, num int) {
+	ip.On("GetIssue", mock.Anything, repo, num).Return(&provider.Issue{
+		Number: num,
+		Repo:   repo,
+		Title:  "Stub Issue",
+	}, nil)
+}
+
 func TestLog_MissingRequiredFlags(t *testing.T) {
 	s := &mocks.Store{}
+	ip := &mocks.IssueProvider{}
 
-	_, err := runLogApp(t, s, "log", "--agent", "claude-code", "--model", "claude-sonnet-4-6")
+	_, err := runLogApp(t, s, ip, "log", "--agent", "claude-code", "--model", "claude-sonnet-4-6")
 
 	assert.Error(t, err)
 }
 
 func TestLog_NoActiveSession_StartsNew(t *testing.T) {
 	s := &mocks.Store{}
+	ip := &mocks.IssueProvider{}
+
+	stubIssue(ip, "owner/repo", 42)
+	s.On("UpsertIssueCache", mock.Anything, mock.Anything).Return(nil)
 
 	sess := &usage.Session{
 		ID:        "sess-1",
@@ -54,7 +68,7 @@ func TestLog_NoActiveSession_StartsNew(t *testing.T) {
 		return e.Repo == "owner/repo" && e.IssueNum == 42 && e.SessionID == "sess-1"
 	})).Return(nil)
 
-	out, err := runLogApp(t, s,
+	out, err := runLogApp(t, s, ip,
 		"log",
 		"--issue", "42",
 		"--agent", "claude-code",
@@ -68,10 +82,15 @@ func TestLog_NoActiveSession_StartsNew(t *testing.T) {
 	assert.Contains(t, out, "owner/repo")
 	assert.Contains(t, out, "42")
 	s.AssertExpectations(t)
+	ip.AssertExpectations(t)
 }
 
 func TestLog_ReuseActiveSession(t *testing.T) {
 	s := &mocks.Store{}
+	ip := &mocks.IssueProvider{}
+
+	stubIssue(ip, "owner/repo", 7)
+	s.On("UpsertIssueCache", mock.Anything, mock.Anything).Return(nil)
 
 	recentTime := time.Now().Add(-5 * time.Minute)
 	activeSess := usage.Session{
@@ -86,7 +105,7 @@ func TestLog_ReuseActiveSession(t *testing.T) {
 		return e.SessionID == "sess-active"
 	})).Return(nil)
 
-	_, err := runLogApp(t, s,
+	_, err := runLogApp(t, s, ip,
 		"log",
 		"--issue", "7",
 		"--agent", "opencode",
@@ -98,10 +117,15 @@ func TestLog_ReuseActiveSession(t *testing.T) {
 
 	require.NoError(t, err)
 	s.AssertExpectations(t)
+	ip.AssertExpectations(t)
 }
 
 func TestLog_ClosesIdleSession_StartsNew(t *testing.T) {
 	s := &mocks.Store{}
+	ip := &mocks.IssueProvider{}
+
+	stubIssue(ip, "owner/repo", 99)
+	s.On("UpsertIssueCache", mock.Anything, mock.Anything).Return(nil)
 
 	idleTime := time.Now().Add(-45 * time.Minute)
 	idleSess := usage.Session{
@@ -125,7 +149,7 @@ func TestLog_ClosesIdleSession_StartsNew(t *testing.T) {
 		return e.SessionID == "sess-new"
 	})).Return(nil)
 
-	_, err := runLogApp(t, s,
+	_, err := runLogApp(t, s, ip,
 		"log",
 		"--issue", "99",
 		"--agent", "cursor",
@@ -137,4 +161,5 @@ func TestLog_ClosesIdleSession_StartsNew(t *testing.T) {
 
 	require.NoError(t, err)
 	s.AssertExpectations(t)
+	ip.AssertExpectations(t)
 }

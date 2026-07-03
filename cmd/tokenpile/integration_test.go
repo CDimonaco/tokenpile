@@ -12,9 +12,21 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/cdimonaco/tokenpile/internal/pricing"
+	"github.com/cdimonaco/tokenpile/internal/provider"
 	"github.com/cdimonaco/tokenpile/internal/store"
 	"github.com/cdimonaco/tokenpile/internal/usage"
 )
+
+// integrationIssueProvider always validates issues as existing with a stub title.
+type integrationIssueProvider struct{}
+
+func (p *integrationIssueProvider) ListIssues(_ context.Context, _ usage.Filter) ([]provider.Issue, error) {
+	return nil, nil
+}
+
+func (p *integrationIssueProvider) GetIssue(_ context.Context, repo string, number int) (*provider.Issue, error) {
+	return &provider.Issue{Number: number, Repo: repo, Title: "Integration Test Issue"}, nil
+}
 
 func newTestStore(t *testing.T) *store.SQLiteStore {
 	t.Helper()
@@ -35,7 +47,7 @@ func runLogCmd(t *testing.T, s *store.SQLiteStore, args ...string) error {
 	t.Helper()
 
 	app := &cli.App{
-		Commands: []*cli.Command{logCommand(s)},
+		Commands: []*cli.Command{logCommand(s, &integrationIssueProvider{})},
 	}
 
 	return app.RunContext(context.Background(), append([]string{"tok"}, args...))

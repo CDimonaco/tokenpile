@@ -92,7 +92,7 @@ func main() {
 	issueProvider := provider.NewGitHubIssueProvider(authProvider)
 
 	app.Commands = []*cli.Command{
-		logCommand(sqliteStore),
+		logCommand(sqliteStore, issueProvider),
 		reportCommand(sqliteStore),
 		authCommands(authProvider),
 		pricingCommands(pricingLoader, paths.PricingOverride),
