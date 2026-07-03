@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os/exec"
+	"runtime"
 	"strings"
 	"time"
 
@@ -39,6 +41,7 @@ type Model struct {
 	chartPoints     []usage.Point
 	unauthenticated bool
 	loading         bool
+	detailErr       error
 
 	granularity usage.Granularity
 	filterAgent string
@@ -57,12 +60,17 @@ type (
 		issues          []usage.TrackedIssue
 		unauthenticated bool
 	}
-	reportLoadedMsg struct{ report *usage.Report }
-	chartLoadedMsg  struct{ points []usage.Point }
-	errMsg          struct{ err error }
+	reportLoadedMsg    struct{ report *usage.Report }
+	chartLoadedMsg     struct{ points []usage.Point }
+	issueRefreshedMsg  struct {
+		title  string
+		labels []string
+		err    error
+	}
+	errMsg struct{ err error }
 )
 
-const contentWidth = 90
+const contentWidth = 120
 
 var (
 	titleStyle    = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("12"))
@@ -116,6 +124,20 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case chartLoadedMsg:
 		m.chartPoints = msg.points
+
+		return m, nil
+
+	case issueRefreshedMsg:
+		if msg.err != nil {
+			m.detailErr = msg.err
+		} else {
+			m.detailErr = nil
+
+			if m.selected != nil {
+				m.selected.Title = msg.title
+				m.selected.Labels = msg.labels
+			}
+		}
 
 		return m, nil
 
@@ -187,8 +209,14 @@ func (m Model) handleListKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			issue := m.issues[m.cursor]
 			m.selected = &issue
 			m.activeView = viewDetail
+			m.detailErr = nil
 
 			return m, m.loadReport(issue.Repo, issue.IssueNum)
+		}
+	case "o":
+		if len(m.issues) > 0 {
+			issue := m.issues[m.cursor]
+			return m, openBrowserCmd(issueURL(issue.Repo, issue.IssueNum))
 		}
 	case "c":
 		m.prevView = viewList
@@ -201,11 +229,22 @@ func (m Model) handleListKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) handleDetailKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	if msg.String() == "c" && m.selected != nil {
-		m.prevView = viewDetail
-		m.activeView = viewChart
+	switch msg.String() {
+	case "c":
+		if m.selected != nil {
+			m.prevView = viewDetail
+			m.activeView = viewChart
 
-		return m, m.loadChart(&m.selected.IssueNum)
+			return m, m.loadChart(&m.selected.IssueNum)
+		}
+	case "o":
+		if m.selected != nil {
+			return m, openBrowserCmd(issueURL(m.selected.Repo, m.selected.IssueNum))
+		}
+	case "r":
+		if m.selected != nil {
+			return m, m.refreshIssueCacheCmd()
+		}
 	}
 
 	return m, nil
@@ -276,12 +315,15 @@ func (m Model) renderFooter() string {
 		keys = []string{
 			keyStyle.Render("j/k") + " navigate",
 			keyStyle.Render("enter") + " detail",
+			keyStyle.Render("o") + " open in browser",
 			keyStyle.Render("c") + " chart",
 			keyStyle.Render("?") + " help",
 			keyStyle.Render("q") + " quit",
 		}
 	case viewDetail:
 		keys = []string{
+			keyStyle.Render("o") + " open in browser",
+			keyStyle.Render("r") + " refresh issue",
 			keyStyle.Render("c") + " chart",
 			keyStyle.Render("esc") + " back",
 			keyStyle.Render("?") + " help",
@@ -317,7 +359,8 @@ func (m Model) viewIssueList() string {
 	fmt.Fprintln(
 		&b,
 		headerStyle.Render(
-			fmt.Sprintf("%-8s %-18s %-26s %-10s %-10s %s", "Issue", "Repo", "Title", "Tokens", "Cost", "Time"),
+			fmt.Sprintf("%-8s %-16s %-22s %-10s %-10s %-8s  %s",
+				"Issue", "Repo", "Title", "Tokens", "Cost", "Time", "URL"),
 		),
 	)
 
@@ -339,13 +382,16 @@ func (m Model) viewIssueList() string {
 			title = "-"
 		}
 
-		line := fmt.Sprintf("#%-7d %-18s %-26s %-10s %-10s %s",
+		url := issueURL(issue.Repo, issue.IssueNum)
+
+		line := fmt.Sprintf("#%-7d %-16s %-22s %-10s %-10s %-8s  %s",
 			issue.IssueNum,
-			truncate(issue.Repo, 18),
-			truncate(title, 26),
+			truncate(issue.Repo, 16),
+			truncate(title, 22),
 			fmt.Sprintf("%dk", (issue.TotalTokensIn+issue.TotalTokensOut)/1000),
 			fmt.Sprintf("$%.2f", issue.TotalCost),
 			formatDuration(issue.TotalTime),
+			url,
 		)
 
 		if i == m.cursor {
@@ -365,7 +411,25 @@ func (m Model) viewIssueDetail() string {
 
 	var b strings.Builder
 
-	fmt.Fprintf(&b, "%s Issue #%d — %s\n\n", titleStyle.Render("tokenpile"), m.selected.IssueNum, m.selected.Repo)
+	title := m.selected.Title
+	if title == "" {
+		title = fmt.Sprintf("Issue #%d", m.selected.IssueNum)
+	}
+
+	url := issueURL(m.selected.Repo, m.selected.IssueNum)
+
+	fmt.Fprintf(&b, "%s  %s\n", titleStyle.Render("tokenpile"), title)
+	fmt.Fprintf(&b, "%s #%d  %s\n", m.selected.Repo, m.selected.IssueNum, hyperlink(url, url))
+
+	if len(m.selected.Labels) > 0 {
+		fmt.Fprintf(&b, "Labels: %s\n", strings.Join(m.selected.Labels, ", "))
+	}
+
+	if m.detailErr != nil {
+		fmt.Fprintf(&b, "%s\n", errorStyle.Render("refresh error: "+m.detailErr.Error()))
+	}
+
+	fmt.Fprintln(&b)
 
 	if m.report == nil {
 		fmt.Fprintln(&b, "Loading...")
@@ -465,6 +529,13 @@ func (m Model) viewHelp() string {
     enter       open issue detail
     esc         go back
 
+  Issue list
+    o           open selected issue in browser
+
+  Issue detail
+    o           open issue in browser
+    r           refresh issue title and labels from GitHub
+
   Views
     c           open chart view
     ?           toggle this help
@@ -476,6 +547,59 @@ func (m Model) viewHelp() string {
   General
     q / ctrl+c  quit
 `
+}
+
+func issueURL(repo string, num int) string {
+	return fmt.Sprintf("https://github.com/%s/issues/%d", repo, num)
+}
+
+func hyperlink(url, text string) string {
+	return "\033]8;;" + url + "\033\\" + text + "\033]8;;\033\\"
+}
+
+func openBrowserCmd(url string) tea.Cmd {
+	return func() tea.Msg {
+		var cmd *exec.Cmd
+
+		switch runtime.GOOS {
+		case "darwin":
+			cmd = exec.Command("open", url)
+		case "windows":
+			cmd = exec.Command("rundll32", "url.dll,FileProtocolHandler", url)
+		default:
+			cmd = exec.Command("xdg-open", url)
+		}
+
+		if err := cmd.Start(); err != nil {
+			return errMsg{err: fmt.Errorf("open browser: %w", err)}
+		}
+
+		return nil
+	}
+}
+
+func (m Model) refreshIssueCacheCmd() tea.Cmd {
+	selected := m.selected
+
+	return func() tea.Msg {
+		ctx := context.Background()
+
+		issue, err := m.issueProvider.GetIssue(ctx, selected.Repo, selected.IssueNum)
+		if err != nil {
+			return issueRefreshedMsg{err: err}
+		}
+
+		if cacheErr := m.store.UpsertIssueCache(ctx, &usage.IssueCache{
+			Repo:     issue.Repo,
+			IssueNum: issue.Number,
+			Title:    issue.Title,
+			Labels:   issue.Labels,
+		}); cacheErr != nil {
+			slog.Warn("upsert issue cache after refresh", "err", cacheErr)
+		}
+
+		return issueRefreshedMsg{title: issue.Title, labels: issue.Labels}
+	}
 }
 
 func (m Model) loadIssues() tea.Cmd {
