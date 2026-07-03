@@ -3,15 +3,17 @@ package usage
 import "time"
 
 type Entry struct {
-	ID        string
-	Repo      string
-	IssueNum  int
-	Agent     string
-	Model     string
-	TokensIn  int
-	TokensOut int
-	SessionID string
-	At        time.Time
+	ID          string
+	Repo        string
+	IssueNum    int
+	Agent       string
+	Model       string
+	TokensIn    int
+	TokensOut   int
+	SessionID   string
+	At          time.Time
+	IssueTitle  string
+	IssueLabels []string
 }
 
 type Session struct {
@@ -53,10 +55,20 @@ type Report struct {
 	TotalTime      time.Duration
 }
 
+type IssueCache struct {
+	Repo      string
+	IssueNum  int
+	Title     string
+	Labels    []string
+	CreatedAt time.Time
+	UpdatedAt time.Time
+}
+
 type TrackedIssue struct {
 	IssueNum       int
 	Repo           string
 	Title          string
+	Labels         []string
 	TotalTokensIn  int
 	TotalTokensOut int
 	TotalCost      float64
