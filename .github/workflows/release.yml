@@ -26,30 +26,12 @@ jobs:
       - name: Run tests
         run: go test -race ./...
 
-      - name: Test cross-compilation with secrets
-        env:
-          CLIENT_ID: ${{ secrets.TOKENPILE_GITHUB_CLIENT_ID }}
-          CLIENT_SECRET: ${{ secrets.TOKENPILE_GITHUB_CLIENT_SECRET }}
-        run: |
-          set -e
-          echo "Client ID length: ${#CLIENT_ID}"
-          echo "Client secret length: ${#CLIENT_SECRET}"
-          for goos in linux darwin; do
-            for goarch in amd64 arm64; do
-              echo "Building $goos/$goarch..."
-              CGO_ENABLED=0 GOOS=$goos GOARCH=$goarch go build \
-                -ldflags "-s -w -X main.version=test -X main.githubClientID=${CLIENT_ID} -X main.githubClientSecret=${CLIENT_SECRET}" \
-                -o /tmp/tokenpile-$goos-$goarch ./cmd/tokenpile
-              echo "OK: $goos/$goarch"
-            done
-          done
-
       - name: Release
         uses: goreleaser/goreleaser-action@v6
         with:
           distribution: goreleaser
           version: "~> v2"
-          args: release --clean --verbose
+          args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HOMEBREW_TAP_GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_GITHUB_TOKEN }}
