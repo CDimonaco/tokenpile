@@ -3,23 +3,33 @@ name: Update Homebrew Formula
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (e.g. v0.1.0)"
+        required: true
 
 jobs:
   update-formula:
     name: Update homebrew-tap formula
     runs-on: ubuntu-latest
     steps:
-      - name: Download release checksums
+      - name: Resolve version
         run: |
-          VERSION="${{ github.event.release.tag_name }}"
+          if [ -n "${{ github.event.inputs.tag }}" ]; then
+            VERSION="${{ github.event.inputs.tag }}"
+          else
+            VERSION="${{ github.event.release.tag_name }}"
+          fi
           VERSION_NO_V="${VERSION#v}"
           echo "VERSION=$VERSION" >> $GITHUB_ENV
           echo "VERSION_NO_V=$VERSION_NO_V" >> $GITHUB_ENV
 
+      - name: Download release checksums
+        run: |
           BASE="https://github.com/${{ github.repository }}/releases/download/${VERSION}"
-          curl -sL "${BASE}/tokenpile_${VERSION_NO_V}_SHA256SUMS" -o sums.txt
+          curl -fsSL "${BASE}/tokenpile_${VERSION_NO_V}_SHA256SUMS" -o sums.txt
           cat sums.txt
-
           echo "SHA_DARWIN_AMD64=$(grep darwin_amd64 sums.txt | awk '{print $1}')" >> $GITHUB_ENV
           echo "SHA_DARWIN_ARM64=$(grep darwin_arm64 sums.txt | awk '{print $1}')" >> $GITHUB_ENV
           echo "SHA_LINUX_AMD64=$(grep linux_amd64 sums.txt | awk '{print $1}')" >> $GITHUB_ENV
@@ -35,44 +45,45 @@ jobs:
       - name: Update formula
         run: |
           BASE="https://github.com/${{ github.repository }}/releases/download/${VERSION}"
-          cat > homebrew-tap/Formula/tokenpile.rb << EOF
-          class Tokenpile < Formula
-            desc "Track LLM token usage and cost per GitHub issue"
-            homepage "https://github.com/cdimonaco/tokenpile"
-            version "${VERSION_NO_V}"
-            license "MIT"
+          mkdir -p homebrew-tap/Formula
+          cat > homebrew-tap/Formula/tokenpile.rb << RUBY
+class Tokenpile < Formula
+  desc "Track LLM token usage and cost per GitHub issue"
+  homepage "https://github.com/cdimonaco/tokenpile"
+  version "${VERSION_NO_V}"
+  license "MIT"
 
-            on_macos do
-              on_arm do
-                url "${BASE}/tokenpile_${VERSION_NO_V}_darwin_arm64.tar.gz"
-                sha256 "${SHA_DARWIN_ARM64}"
-              end
-              on_intel do
-                url "${BASE}/tokenpile_${VERSION_NO_V}_darwin_amd64.tar.gz"
-                sha256 "${SHA_DARWIN_AMD64}"
-              end
-            end
+  on_macos do
+    on_arm do
+      url "${BASE}/tokenpile_${VERSION_NO_V}_darwin_arm64.tar.gz"
+      sha256 "${SHA_DARWIN_ARM64}"
+    end
+    on_intel do
+      url "${BASE}/tokenpile_${VERSION_NO_V}_darwin_amd64.tar.gz"
+      sha256 "${SHA_DARWIN_AMD64}"
+    end
+  end
 
-            on_linux do
-              on_arm do
-                url "${BASE}/tokenpile_${VERSION_NO_V}_linux_arm64.tar.gz"
-                sha256 "${SHA_LINUX_ARM64}"
-              end
-              on_intel do
-                url "${BASE}/tokenpile_${VERSION_NO_V}_linux_amd64.tar.gz"
-                sha256 "${SHA_LINUX_AMD64}"
-              end
-            end
+  on_linux do
+    on_arm do
+      url "${BASE}/tokenpile_${VERSION_NO_V}_linux_arm64.tar.gz"
+      sha256 "${SHA_LINUX_ARM64}"
+    end
+    on_intel do
+      url "${BASE}/tokenpile_${VERSION_NO_V}_linux_amd64.tar.gz"
+      sha256 "${SHA_LINUX_AMD64}"
+    end
+  end
 
-            def install
-              bin.install "tokenpile"
-            end
+  def install
+    bin.install "tokenpile"
+  end
 
-            test do
-              assert_match version.to_s, shell_output("#{bin}/tokenpile --version")
-            end
-          end
-          EOF
+  test do
+    assert_match version.to_s, shell_output("#{bin}/tokenpile --version")
+  end
+end
+RUBY
 
       - name: Commit and push
         run: |
@@ -80,6 +91,6 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
           git add Formula/tokenpile.rb
-          git diff --cached --quiet && echo "no changes" && exit 0
+          git diff --cached --quiet && echo "formula already up to date" && exit 0
           git commit -m "feat: update tokenpile formula to ${VERSION}"
           git push
