@@ -369,7 +369,7 @@ func (m Model) viewIssueList() string {
 	fmt.Fprintln(&b, titleStyle.Render("tokenpile"))
 
 	if m.unauthenticated {
-		fmt.Fprintln(&b, dimStyle.Render("(not authenticated — showing local issues only)"))
+		fmt.Fprintln(&b, errorStyle.Render("not authenticated — run: tokenpile auth login"))
 	}
 
 	fmt.Fprintln(
