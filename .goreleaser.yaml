@@ -21,8 +21,8 @@ builds:
     ldflags:
       - -s -w
       - -X main.version={{.Version}}
-      - -X main.githubClientID={{.Env.TOKENPILE_GITHUB_CLIENT_ID | trimspace}}
-      - -X main.githubClientSecret={{.Env.TOKENPILE_GITHUB_CLIENT_SECRET | trimspace}}
+      - -X main.githubClientID={{.Env.TOKENPILE_GITHUB_CLIENT_ID | trim}}
+      - -X main.githubClientSecret={{.Env.TOKENPILE_GITHUB_CLIENT_SECRET | trim}}
 
 archives:
   - id: tokenpile
