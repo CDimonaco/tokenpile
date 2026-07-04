@@ -18,6 +18,12 @@ Track LLM token usage and cost per GitHub issue. Any agent (Claude Code, OpenCod
 
 ## Installation
 
+### Homebrew (macOS / Linux)
+
+```sh
+brew install cdimonaco/tap/tokenpile
+```
+
 ### From source
 
 Prerequisites: Go 1.25+
