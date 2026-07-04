@@ -35,3 +35,8 @@ jobs:
 
       - name: Test
         run: go test -race ./...
+
+      - name: Vulnerability scan
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          govulncheck ./...

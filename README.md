@@ -2,6 +2,15 @@
   <img src="tokenpile-banner.png" alt="tokenpile — every token, counted" width="600">
 </p>
 
+<p align="center">
+  <a href="https://github.com/CDimonaco/tokenpile/actions/workflows/ci.yml"><img src="https://github.com/CDimonaco/tokenpile/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://github.com/CDimonaco/tokenpile/releases/latest"><img src="https://img.shields.io/github/v/release/cdimonaco/tokenpile?color=blue" alt="Latest release"></a>
+  <a href="https://github.com/CDimonaco/tokenpile/blob/main/go.mod"><img src="https://img.shields.io/github/go-mod/go-version/cdimonaco/tokenpile" alt="Go version"></a>
+  <a href="https://github.com/CDimonaco/tokenpile/blob/main/LICENSE"><img src="https://img.shields.io/github/license/cdimonaco/tokenpile" alt="License"></a>
+  <a href="https://github.com/CDimonaco/homebrew-tap/blob/main/Formula/tokenpile.rb"><img src="https://img.shields.io/badge/homebrew-cdimonaco%2Ftap-orange?logo=homebrew" alt="Homebrew tap"></a>
+  <a href="https://github.com/CDimonaco/tokenpile/actions/workflows/codeql.yml"><img src="https://github.com/CDimonaco/tokenpile/actions/workflows/codeql.yml/badge.svg" alt="CodeQL"></a>
+</p>
+
 Track LLM token usage and cost per GitHub issue. Any agent (Claude Code, OpenCode, Cursor, or your own tooling) calls the CLI to log usage; you browse a TUI to see where time and money went.
 
 ## Features
