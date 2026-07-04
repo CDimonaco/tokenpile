@@ -36,7 +36,7 @@ jobs:
           echo "SHA_LINUX_ARM64=$(grep linux_arm64  sums.txt | awk '{print $1}')" >> "$GITHUB_ENV"
 
       - name: Checkout homebrew-tap
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: cdimonaco/homebrew-tap
           ssh-key: ${{ secrets.HOMEBREW_TAP_DEPLOY_KEY }}
