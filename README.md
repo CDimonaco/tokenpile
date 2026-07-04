@@ -13,6 +13,10 @@
 
 Track LLM token usage and cost per GitHub issue. Any agent (Claude Code, OpenCode, Cursor, or your own tooling) calls the CLI to log usage; you browse a TUI to see where time and money went.
 
+<p align="center">
+  <img src="demo.gif" alt="tokenpile demo" width="700">
+</p>
+
 ## Features
 
 - Log token usage from any LLM agent via a single CLI call
