@@ -22,18 +22,18 @@ jobs:
             VERSION="${{ github.event.release.tag_name }}"
           fi
           VERSION_NO_V="${VERSION#v}"
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo "VERSION_NO_V=$VERSION_NO_V" >> $GITHUB_ENV
+          echo "VERSION=$VERSION"         >> "$GITHUB_ENV"
+          echo "VERSION_NO_V=$VERSION_NO_V" >> "$GITHUB_ENV"
 
       - name: Download release checksums
         run: |
           BASE="https://github.com/${{ github.repository }}/releases/download/${VERSION}"
           curl -fsSL "${BASE}/tokenpile_${VERSION_NO_V}_SHA256SUMS" -o sums.txt
           cat sums.txt
-          echo "SHA_DARWIN_AMD64=$(grep darwin_amd64 sums.txt | awk '{print $1}')" >> $GITHUB_ENV
-          echo "SHA_DARWIN_ARM64=$(grep darwin_arm64 sums.txt | awk '{print $1}')" >> $GITHUB_ENV
-          echo "SHA_LINUX_AMD64=$(grep linux_amd64 sums.txt | awk '{print $1}')" >> $GITHUB_ENV
-          echo "SHA_LINUX_ARM64=$(grep linux_arm64 sums.txt | awk '{print $1}')" >> $GITHUB_ENV
+          echo "SHA_DARWIN_AMD64=$(grep darwin_amd64 sums.txt | awk '{print $1}')" >> "$GITHUB_ENV"
+          echo "SHA_DARWIN_ARM64=$(grep darwin_arm64 sums.txt | awk '{print $1}')" >> "$GITHUB_ENV"
+          echo "SHA_LINUX_AMD64=$(grep linux_amd64  sums.txt | awk '{print $1}')" >> "$GITHUB_ENV"
+          echo "SHA_LINUX_ARM64=$(grep linux_arm64  sums.txt | awk '{print $1}')" >> "$GITHUB_ENV"
 
       - name: Checkout homebrew-tap
         uses: actions/checkout@v4
@@ -42,48 +42,49 @@ jobs:
           ssh-key: ${{ secrets.HOMEBREW_TAP_DEPLOY_KEY }}
           path: homebrew-tap
 
-      - name: Update formula
+      - name: Write formula
         run: |
-          BASE="https://github.com/${{ github.repository }}/releases/download/${VERSION}"
+          REPO="${{ github.repository }}"
+          BASE="https://github.com/${REPO}/releases/download/${VERSION}"
           mkdir -p homebrew-tap/Formula
-          cat > homebrew-tap/Formula/tokenpile.rb << RUBY
-class Tokenpile < Formula
-  desc "Track LLM token usage and cost per GitHub issue"
-  homepage "https://github.com/cdimonaco/tokenpile"
-  version "${VERSION_NO_V}"
-  license "MIT"
+          cat > homebrew-tap/Formula/tokenpile.rb << ENDOFFORMULA
+          class Tokenpile < Formula
+            desc "Track LLM token usage and cost per GitHub issue"
+            homepage "https://github.com/cdimonaco/tokenpile"
+            version "${VERSION_NO_V}"
+            license "MIT"
 
-  on_macos do
-    on_arm do
-      url "${BASE}/tokenpile_${VERSION_NO_V}_darwin_arm64.tar.gz"
-      sha256 "${SHA_DARWIN_ARM64}"
-    end
-    on_intel do
-      url "${BASE}/tokenpile_${VERSION_NO_V}_darwin_amd64.tar.gz"
-      sha256 "${SHA_DARWIN_AMD64}"
-    end
-  end
+            on_macos do
+              on_arm do
+                url "${BASE}/tokenpile_${VERSION_NO_V}_darwin_arm64.tar.gz"
+                sha256 "${SHA_DARWIN_ARM64}"
+              end
+              on_intel do
+                url "${BASE}/tokenpile_${VERSION_NO_V}_darwin_amd64.tar.gz"
+                sha256 "${SHA_DARWIN_AMD64}"
+              end
+            end
 
-  on_linux do
-    on_arm do
-      url "${BASE}/tokenpile_${VERSION_NO_V}_linux_arm64.tar.gz"
-      sha256 "${SHA_LINUX_ARM64}"
-    end
-    on_intel do
-      url "${BASE}/tokenpile_${VERSION_NO_V}_linux_amd64.tar.gz"
-      sha256 "${SHA_LINUX_AMD64}"
-    end
-  end
+            on_linux do
+              on_arm do
+                url "${BASE}/tokenpile_${VERSION_NO_V}_linux_arm64.tar.gz"
+                sha256 "${SHA_LINUX_ARM64}"
+              end
+              on_intel do
+                url "${BASE}/tokenpile_${VERSION_NO_V}_linux_amd64.tar.gz"
+                sha256 "${SHA_LINUX_AMD64}"
+              end
+            end
 
-  def install
-    bin.install "tokenpile"
-  end
+            def install
+              bin.install "tokenpile"
+            end
 
-  test do
-    assert_match version.to_s, shell_output("#{bin}/tokenpile --version")
-  end
-end
-RUBY
+            test do
+              assert_match version.to_s, shell_output("#{bin}/tokenpile --version")
+            end
+          end
+          ENDOFFORMULA
 
       - name: Commit and push
         run: |
