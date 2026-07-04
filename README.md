@@ -1,4 +1,6 @@
-# tokenpile
+<p align="center">
+  <img src="tokenpile-banner.png" alt="tokenpile — every token, counted" width="600">
+</p>
 
 Track LLM token usage and cost per GitHub issue. Any agent (Claude Code, OpenCode, Cursor, or your own tooling) calls the CLI to log usage; you browse a TUI to see where time and money went.
 
