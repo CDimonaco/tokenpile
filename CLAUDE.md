@@ -35,6 +35,17 @@ Never use emojis anywhere in code, comments, commit messages, or output strings.
 
 Module: `github.com/cdimonaco/tokenpile`
 
+A machine-generated call graph is committed at `.gograph/`. Read it before using `ls` or `find`:
+
+- `.gograph/GRAPH_REPORT.md` — entry point: package count, symbol count, entry points, index of other reports
+- `.gograph/graph-symbols.md` — top files by density, top symbols by outgoing calls, package table
+- `.gograph/graph-deps.md` — tech stack (go.mod) and per-package import lists
+- `.gograph/graph-errors.md` — custom errors and panics with origin file:line
+- `.gograph/graph-sql.md` — raw SQL queries mapped to functions
+
+The graph is regenerated on every `make check` (run before each commit), so it is always current.
+Do NOT read `.gograph/graph.json` — it is a large binary database that will exhaust context.
+
 Key files — read these directly without exploring the directory first:
 
 ```
@@ -172,8 +183,11 @@ Name packages after what they contain, not architectural layers. No `domain`, `m
 | `make install`  | Install binary to `$GOPATH/bin`     |
 | `make clean`    | Remove build artifacts              |
 | `make release-check` | Validate goreleaser config     |
-| `make check`    | fmt + lint + test (run before commit) |
+| `make check`    | fmt + lint + test + map (run before commit) |
 | `make status`   | Branch, uncommitted files, recent commits, OpenSpec changes, CI status |
+| `make map`      | Regenerate `.gograph/` call graph (gograph) |
+| `make pack`     | Compress full source to `.gograph/pack.md` (repomix, on demand) |
+| `make tools`    | Install dev tools: gograph |
 
 ## Key design decisions (summary)
 
