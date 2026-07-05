@@ -1,7 +1,7 @@
 # Symbols & Packages
 
 **Root:** `/Users/cdimonaco/code/github.com/cdimonaco/tokenpile`  
-**Generated:** 2026-07-05 15:02:06 UTC  
+**Generated:** 2026-07-05 15:04:58 UTC  
 
 ---
 
@@ -17,6 +17,7 @@
 | `internal/export/export_test.go` | 22 | 425 |
 | `internal/skill/skill_test.go` | 20 | 349 |
 | `internal/provider/github_auth.go` | 15 | 228 |
+| `cmd/tokenpile/smoke_test.go` | 8 | 202 |
 | `internal/export/export.go` | 14 | 189 |
 | `cmd/tokenpile/cmd_export.go` | 4 | 194 |
 | `internal/skill/skill.go` | 18 | 168 |
@@ -27,7 +28,6 @@
 | `internal/provider/github_issues_test.go` | 5 | 135 |
 | `cmd/tokenpile/main.go` | 5 | 126 |
 | `internal/pricing/pricing_test.go` | 7 | 121 |
-| `cmd/tokenpile/smoke_test.go` | 7 | 112 |
 | `internal/config/paths_test.go` | 4 | 112 |
 
 ## Important Symbols (top 30 by outgoing calls)
@@ -40,6 +40,7 @@
 | `reportCommand` | function | `cmd/tokenpile/cmd_report.go` | 15 | 95 |
 | `(*SQLiteStore).ListEntries` | method | `internal/store/sqlite.go` | 206 | 94 |
 | `(*GitHubAuthProvider).Login` | method | `internal/provider/github_auth.go` | 55 | 93 |
+| `TestSmoke_ExportVerify` | function | `cmd/tokenpile/smoke_test.go` | 69 | 90 |
 | `runExport` | function | `cmd/tokenpile/cmd_export.go` | 175 | 89 |
 | `runLog` | function | `cmd/tokenpile/cmd_log.go` | 73 | 89 |
 | `Build` | function | `internal/export/export.go` | 84 | 79 |
@@ -63,13 +64,12 @@
 | `printSessionsReport` | function | `cmd/tokenpile/cmd_report.go` | 115 | 48 |
 | `TestLog_ClosesIdleSession_StartsNew` | function | `cmd/tokenpile/cmd_log_test.go` | 126 | 45 |
 | `TestSQLiteStore_UpdateSessionAnnotations_TagsUnion` | function | `internal/store/sqlite_test.go` | 330 | 45 |
-| `TestResolve_UsesEnvOverride` | function | `internal/config/paths_test.go` | 14 | 44 |
 
 ## Packages
 
 | Package | Dir | Files | Symbols |
 |---------|-----|-------|---------|
-| `main` | `cmd/tokenpile` | 13 | 77 |
+| `main` | `cmd/tokenpile` | 13 | 78 |
 | `config` | `internal/config` | 3 | 8 |
 | `export` | `internal/export` | 5 | 16 |
 | `pricing` | `internal/pricing` | 2 | 9 |
