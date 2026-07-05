@@ -1,7 +1,7 @@
 # GoGraph Report Index
 
 **Root:** `/Users/cdimonaco/code/github.com/cdimonaco/tokenpile`  
-**Generated:** 2026-07-05 15:20:00 UTC  
+**Generated:** 2026-07-05 15:21:41 UTC  
 
 ---
 
@@ -11,12 +11,12 @@
 |--------|-------|
 | Packages | 10 |
 | Files | 39 |
-| Symbols | 403 |
-| Functions | 251 |
+| Symbols | 405 |
+| Functions | 253 |
 | Methods | 59 |
 | Structs | 37 |
 | Interfaces | 4 |
-| Call edges | 7106 |
+| Call edges | 7193 |
 | Env var reads | 7 |
 
 ## 2. Structural Index

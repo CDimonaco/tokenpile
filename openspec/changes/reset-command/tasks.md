@@ -6,8 +6,8 @@
 
 ## 2. Export scope change
 
-- [ ] 2.1 Rework session/budget gathering in `runExport` (`cmd/tokenpile/cmd_export.go`): no filter → all sessions and budgets; `--repo` → whole repo; `--repo --issue` → unchanged; time/agent/model filters do not apply to sessions and budgets
-- [ ] 2.2 Update `TestIntegration_Export_NoRepoIssueFilter_OmitsSessionsAndBudgets` (now expects inclusion) and add repo-scoped and unfiltered integration tests matching the spec scenarios
+- [x] 2.1 Rework session/budget gathering in `runExport` (`cmd/tokenpile/cmd_export.go`): no filter → all sessions and budgets; `--repo` → whole repo; `--repo --issue` → unchanged; time/agent/model filters do not apply to sessions and budgets
+- [x] 2.2 Update `TestIntegration_Export_NoRepoIssueFilter_OmitsSessionsAndBudgets` (now expects inclusion) and add repo-scoped and unfiltered integration tests matching the spec scenarios
 
 ## 3. Skill uninstall
 

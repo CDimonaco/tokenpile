@@ -535,23 +535,57 @@ func TestIntegration_Export_SchemaV3_IncludesBudget(t *testing.T) {
 	assert.InEpsilon(t, 25.00, doc.Budgets[0].Amount, 0.001)
 }
 
-func TestIntegration_Export_NoRepoIssueFilter_OmitsSessionsAndBudgets(t *testing.T) {
+func TestIntegration_Export_Unfiltered_IncludesAllSessionsAndBudgets(t *testing.T) {
 	s := newTestStore(t)
+	ctx := context.Background()
 
 	require.NoError(t, runLogCmd(t, s,
 		"log", "--issue", "52", "--agent", "claude-code", "--model", "claude-sonnet-4-6",
-		"--tokens-in", "100", "--tokens-out", "50", "--repo", "owner/repo",
+		"--tokens-in", "100", "--tokens-out", "50", "--repo", "owner/a",
 	))
+	require.NoError(t, runLogCmd(t, s,
+		"log", "--issue", "53", "--agent", "claude-code", "--model", "claude-sonnet-4-6",
+		"--tokens-in", "200", "--tokens-out", "80", "--repo", "owner/b",
+	))
+	require.NoError(t, s.SetBudget(ctx, "owner/b", 53, 25.00))
 
-	// export without --repo/--issue filter: sessions and budgets blocks must be absent
 	out, err := runExportCmd(t, s, "export")
 	require.NoError(t, err)
 
 	var doc export.Document
 	require.NoError(t, json.Unmarshal([]byte(out), &doc))
 
-	assert.Empty(t, doc.Sessions)
-	assert.Empty(t, doc.Budgets)
+	require.Len(t, doc.Sessions, 2)
+	require.Len(t, doc.Budgets, 1)
+	assert.Equal(t, "owner/b", doc.Budgets[0].Repo)
+	assert.Equal(t, 53, doc.Budgets[0].IssueNum)
+}
+
+func TestIntegration_Export_RepoFilter_ScopesSessionsAndBudgets(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	require.NoError(t, runLogCmd(t, s,
+		"log", "--issue", "1", "--agent", "claude-code", "--model", "claude-sonnet-4-6",
+		"--tokens-in", "100", "--tokens-out", "50", "--repo", "owner/a",
+	))
+	require.NoError(t, runLogCmd(t, s,
+		"log", "--issue", "2", "--agent", "claude-code", "--model", "claude-sonnet-4-6",
+		"--tokens-in", "200", "--tokens-out", "80", "--repo", "owner/b",
+	))
+	require.NoError(t, s.SetBudget(ctx, "owner/a", 1, 10.00))
+	require.NoError(t, s.SetBudget(ctx, "owner/b", 2, 20.00))
+
+	out, err := runExportCmd(t, s, "export", "--repo", "owner/a")
+	require.NoError(t, err)
+
+	var doc export.Document
+	require.NoError(t, json.Unmarshal([]byte(out), &doc))
+
+	require.Len(t, doc.Sessions, 1)
+	assert.Equal(t, "owner/a", doc.Sessions[0].Repo)
+	require.Len(t, doc.Budgets, 1)
+	assert.Equal(t, "owner/a", doc.Budgets[0].Repo)
 }
 
 func exportToFile(t *testing.T, s *store.SQLiteStore, priv ed25519.PrivateKey) string {

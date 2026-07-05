@@ -1,7 +1,7 @@
 # Symbols & Packages
 
 **Root:** `/Users/cdimonaco/code/github.com/cdimonaco/tokenpile`  
-**Generated:** 2026-07-05 15:20:00 UTC  
+**Generated:** 2026-07-05 15:21:41 UTC  
 
 ---
 
@@ -9,17 +9,17 @@
 
 | File | Symbols | Calls |
 |------|---------|-------|
+| `cmd/tokenpile/integration_test.go` | 32 | 868 |
 | `internal/store/sqlite.go` | 33 | 834 |
-| `cmd/tokenpile/integration_test.go` | 31 | 793 |
 | `internal/store/sqlite_test.go` | 30 | 758 |
 | `internal/tui/tui.go` | 53 | 547 |
 | `internal/tui/tui_test.go` | 40 | 511 |
 | `internal/export/export_test.go` | 22 | 425 |
 | `internal/skill/skill_test.go` | 20 | 349 |
 | `internal/provider/github_auth.go` | 15 | 228 |
+| `cmd/tokenpile/cmd_export.go` | 5 | 206 |
 | `cmd/tokenpile/smoke_test.go` | 8 | 202 |
 | `internal/export/export.go` | 14 | 189 |
-| `cmd/tokenpile/cmd_export.go` | 4 | 194 |
 | `internal/skill/skill.go` | 18 | 168 |
 | `cmd/tokenpile/cmd_log.go` | 5 | 164 |
 | `cmd/tokenpile/cmd_log_test.go` | 6 | 154 |
@@ -41,35 +41,35 @@
 | `(*SQLiteStore).ListEntries` | method | `internal/store/sqlite.go` | 206 | 94 |
 | `(*GitHubAuthProvider).Login` | method | `internal/provider/github_auth.go` | 55 | 93 |
 | `TestSmoke_ExportVerify` | function | `cmd/tokenpile/smoke_test.go` | 69 | 90 |
-| `runExport` | function | `cmd/tokenpile/cmd_export.go` | 175 | 89 |
 | `runLog` | function | `cmd/tokenpile/cmd_log.go` | 73 | 89 |
 | `Build` | function | `internal/export/export.go` | 84 | 79 |
 | `TestTUI_DetailView_SessionsTab_ShowsNoteAndTags` | function | `internal/tui/tui_test.go` | 392 | 75 |
+| `runExport` | function | `cmd/tokenpile/cmd_export.go` | 226 | 73 |
 | `(Model).viewIssueList` | method | `internal/tui/tui.go` | 434 | 68 |
 | `(Model).loadIssues` | method | `internal/tui/tui.go` | 771 | 62 |
-| `runVerify` | function | `cmd/tokenpile/cmd_export.go` | 82 | 58 |
+| `runVerify` | function | `cmd/tokenpile/cmd_export.go` | 83 | 58 |
 | `scanSessions` | function | `internal/store/sqlite.go` | 393 | 58 |
-| `TestIntegration_ExportVerify_TamperedSessionFails` | function | `cmd/tokenpile/integration_test.go` | 587 | 56 |
+| `TestIntegration_ExportVerify_TamperedSessionFails` | function | `cmd/tokenpile/integration_test.go` | 621 | 56 |
+| `TestIntegration_Export_RepoFilter_ScopesSessionsAndBudgets` | function | `cmd/tokenpile/integration_test.go` | 564 | 56 |
 | `(Model).viewIssueDetail` | method | `internal/tui/tui.go` | 493 | 55 |
 | `TestGenerateFixtures` | function | `internal/export/gen_fixture_internal_test.go` | 14 | 53 |
 | `(*SQLiteStore).UpdateSessionAnnotations` | method | `internal/store/sqlite.go` | 459 | 53 |
 | `resolveSession` | function | `cmd/tokenpile/cmd_log.go` | 170 | 52 |
 | `(*SQLiteStore).GetReport` | method | `internal/store/sqlite.go` | 618 | 52 |
+| `TestIntegration_Export_Unfiltered_IncludesAllSessionsAndBudgets` | function | `cmd/tokenpile/integration_test.go` | 538 | 51 |
 | `marshalCanonical` | function | `internal/export/export.go` | 238 | 51 |
 | `TestInstall_Codex_AppendsToExistingFile` | function | `internal/skill/skill_test.go` | 95 | 51 |
 | `installShared` | function | `internal/skill/skill.go` | 124 | 51 |
 | `TestSQLiteStore_ListUsageOverTime_WeekGranularity` | function | `internal/store/sqlite_test.go` | 196 | 51 |
-| `TestIntegration_Log_IdleSessionClosed_ByResolveSession` | function | `cmd/tokenpile/integration_test.go` | 669 | 50 |
+| `TestIntegration_Log_IdleSessionClosed_ByResolveSession` | function | `cmd/tokenpile/integration_test.go` | 703 | 50 |
 | `budgetCommands` | function | `cmd/tokenpile/cmd_budget.go` | 13 | 49 |
 | `printSessionsReport` | function | `cmd/tokenpile/cmd_report.go` | 115 | 48 |
-| `TestLog_ClosesIdleSession_StartsNew` | function | `cmd/tokenpile/cmd_log_test.go` | 126 | 45 |
-| `TestSQLiteStore_UpdateSessionAnnotations_TagsUnion` | function | `internal/store/sqlite_test.go` | 330 | 45 |
 
 ## Packages
 
 | Package | Dir | Files | Symbols |
 |---------|-----|-------|---------|
-| `main` | `cmd/tokenpile` | 13 | 78 |
+| `main` | `cmd/tokenpile` | 13 | 80 |
 | `config` | `internal/config` | 3 | 8 |
 | `export` | `internal/export` | 5 | 16 |
 | `pricing` | `internal/pricing` | 2 | 9 |

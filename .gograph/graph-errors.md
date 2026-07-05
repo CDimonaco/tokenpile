@@ -1,7 +1,7 @@
 # Errors & Panics
 
 **Root:** `/Users/cdimonaco/code/github.com/cdimonaco/tokenpile`  
-**Generated:** 2026-07-05 15:20:00 UTC  
+**Generated:** 2026-07-05 15:21:41 UTC  
 
 ---
 
@@ -18,24 +18,24 @@
 | `cannot infer repo: pass --repo owner/repo or run from inside a GitHub repository` | `budgetCommands` | `cmd/tokenpile/cmd_budget.go` | 88 |
 | `infer repo: %w` | `budgetCommands` | `cmd/tokenpile/cmd_budget.go` | 93 |
 | `unset budget: %w` | `budgetCommands` | `cmd/tokenpile/cmd_budget.go` | 99 |
-| `read file: %w` | `runVerify` | `cmd/tokenpile/cmd_export.go` | 85 |
-| `parse export: %w` | `runVerify` | `cmd/tokenpile/cmd_export.go` | 90 |
-| `parse --pubkey: %w` | `runVerify` | `cmd/tokenpile/cmd_export.go` | 98 |
-| `decode document public key: %w` | `runVerify` | `cmd/tokenpile/cmd_export.go` | 103 |
-| `verification failed: document is not signed by the expected key` | `runVerify` | `cmd/tokenpile/cmd_export.go` | 109 |
-| `verification failed: %w` | `runVerify` | `cmd/tokenpile/cmd_export.go` | 119 |
-| `read pubkey file: %w` | `parseExpectedPubKey` | `cmd/tokenpile/cmd_export.go` | 152 |
-| `invalid public key size: got %d, want %d` | `parseExpectedPubKey` | `cmd/tokenpile/cmd_export.go` | 157 |
-| `decode pubkey file: %w` | `parseExpectedPubKey` | `cmd/tokenpile/cmd_export.go` | 165 |
-| `invalid public key size: got %d, want %d` | `parseExpectedPubKey` | `cmd/tokenpile/cmd_export.go` | 169 |
-| `parse --from: %w` | `runExport` | `cmd/tokenpile/cmd_export.go` | 187 |
-| `parse --to: %w` | `runExport` | `cmd/tokenpile/cmd_export.go` | 196 |
-| `list entries: %w` | `runExport` | `cmd/tokenpile/cmd_export.go` | 204 |
-| `list sessions: %w` | `runExport` | `cmd/tokenpile/cmd_export.go` | 211 |
-| `get budget: %w` | `runExport` | `cmd/tokenpile/cmd_export.go` | 219 |
-| `build export: %w` | `runExport` | `cmd/tokenpile/cmd_export.go` | 229 |
-| `marshal export: %w` | `runExport` | `cmd/tokenpile/cmd_export.go` | 234 |
-| `write output: %w` | `runExport` | `cmd/tokenpile/cmd_export.go` | 239 |
+| `read file: %w` | `runVerify` | `cmd/tokenpile/cmd_export.go` | 86 |
+| `parse export: %w` | `runVerify` | `cmd/tokenpile/cmd_export.go` | 91 |
+| `parse --pubkey: %w` | `runVerify` | `cmd/tokenpile/cmd_export.go` | 99 |
+| `decode document public key: %w` | `runVerify` | `cmd/tokenpile/cmd_export.go` | 104 |
+| `verification failed: document is not signed by the expected key` | `runVerify` | `cmd/tokenpile/cmd_export.go` | 110 |
+| `verification failed: %w` | `runVerify` | `cmd/tokenpile/cmd_export.go` | 120 |
+| `read pubkey file: %w` | `parseExpectedPubKey` | `cmd/tokenpile/cmd_export.go` | 153 |
+| `invalid public key size: got %d, want %d` | `parseExpectedPubKey` | `cmd/tokenpile/cmd_export.go` | 158 |
+| `decode pubkey file: %w` | `parseExpectedPubKey` | `cmd/tokenpile/cmd_export.go` | 166 |
+| `invalid public key size: got %d, want %d` | `parseExpectedPubKey` | `cmd/tokenpile/cmd_export.go` | 170 |
+| `list sessions: %w` | `gatherSessionsAndBudgets` | `cmd/tokenpile/cmd_export.go` | 187 |
+| `list budgets: %w` | `gatherSessionsAndBudgets` | `cmd/tokenpile/cmd_export.go` | 192 |
+| `parse --from: %w` | `runExport` | `cmd/tokenpile/cmd_export.go` | 238 |
+| `parse --to: %w` | `runExport` | `cmd/tokenpile/cmd_export.go` | 247 |
+| `list entries: %w` | `runExport` | `cmd/tokenpile/cmd_export.go` | 255 |
+| `build export: %w` | `runExport` | `cmd/tokenpile/cmd_export.go` | 265 |
+| `marshal export: %w` | `runExport` | `cmd/tokenpile/cmd_export.go` | 270 |
+| `write output: %w` | `runExport` | `cmd/tokenpile/cmd_export.go` | 275 |
 | `cannot infer repo: pass --repo owner/repo or run from inside a GitHub repository` | `runLog` | `cmd/tokenpile/cmd_log.go` | 77 |
 | `infer repo: %w` | `runLog` | `cmd/tokenpile/cmd_log.go` | 82 |
 | `--tokens-in must be zero or greater` | `runLog` | `cmd/tokenpile/cmd_log.go` | 93 |

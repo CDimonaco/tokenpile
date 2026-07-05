@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/ed25519"
 	"crypto/subtle"
 	"encoding/base64"
@@ -172,6 +173,56 @@ func parseExpectedPubKey(value string) (ed25519.PublicKey, error) {
 	return ed25519.PublicKey(raw), nil
 }
 
+// gatherSessionsAndBudgets scopes sessions and budgets to the same repo/issue
+// filter as the entries: unfiltered exports include everything, --repo scopes
+// to the repository, --repo --issue to the single issue. Time, agent and
+// model filters intentionally do not apply.
+func gatherSessionsAndBudgets(
+	ctx context.Context,
+	s store.Store,
+	filter usage.Filter,
+) ([]usage.Session, []export.IssueBudget, error) {
+	allSessions, err := s.ListAllSessions(ctx)
+	if err != nil {
+		return nil, nil, fmt.Errorf("list sessions: %w", err)
+	}
+
+	allBudgets, err := s.ListBudgets(ctx)
+	if err != nil {
+		return nil, nil, fmt.Errorf("list budgets: %w", err)
+	}
+
+	inScope := func(repo string, issueNum int) bool {
+		if filter.Repo != "" && repo != filter.Repo {
+			return false
+		}
+
+		if filter.Repo != "" && filter.IssueNum > 0 && issueNum != filter.IssueNum {
+			return false
+		}
+
+		return true
+	}
+
+	var sessions []usage.Session
+
+	for _, sess := range allSessions {
+		if inScope(sess.Repo, sess.IssueNum) {
+			sessions = append(sessions, sess)
+		}
+	}
+
+	var budgets []export.IssueBudget
+
+	for _, b := range allBudgets {
+		if inScope(b.Repo, b.IssueNum) {
+			budgets = append(budgets, export.IssueBudget(b))
+		}
+	}
+
+	return sessions, budgets, nil
+}
+
 func runExport(c *cli.Context, s store.Store, priv ed25519.PrivateKey, version string) error {
 	ctx := c.Context
 	filter := usage.Filter{
@@ -204,24 +255,9 @@ func runExport(c *cli.Context, s store.Store, priv ed25519.PrivateKey, version s
 		return fmt.Errorf("list entries: %w", err)
 	}
 
-	var sessions []usage.Session
-	if filter.Repo != "" && filter.IssueNum > 0 {
-		sessions, err = s.ListSessions(ctx, filter.Repo, filter.IssueNum)
-		if err != nil {
-			return fmt.Errorf("list sessions: %w", err)
-		}
-	}
-
-	var budgets []export.IssueBudget
-	if filter.Repo != "" && filter.IssueNum > 0 {
-		b, budgetErr := s.GetBudget(ctx, filter.Repo, filter.IssueNum)
-		if budgetErr != nil && !errors.Is(budgetErr, store.ErrBudgetNotFound) {
-			return fmt.Errorf("get budget: %w", budgetErr)
-		}
-
-		if b != nil {
-			budgets = []export.IssueBudget{{Repo: filter.Repo, IssueNum: filter.IssueNum, Amount: *b}}
-		}
+	sessions, budgets, err := gatherSessionsAndBudgets(ctx, s, filter)
+	if err != nil {
+		return err
 	}
 
 	doc, err := export.Build(entries, sessions, budgets, priv, version)
