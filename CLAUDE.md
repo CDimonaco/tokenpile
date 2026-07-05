@@ -58,6 +58,7 @@ cmd/tokenpile/
   cmd_auth.go             `auth` command (OAuth login/logout)
   cmd_pricing.go          `pricing` command
   cmd_skill.go            `skill` command
+  cmd_reset.go            `reset` command (signed backup, then full state deletion)
   integration_test.go     CLI integration tests; helpers: newTestStore, runLogCmd, runReportCmd, runBudgetCmd, runExportCmd
 
 internal/
@@ -77,7 +78,7 @@ internal/
   export/
     export.go             JSON export, Ed25519 signing, schema validation
   skill/
-    skill.go              List, Install, IsInstalled, IsUpToDate
+    skill.go              List, Install, Uninstall, IsInstalled, IsUpToDate
     templates/            embedded agent skill files
   tui/
     tui.go                Bubble Tea Model, Update, View; all TUI views

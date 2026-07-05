@@ -24,5 +24,5 @@
 
 ## 5. Docs and checks
 
-- [ ] 5.1 README: `tokenpile reset` section and updated export scope wording; CLAUDE.md project map entry for `cmd_reset.go`
-- [ ] 5.2 Run `make check` and commit
+- [x] 5.1 README: `tokenpile reset` section and updated export scope wording; CLAUDE.md project map entry for `cmd_reset.go`
+- [x] 5.2 Run `make check` and commit

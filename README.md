@@ -211,7 +211,7 @@ tokenpile export --repo owner/repo --issue 42 --agent claude-code
 tokenpile export --from 2026-01-01T00:00:00Z --to 2026-07-01T00:00:00Z
 ```
 
-When filtered to a specific repo+issue, the export includes a `sessions` block (all sessions for that issue) and a `budgets` block (budget if set). The Ed25519 signature covers the whole document (canonical JSON with the `signature` field emptied), so tampering with any field fails verification. Legacy schema v2 files still verify with a warning: their signature covers entries only.
+Sessions and budgets follow the same repo/issue scope as the entries filter: an unfiltered export includes all sessions and budgets, `--repo` scopes them to the repository, `--repo --issue` to the single issue. The Ed25519 signature covers the whole document (canonical JSON with the `signature` field emptied), so tampering with any field fails verification. Legacy schema v2 files still verify with a warning: their signature covers entries only.
 
 Verify a previously exported file:
 
@@ -221,6 +221,19 @@ tokenpile export verify --file data.json --pubkey ~/.config/tokenpile/identity.p
 ```
 
 Without `--pubkey` the check proves internal consistency against the key embedded in the document. Pass `--pubkey` (base64 string or path to a PEM/base64 file) to also prove the export was signed by the expected identity.
+
+### `tokenpile reset`
+
+Back up everything to a signed export, then delete all local tokenpile state: database, identity keypair, credentials, keychain token, pricing override, and installed agent skills.
+
+```sh
+tokenpile reset                               # interactive: lists what will be deleted, asks to type 'yes'
+tokenpile reset --yes                         # no prompt (for scripts)
+tokenpile reset --yes --output backup.json    # choose the backup path
+tokenpile reset --yes --no-backup             # skip the backup
+```
+
+The backup is a standard signed export (schema v3) written to `tokenpile-backup-<timestamp>.json` by default, so it can be verified later with `tokenpile export verify`. It is written before anything is deleted; if it fails, nothing is removed.
 
 ### `tokenpile skill`
 
