@@ -1,7 +1,7 @@
 # SQL Queries
 
 **Root:** `/Users/cdimonaco/code/github.com/cdimonaco/tokenpile`  
-**Generated:** 2026-07-05 14:57:59 UTC  
+**Generated:** 2026-07-05 15:02:06 UTC  
 
 ---
 
@@ -20,10 +20,11 @@
 | `UPDATE sessions SET note = ?, tags = ? WHERE id = ?` | `(*SQLiteStore).UpdateSessionAnnotations` | `internal/store/sqlite.go` | 487 |
 | `UPDATE sessions SET tags = ? WHERE id = ?` | `(*SQLiteStore).UpdateSessionAnnotations` | `internal/store/sqlite.go` | 492 |
 | ` 		SELECT ue.repo, ue.issue_num, ue.model, SUM(ue.tokens_in), SUM(ue.tokens_out), 		       COALESCE(ic.title, ''), COALESCE(ic.labels, '[]'), ib.budget 		FROM usage_entries ue 		LEFT JOIN issue_cache ic ON ic.repo = ue.repo AND ic.issue_num = ue.issue_num 		LEFT JOIN issue_budgets ib ON ib.repo = ue.repo AND ib.issue_num = ue.issue_num 		WHERE 1=1` | `(*SQLiteStore).ListIssues` | `internal/store/sqlite.go` | 542 |
-| `SELECT agent, model, COUNT(*), SUM(tokens_in), SUM(tokens_out) 		 FROM usage_entries 		 WHERE repo = ? AND issue_num = ? 		 GROUP BY agent, model 		 ORDER BY agent, model` | `(*SQLiteStore).GetReport` | `internal/store/sqlite.go` | 602 |
-| `SELECT DISTINCT repo, issue_num FROM usage_entries ORDER BY repo, issue_num` | `(*SQLiteStore).ListTrackedIssueRefs` | `internal/store/sqlite.go` | 752 |
-| `SELECT started_at, ended_at FROM sessions WHERE repo = ? AND issue_num = ?` | `(*SQLiteStore).totalTime` | `internal/store/sqlite.go` | 779 |
-| `INSERT INTO issue_budgets (repo, issue_num, budget) VALUES (?, ?, ?) 		 ON CONFLICT(repo, issue_num) DO UPDATE SET budget = excluded.budget` | `(*SQLiteStore).SetBudget` | `internal/store/sqlite.go` | 824 |
-| `DELETE FROM issue_budgets WHERE repo = ? AND issue_num = ?` | `(*SQLiteStore).UnsetBudget` | `internal/store/sqlite.go` | 837 |
-| `SELECT budget FROM issue_budgets WHERE repo = ? AND issue_num = ?` | `(*SQLiteStore).GetBudget` | `internal/store/sqlite.go` | 850 |
+| `SELECT agent, model, COUNT(*), SUM(tokens_in), SUM(tokens_out) 		 FROM usage_entries 		 WHERE repo = ? AND issue_num = ? 		 GROUP BY agent, model 		 ORDER BY agent, model` | `(*SQLiteStore).GetReport` | `internal/store/sqlite.go` | 600 |
+| `SELECT DISTINCT repo, issue_num FROM usage_entries ORDER BY repo, issue_num` | `(*SQLiteStore).ListTrackedIssueRefs` | `internal/store/sqlite.go` | 750 |
+| `SELECT repo, issue_num, started_at, ended_at FROM sessions` | `(*SQLiteStore).totalTimes` | `internal/store/sqlite.go` | 792 |
+| `SELECT started_at, ended_at FROM sessions WHERE repo = ? AND issue_num = ?` | `(*SQLiteStore).totalTime` | `internal/store/sqlite.go` | 837 |
+| `INSERT INTO issue_budgets (repo, issue_num, budget) VALUES (?, ?, ?) 		 ON CONFLICT(repo, issue_num) DO UPDATE SET budget = excluded.budget` | `(*SQLiteStore).SetBudget` | `internal/store/sqlite.go` | 882 |
+| `DELETE FROM issue_budgets WHERE repo = ? AND issue_num = ?` | `(*SQLiteStore).UnsetBudget` | `internal/store/sqlite.go` | 895 |
+| `SELECT budget FROM issue_budgets WHERE repo = ? AND issue_num = ?` | `(*SQLiteStore).GetBudget` | `internal/store/sqlite.go` | 908 |
 

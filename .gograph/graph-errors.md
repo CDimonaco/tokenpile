@@ -1,7 +1,7 @@
 # Errors & Panics
 
 **Root:** `/Users/cdimonaco/code/github.com/cdimonaco/tokenpile`  
-**Generated:** 2026-07-05 14:57:59 UTC  
+**Generated:** 2026-07-05 15:02:06 UTC  
 
 ---
 
@@ -148,20 +148,20 @@
 | `marshal tags: %w` | `(*SQLiteStore).UpdateSessionAnnotations` | `internal/store/sqlite.go` | 483 |
 | `update session annotations: %w` | `(*SQLiteStore).UpdateSessionAnnotations` | `internal/store/sqlite.go` | 499 |
 | `list issues: %w` | `(*SQLiteStore).ListIssues` | `internal/store/sqlite.go` | 544 |
-| `scan issue: %w` | `(*SQLiteStore).ListIssues` | `internal/store/sqlite.go` | 561 |
-| `iterate issues: %w` | `(*SQLiteStore).ListIssues` | `internal/store/sqlite.go` | 588 |
-| `get report: %w` | `(*SQLiteStore).GetReport` | `internal/store/sqlite.go` | 611 |
-| `scan report row: %w` | `(*SQLiteStore).GetReport` | `internal/store/sqlite.go` | 623 |
-| `iterate report rows: %w` | `(*SQLiteStore).GetReport` | `internal/store/sqlite.go` | 636 |
-| `list usage over time: %w` | `(*SQLiteStore).ListUsageOverTime` | `internal/store/sqlite.go` | 693 |
-| `scan usage point: %w` | `(*SQLiteStore).ListUsageOverTime` | `internal/store/sqlite.go` | 714 |
-| `iterate usage points: %w` | `(*SQLiteStore).ListUsageOverTime` | `internal/store/sqlite.go` | 734 |
-| `list tracked issue refs: %w` | `(*SQLiteStore).ListTrackedIssueRefs` | `internal/store/sqlite.go` | 756 |
-| `scan tracked issue ref: %w` | `(*SQLiteStore).ListTrackedIssueRefs` | `internal/store/sqlite.go` | 765 |
-| `iterate tracked issue refs: %w` | `(*SQLiteStore).ListTrackedIssueRefs` | `internal/store/sqlite.go` | 772 |
-| `set budget: %w` | `(*SQLiteStore).SetBudget` | `internal/store/sqlite.go` | 830 |
-| `unset budget: %w` | `(*SQLiteStore).UnsetBudget` | `internal/store/sqlite.go` | 842 |
-| `get budget: %w` | `(*SQLiteStore).GetBudget` | `internal/store/sqlite.go` | 860 |
+| `scan issue: %w` | `(*SQLiteStore).ListIssues` | `internal/store/sqlite.go` | 557 |
+| `iterate issues: %w` | `(*SQLiteStore).ListIssues` | `internal/store/sqlite.go` | 584 |
+| `get report: %w` | `(*SQLiteStore).GetReport` | `internal/store/sqlite.go` | 609 |
+| `scan report row: %w` | `(*SQLiteStore).GetReport` | `internal/store/sqlite.go` | 621 |
+| `iterate report rows: %w` | `(*SQLiteStore).GetReport` | `internal/store/sqlite.go` | 634 |
+| `list usage over time: %w` | `(*SQLiteStore).ListUsageOverTime` | `internal/store/sqlite.go` | 691 |
+| `scan usage point: %w` | `(*SQLiteStore).ListUsageOverTime` | `internal/store/sqlite.go` | 712 |
+| `iterate usage points: %w` | `(*SQLiteStore).ListUsageOverTime` | `internal/store/sqlite.go` | 732 |
+| `list tracked issue refs: %w` | `(*SQLiteStore).ListTrackedIssueRefs` | `internal/store/sqlite.go` | 754 |
+| `scan tracked issue ref: %w` | `(*SQLiteStore).ListTrackedIssueRefs` | `internal/store/sqlite.go` | 763 |
+| `iterate tracked issue refs: %w` | `(*SQLiteStore).ListTrackedIssueRefs` | `internal/store/sqlite.go` | 770 |
+| `set budget: %w` | `(*SQLiteStore).SetBudget` | `internal/store/sqlite.go` | 888 |
+| `unset budget: %w` | `(*SQLiteStore).UnsetBudget` | `internal/store/sqlite.go` | 900 |
+| `get budget: %w` | `(*SQLiteStore).GetBudget` | `internal/store/sqlite.go` | 918 |
 | `open browser: %w` | `openBrowserCmd` | `internal/tui/tui.go` | 739 |
 | `` | `newTUITestStore` | `internal/tui/tui_test.go` | 43 |
 | `` | `newTUIModel` | `internal/tui/tui_test.go` | 55 |

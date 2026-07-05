@@ -545,10 +545,6 @@ func (s *SQLiteStore) ListIssues(ctx context.Context, filter usage.Filter) ([]us
 	}
 	defer rows.Close()
 
-	type issueKey struct {
-		repo     string
-		issueNum int
-	}
 	issueMap := make(map[issueKey]*usage.TrackedIssue)
 	var issueOrder []issueKey
 
@@ -588,10 +584,12 @@ func (s *SQLiteStore) ListIssues(ctx context.Context, filter usage.Filter) ([]us
 		return nil, fmt.Errorf("iterate issues: %w", err)
 	}
 
+	totals := s.totalTimes(ctx, filter.Repo)
+
 	issues := make([]usage.TrackedIssue, 0, len(issueOrder))
 	for _, k := range issueOrder {
 		ti := issueMap[k]
-		ti.TotalTime = s.totalTime(ctx, k.repo, k.issueNum)
+		ti.TotalTime = totals[k]
 		issues = append(issues, *ti)
 	}
 
@@ -773,6 +771,66 @@ func (s *SQLiteStore) ListTrackedIssueRefs(ctx context.Context) ([]usage.Tracked
 	}
 
 	return refs, nil
+}
+
+type issueKey struct {
+	repo     string
+	issueNum int
+}
+
+// totalTimes aggregates session durations per issue in a single query,
+// optionally filtered by repo. Open sessions count up to now.
+func (s *SQLiteStore) totalTimes(ctx context.Context, repo string) map[issueKey]time.Duration {
+	query := `SELECT repo, issue_num, started_at, ended_at FROM sessions`
+	args := []any{}
+
+	if repo != "" {
+		query += ` WHERE repo = ?`
+		args = append(args, repo)
+	}
+
+	rows, err := s.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil
+	}
+	defer rows.Close()
+
+	totals := make(map[issueKey]time.Duration)
+	now := time.Now().UTC()
+
+	for rows.Next() {
+		var k issueKey
+		var startedAtStr string
+		var endedAtNull sql.NullString
+
+		if err = rows.Scan(&k.repo, &k.issueNum, &startedAtStr, &endedAtNull); err != nil {
+			continue
+		}
+
+		startedAt, parseErr := time.Parse(time.RFC3339, startedAtStr)
+		if parseErr != nil {
+			continue
+		}
+
+		end := now
+
+		if endedAtNull.Valid {
+			endedAt, parseEndErr := time.Parse(time.RFC3339, endedAtNull.String)
+			if parseEndErr != nil {
+				continue
+			}
+
+			end = endedAt
+		}
+
+		totals[k] += end.Sub(startedAt)
+	}
+
+	if rowsErr := rows.Err(); rowsErr != nil {
+		slog.Error("iterate sessions for total times", "err", rowsErr)
+	}
+
+	return totals
 }
 
 func (s *SQLiteStore) totalTime(ctx context.Context, repo string, issueNum int) time.Duration {
