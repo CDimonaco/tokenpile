@@ -153,8 +153,8 @@ func applyAnnotations(ctx context.Context, s store.Store, sessionID, noteStr str
 		return
 	}
 
-	if len(noteStr) > 200 {
-		noteStr = noteStr[:200]
+	if runes := []rune(noteStr); len(runes) > 200 {
+		noteStr = string(runes[:200])
 	}
 
 	var notePtr *string

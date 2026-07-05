@@ -6,8 +6,10 @@ import (
 	"crypto/ed25519"
 	"encoding/json"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
+	"unicode/utf8"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -383,6 +385,30 @@ func TestIntegration_Log_WithNoteAndTag(t *testing.T) {
 	require.Len(t, sessions, 1)
 	assert.Equal(t, "refactored auth", sessions[0].Note)
 	assert.ElementsMatch(t, []string{"refactor", "feature"}, sessions[0].Tags)
+}
+
+func TestIntegration_Log_NoteTruncatedOnRuneBoundary(t *testing.T) {
+	s := newTestStore(t)
+
+	longNote := strings.Repeat("è", 250)
+
+	require.NoError(t, runLogCmd(t, s,
+		"log",
+		"--issue", "1",
+		"--agent", "claude-code",
+		"--model", "claude-sonnet-4-6",
+		"--tokens-in", "10",
+		"--tokens-out", "10",
+		"--repo", "owner/repo",
+		"--note", longNote,
+	))
+
+	sessions, err := s.ListSessions(context.Background(), "owner/repo", 1)
+	require.NoError(t, err)
+	require.Len(t, sessions, 1)
+
+	assert.True(t, utf8.ValidString(sessions[0].Note))
+	assert.Len(t, []rune(sessions[0].Note), 200)
 }
 
 func TestIntegration_Log_TagsAccumulate(t *testing.T) {

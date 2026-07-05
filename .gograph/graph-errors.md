@@ -1,7 +1,7 @@
 # Errors & Panics
 
 **Root:** `/Users/cdimonaco/code/github.com/cdimonaco/tokenpile`  
-**Generated:** 2026-07-05 14:41:00 UTC  
+**Generated:** 2026-07-05 14:42:19 UTC  
 
 ---
 
@@ -50,7 +50,7 @@
 | `get budget: %w` | `reportCommand` | `cmd/tokenpile/cmd_report.go` | 101 |
 | `list sessions: %w` | `printSessionsReport` | `cmd/tokenpile/cmd_report.go` | 120 |
 | `install skill: %w` | `skillCommands` | `cmd/tokenpile/cmd_skill.go` | 41 |
-| `` | `newTestStore` | `cmd/tokenpile/integration_test.go` | 38 |
+| `` | `newTestStore` | `cmd/tokenpile/integration_test.go` | 40 |
 | `tui: %w` | `main` | `cmd/tokenpile/main.go` | 112 |
 | `generate ed25519 key: %w` | `generateIdentity` | `internal/config/identity.go` | 24 |
 | `write identity key: %w` | `generateIdentity` | `internal/config/identity.go` | 38 |
