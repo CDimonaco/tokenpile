@@ -23,11 +23,13 @@ Track LLM token usage and cost per GitHub issue. Any agent (Claude Code, OpenCod
 - Validates the GitHub issue exists before logging — no phantom entries
 - Track by agent name and model separately (e.g. `claude-code` running `claude-sonnet-4-6`)
 - Sessions with 30-minute idle auto-close for wall-clock time tracking
+- Annotate sessions with a `--note` and one or more `--tag` labels per log call; tags accumulate across calls in the same session
+- Per-issue spending budget with `tokenpile budget set`; report shows consumed vs. total percentage
 - GitHub issue metadata (title, labels, URL) cached in the local DB at log time
-- TUI: issue list with clickable `#N` OSC 8 hyperlinks, per-issue detail with title/labels, token usage chart over time
+- TUI: issue list with clickable `#N` OSC 8 hyperlinks, per-issue detail with Summary and Sessions tabs, budget progress bar (green/yellow/red), token usage chart over time
 - Open issues in the browser with `o`, refresh cached metadata with `r`
 - Report and export include issue title and labels
-- Ed25519-signed JSON export for auditing
+- Ed25519-signed JSON export (schema v2) with sessions and budgets blocks
 - Pricing config with built-in defaults and per-model overrides
 - SQLite storage — local, no external services required
 
@@ -90,7 +92,9 @@ tokenpile log \
   --agent claude-code \
   --model claude-sonnet-4-6 \
   --tokens-in 12000 \
-  --tokens-out 3000
+  --tokens-out 3000 \
+  --note "refactored auth middleware" \
+  --tag refactor --tag feature
 ```
 
 `--repo` is optional if you run from inside a git repository with a GitHub remote. Otherwise pass it explicitly:
@@ -124,6 +128,7 @@ The list shows a clickable `#N` link for each issue. In terminals that support O
 
 | Key | Action |
 |-----|--------|
+| `tab` | switch between Summary and Sessions tabs |
 | `o` | open issue in browser |
 | `r` | refresh title and labels from GitHub |
 | `c` | open chart view |
@@ -139,10 +144,16 @@ Record token usage for an issue.
 
 ```sh
 tokenpile log --issue <num> --agent <name> --model <model> \
-  --tokens-in <n> --tokens-out <n> [--repo owner/repo]
+  --tokens-in <n> --tokens-out <n> [--repo owner/repo] \
+  [--note "description"] [--tag <tag> ...]
 ```
 
-Sessions are managed automatically. The first call for an `(issue, repo)` pair starts a session; subsequent calls within 30 minutes reuse it. After 30 minutes of inactivity the session is closed and a new one starts on the next call.
+| Flag | Description |
+|------|-------------|
+| `--note` | Short description of what was done in this call (last-write-wins per session) |
+| `--tag` | Label for the call; repeatable. Tags accumulate across calls in the same session (union). |
+
+Sessions are managed automatically. The first call for an `(issue, repo)` pair starts a session; subsequent calls within 30 minutes of the previous log reuse it. After 30 minutes of inactivity since the last log call the session is closed and a new one starts on the next call.
 
 The log command validates that the issue exists on GitHub before inserting the entry. If the issue is not found, the command fails with an error. Issue title and labels are cached in the local DB for use in reports, exports, and the TUI.
 
@@ -153,7 +164,24 @@ Print a per-(agent, model) breakdown for an issue. The header shows the issue ti
 ```sh
 tokenpile report --issue 42
 tokenpile report --issue 42 --repo owner/repo
+tokenpile report --issue 42 --sessions          # also print a per-session breakdown
 ```
+
+If a budget is set for the issue, the report shows total consumed vs. budget and the percentage used.
+
+The `--sessions` flag adds a session list showing start/end time, duration, tags, and note for each session.
+
+### `tokenpile budget`
+
+Set or remove a spending budget for an issue.
+
+```sh
+tokenpile budget set --issue 42 --amount 10.00      # set $10 budget
+tokenpile budget set --issue 42 --amount 10.00 --repo owner/repo
+tokenpile budget unset --issue 42                   # remove the budget
+```
+
+Once a budget is set, `tokenpile report` shows the consumed amount alongside the budget, and the TUI issue list shows a colour-coded budget bar (green below 80%, yellow 80–99%, red at or above 100%).
 
 ### `tokenpile auth`
 
@@ -174,7 +202,7 @@ Prices are per million tokens. Built-in defaults cover the most common Claude, G
 
 ### `tokenpile export`
 
-Export usage data as an Ed25519-signed JSON document.
+Export usage data as an Ed25519-signed JSON document (schema v2).
 
 ```sh
 tokenpile export                              # all data, to stdout
@@ -182,6 +210,8 @@ tokenpile export --output data.json          # write to file
 tokenpile export --repo owner/repo --issue 42 --agent claude-code
 tokenpile export --from 2026-01-01T00:00:00Z --to 2026-07-01T00:00:00Z
 ```
+
+When filtered to a specific repo+issue, the export includes a `sessions` block (all sessions for that issue) and a `budgets` block (budget if set). The Ed25519 signature covers only the `entries` block; sessions and budgets are informational.
 
 Verify a previously exported file:
 
@@ -192,11 +222,13 @@ tokenpile export verify --file data.json
 ### `tokenpile skill`
 
 ```sh
-tokenpile skill list                          # show agents and install status
+tokenpile skill list                          # show agents, install status, and skill version
 tokenpile skill install --agent claude-code   # dedicated file: ~/.claude/skills/tokenpile.md
 tokenpile skill install --agent codex         # append/update block in ~/.codex/AGENTS.md
 tokenpile skill install --agent opencode      # append/update block in ~/.config/opencode/AGENTS.md
 ```
+
+`skill list` shows a Version column: "up to date" if the installed skill matches the current version, "outdated (vN)" if a newer version is available. Re-run `skill install` to upgrade.
 
 For shared AGENTS.md targets (codex, opencode) the command prints a summary of what it did — whether it created the file, appended a new block, or updated an existing one — so you always know exactly what changed.
 
