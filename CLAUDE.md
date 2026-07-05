@@ -1,5 +1,25 @@
 # tokenpile — project conventions
 
+## Working with AI agents
+
+These rules apply when an AI agent (Claude Code or similar) is implementing changes in this repo. They exist so the developer can follow along, intervene, and review without being in yolo mode.
+
+### Plan before code
+
+For any change that touches more than one package or introduces a new concept: write a 3-6 line plan in the conversation before editing any files, and wait for explicit approval. One-liner fixes and isolated test additions do not need a plan.
+
+### Commit rhythm
+
+Commit after each completed task — not at the end of a session. Run `make check` before every commit. This gives the developer a reviewable, revertable checkpoint at every step.
+
+### Announce before large changes
+
+Before modifying more than three files or touching a package for the first time in a session, state in one sentence what is about to change and why. Then start the edits.
+
+### Never push without being asked
+
+Do not run `git push` unless the developer explicitly requests it in that message. Implement and commit freely; the developer decides when to publish.
+
 ## Commits
 
 - Conventional commits: `feat:`, `fix:`, `chore:`, `docs:`, `test:`, `refactor:`, `ci:`
@@ -100,6 +120,8 @@ Name packages after what they contain, not architectural layers. No `domain`, `m
 | `make install`  | Install binary to `$GOPATH/bin`     |
 | `make clean`    | Remove build artifacts              |
 | `make release-check` | Validate goreleaser config     |
+| `make check`    | fmt + lint + test (run before commit) |
+| `make status`   | Branch, uncommitted files, recent commits, OpenSpec changes, CI status |
 
 ## Key design decisions (summary)
 
