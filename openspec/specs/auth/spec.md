@@ -14,11 +14,12 @@ The interface SHALL expose:
 
 ### Requirement: Local OAuth callback flow
 
-The system SHALL implement OAuth 2.0 authorization code flow using a local HTTP callback server. When `tokenpile auth login --provider github` is invoked:
-1. A local HTTP server SHALL start on an ephemeral port
-2. The browser SHALL be opened to the provider's authorization URL with `redirect_uri=http://localhost:<port>/callback`
-3. Upon redirect, the server SHALL extract the authorization code and exchange it for an access token
-4. The local server SHALL shut down after receiving the callback or after a 2-minute timeout
+The system SHALL implement OAuth 2.0 authorization code flow with PKCE (S256) using a local HTTP callback server. When `tokenpile auth login --provider github` is invoked:
+1. A local HTTP server SHALL start on an ephemeral loopback port (`127.0.0.1:0`)
+2. The browser SHALL be opened to the provider's authorization URL with `redirect_uri=http://127.0.0.1:<port>/callback`, a random `state`, and an S256 `code_challenge`
+3. Upon redirect, the server SHALL validate the `state`, extract the authorization code, and exchange it for an access token passing the PKCE `code_verifier`
+4. Callback requests whose `state` does not match SHALL receive HTTP 400 and SHALL NOT abort the login flow in progress
+5. The local server SHALL shut down after receiving the callback or after a 2-minute timeout
 
 #### Scenario: Successful login
 - **WHEN** the user runs `tokenpile auth login --provider github`
@@ -31,13 +32,18 @@ The system SHALL implement OAuth 2.0 authorization code flow using a local HTTP 
 - **THEN** the local server shuts down
 - **THEN** the CLI exits with an error: "login timed out, please try again"
 
+#### Scenario: Stray callback request does not abort login
+- **WHEN** a request with a wrong or missing `state` reaches the callback endpoint during login
+- **THEN** the request receives HTTP 400
+- **THEN** the login keeps waiting for the legitimate callback until the timeout
+
 #### Scenario: Unknown provider
 - **WHEN** the user runs `tokenpile auth login --provider unknown`
 - **THEN** the CLI exits with an error listing supported providers
 
 ### Requirement: Token storage in OS keychain
 
-The system SHALL store OAuth access tokens in the OS keychain using `zalando/go-keyring`. On macOS this uses Keychain; on Linux this uses the Secret Service (libsecret). On Linux systems without a Secret Service, the system SHALL fall back to an AES-256-GCM encrypted file at `~/.config/tokenpile/credentials` with permissions 0600.
+The system SHALL store OAuth access tokens in the OS keychain using `zalando/go-keyring`. On macOS this uses Keychain; on Linux this uses the Secret Service (libsecret). On Linux systems without a Secret Service, the system SHALL fall back to an AES-256-GCM encrypted file at `~/.config/tokenpile/credentials` with permissions 0600, whose key is derived from per-machine, per-user material (machine-id and uid).
 
 #### Scenario: Token persists across invocations
 - **WHEN** the user logs in
