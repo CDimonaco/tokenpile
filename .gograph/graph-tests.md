@@ -1,7 +1,7 @@
 # Test Coverage Edges
 
 **Root:** `/Users/cdimonaco/code/github.com/cdimonaco/tokenpile`  
-**Generated:** 2026-07-05 15:08:03 UTC  
+**Generated:** 2026-07-05 15:20:00 UTC  
 
 ---
 
@@ -98,6 +98,7 @@
 | `assert.Empty` | `TestIntegration_Export_NoRepoIssueFilter_OmitsSessionsAndBudgets` | `cmd/tokenpile/integration_test.go` | 553 |
 | `assert.Empty` | `TestIntegration_Log_RejectsNegativeTokens` | `cmd/tokenpile/integration_test.go` | 124 |
 | `assert.Empty` | `TestSQLiteStore_GetReport_EmptyIssue` | `internal/store/sqlite_test.go` | 130 |
+| `assert.Empty` | `TestSQLiteStore_ListBudgets_Empty` | `internal/store/sqlite_test.go` | 495 |
 | `assert.Empty` | `TestSQLiteStore_ListSessions_EmptyTagsNonNil` | `internal/store/sqlite_test.go` | 384 |
 | `assert.Empty` | `TestSQLiteStore_ListTrackedIssueRefs` | `internal/store/sqlite_test.go` | 272 |
 | `assert.Equal` | `TestBuild_BudgetsIncludedInDocument` | `internal/export/export_test.go` | 235 |
@@ -134,6 +135,8 @@
 | `assert.Equal` | `TestResolve_UsesXDGConfig` | `internal/config/paths_test.go` | 39 |
 | `assert.Equal` | `TestSQLiteStore_GetReport_ByAgentModel` | `internal/store/sqlite_test.go` | 120 |
 | `assert.Equal` | `TestSQLiteStore_GetReport_EmptyIssue` | `internal/store/sqlite_test.go` | 131 |
+| `assert.Equal` | `TestSQLiteStore_ListAllSessions_AcrossRepos` | `internal/store/sqlite_test.go` | 472 |
+| `assert.Equal` | `TestSQLiteStore_ListBudgets_RoundTrip` | `internal/store/sqlite_test.go` | 486 |
 | `assert.Equal` | `TestSQLiteStore_ListIssues_FilterByAgent` | `internal/store/sqlite_test.go` | 166 |
 | `assert.Equal` | `TestSQLiteStore_ListTrackedIssueRefs` | `internal/store/sqlite_test.go` | 283 |
 | `assert.Equal` | `TestSQLiteStore_ListUsageOverTime_DayGranularity` | `internal/store/sqlite_test.go` | 191 |
@@ -325,6 +328,9 @@
 | `context.Background` | `TestSQLiteStore_EndSession_NotFound` | `internal/store/sqlite_test.go` | 97 |
 | `context.Background` | `TestSQLiteStore_GetReport_ByAgentModel` | `internal/store/sqlite_test.go` | 105 |
 | `context.Background` | `TestSQLiteStore_GetReport_EmptyIssue` | `internal/store/sqlite_test.go` | 126 |
+| `context.Background` | `TestSQLiteStore_ListAllSessions_AcrossRepos` | `internal/store/sqlite_test.go` | 461 |
+| `context.Background` | `TestSQLiteStore_ListBudgets_Empty` | `internal/store/sqlite_test.go` | 493 |
+| `context.Background` | `TestSQLiteStore_ListBudgets_RoundTrip` | `internal/store/sqlite_test.go` | 478 |
 | `context.Background` | `TestSQLiteStore_ListIssues_BudgetPopulated` | `internal/store/sqlite_test.go` | 428 |
 | `context.Background` | `TestSQLiteStore_ListIssues_CostPopulated` | `internal/store/sqlite_test.go` | 253 |
 | `context.Background` | `TestSQLiteStore_ListIssues_FilterByAgent` | `internal/store/sqlite_test.go` | 152 |
@@ -575,6 +581,9 @@
 | `newTestStore` | `TestSQLiteStore_EndSession_NotFound` | `internal/store/sqlite_test.go` | 96 |
 | `newTestStore` | `TestSQLiteStore_GetReport_ByAgentModel` | `internal/store/sqlite_test.go` | 104 |
 | `newTestStore` | `TestSQLiteStore_GetReport_EmptyIssue` | `internal/store/sqlite_test.go` | 125 |
+| `newTestStore` | `TestSQLiteStore_ListAllSessions_AcrossRepos` | `internal/store/sqlite_test.go` | 460 |
+| `newTestStore` | `TestSQLiteStore_ListBudgets_Empty` | `internal/store/sqlite_test.go` | 491 |
+| `newTestStore` | `TestSQLiteStore_ListBudgets_RoundTrip` | `internal/store/sqlite_test.go` | 477 |
 | `newTestStore` | `TestSQLiteStore_ListIssues_BudgetPopulated` | `internal/store/sqlite_test.go` | 427 |
 | `newTestStore` | `TestSQLiteStore_ListIssues_CostPopulated` | `internal/store/sqlite_test.go` | 252 |
 | `newTestStore` | `TestSQLiteStore_ListIssues_FilterByAgent` | `internal/store/sqlite_test.go` | 151 |
@@ -677,6 +686,8 @@
 | `require.Len` | `TestIntegration_Log_TagsAccumulate` | `cmd/tokenpile/integration_test.go` | 434 |
 | `require.Len` | `TestIntegration_Log_WithNoteAndTag` | `cmd/tokenpile/integration_test.go` | 387 |
 | `require.Len` | `TestSQLiteStore_GetReport_ByAgentModel` | `internal/store/sqlite_test.go` | 119 |
+| `require.Len` | `TestSQLiteStore_ListAllSessions_AcrossRepos` | `internal/store/sqlite_test.go` | 471 |
+| `require.Len` | `TestSQLiteStore_ListBudgets_RoundTrip` | `internal/store/sqlite_test.go` | 485 |
 | `require.Len` | `TestSQLiteStore_ListIssues_BudgetPopulated` | `internal/store/sqlite_test.go` | 439 |
 | `require.Len` | `TestSQLiteStore_ListIssues_CostPopulated` | `internal/store/sqlite_test.go` | 262 |
 | `require.Len` | `TestSQLiteStore_ListIssues_FilterByAgent` | `internal/store/sqlite_test.go` | 165 |
@@ -768,6 +779,9 @@
 | `require.NoError` | `TestParseRemote_SSH` | `internal/provider/repoinfer_test.go` | 41 |
 | `require.NoError` | `TestSQLiteStore_GetReport_ByAgentModel` | `internal/store/sqlite_test.go` | 114 |
 | `require.NoError` | `TestSQLiteStore_GetReport_EmptyIssue` | `internal/store/sqlite_test.go` | 129 |
+| `require.NoError` | `TestSQLiteStore_ListAllSessions_AcrossRepos` | `internal/store/sqlite_test.go` | 464 |
+| `require.NoError` | `TestSQLiteStore_ListBudgets_Empty` | `internal/store/sqlite_test.go` | 494 |
+| `require.NoError` | `TestSQLiteStore_ListBudgets_RoundTrip` | `internal/store/sqlite_test.go` | 480 |
 | `require.NoError` | `TestSQLiteStore_ListIssues_BudgetPopulated` | `internal/store/sqlite_test.go` | 430 |
 | `require.NoError` | `TestSQLiteStore_ListIssues_CostPopulated` | `internal/store/sqlite_test.go` | 255 |
 | `require.NoError` | `TestSQLiteStore_ListIssues_FilterByAgent` | `internal/store/sqlite_test.go` | 154 |
@@ -883,6 +897,9 @@
 | `s.GetReport` | `TestIntegration_Log_ReuseSession` | `cmd/tokenpile/integration_test.go` | 178 |
 | `s.GetReport` | `TestSQLiteStore_GetReport_ByAgentModel` | `internal/store/sqlite_test.go` | 117 |
 | `s.GetReport` | `TestSQLiteStore_GetReport_EmptyIssue` | `internal/store/sqlite_test.go` | 128 |
+| `s.ListAllSessions` | `TestSQLiteStore_ListAllSessions_AcrossRepos` | `internal/store/sqlite_test.go` | 469 |
+| `s.ListBudgets` | `TestSQLiteStore_ListBudgets_Empty` | `internal/store/sqlite_test.go` | 493 |
+| `s.ListBudgets` | `TestSQLiteStore_ListBudgets_RoundTrip` | `internal/store/sqlite_test.go` | 483 |
 | `s.ListEntries` | `TestIntegration_Log_RejectsNegativeTokens` | `cmd/tokenpile/integration_test.go` | 122 |
 | `s.ListIssues` | `TestIntegration_Log_MultipleIssues` | `cmd/tokenpile/integration_test.go` | 362 |
 | `s.ListIssues` | `TestSQLiteStore_ListIssues_BudgetPopulated` | `internal/store/sqlite_test.go` | 437 |
@@ -928,6 +945,7 @@
 | `s.SetBudget` | `TestIntegration_Budget_Unset` | `cmd/tokenpile/cmd_budget_test.go` | 44 |
 | `s.SetBudget` | `TestIntegration_Export_SchemaV3_IncludesBudget` | `cmd/tokenpile/integration_test.go` | 525 |
 | `s.SetBudget` | `TestIntegration_Report_WithBudget` | `cmd/tokenpile/integration_test.go` | 463 |
+| `s.SetBudget` | `TestSQLiteStore_ListBudgets_RoundTrip` | `internal/store/sqlite_test.go` | 480 |
 | `s.SetBudget` | `TestSQLiteStore_ListIssues_BudgetPopulated` | `internal/store/sqlite_test.go` | 435 |
 | `s.SetBudget` | `TestSQLiteStore_SetBudget_And_GetBudget` | `internal/store/sqlite_test.go` | 394 |
 | `s.SetBudget` | `TestSQLiteStore_SetBudget_Upsert` | `internal/store/sqlite_test.go` | 406 |
@@ -936,6 +954,7 @@
 | `s.SetBudget` | `TestTUI_IssueList_ShowsBudgetBar` | `internal/tui/tui_test.go` | 360 |
 | `s.StartSession` | `TestIntegration_Log_ClosesIdleSession` | `cmd/tokenpile/integration_test.go` | 189 |
 | `s.StartSession` | `TestIntegration_Log_IdleSessionClosed_ByResolveSession` | `cmd/tokenpile/integration_test.go` | 674 |
+| `s.StartSession` | `TestSQLiteStore_ListAllSessions_AcrossRepos` | `internal/store/sqlite_test.go` | 463 |
 | `s.StartSession` | `TestSQLiteStore_ListSessions_EmptyTagsNonNil` | `internal/store/sqlite_test.go` | 377 |
 | `s.StartSession` | `TestSQLiteStore_Session_StartEnd` | `internal/store/sqlite_test.go` | 81 |
 | `s.StartSession` | `TestSQLiteStore_UpdateSessionAnnotations_NilNotePreservesExisting` | `internal/store/sqlite_test.go` | 356 |

@@ -1,8 +1,8 @@
 ## 1. Store: full listings
 
-- [ ] 1.1 Add `ListAllSessions(ctx) ([]usage.Session, error)` and `ListBudgets(ctx) ([]usage.IssueBudgetRow, error)` (repo, issue_num, budget) to the `Store` interface and the SQLite adapter; sessions query has no WHERE, budgets reads `issue_budgets`
-- [ ] 1.2 Run `make generate` to regenerate mocks
-- [ ] 1.3 Store tests: sessions across repos returned in full; budgets listing round-trips `SetBudget`
+- [x] 1.1 Add `ListAllSessions(ctx) ([]usage.Session, error)` and `ListBudgets(ctx) ([]usage.IssueBudgetRow, error)` (repo, issue_num, budget) to the `Store` interface and the SQLite adapter; sessions query has no WHERE, budgets reads `issue_budgets`
+- [x] 1.2 Run `make generate` to regenerate mocks
+- [x] 1.3 Store tests: sessions across repos returned in full; budgets listing round-trips `SetBudget`
 
 ## 2. Export scope change
 

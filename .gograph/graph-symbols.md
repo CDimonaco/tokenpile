@@ -1,7 +1,7 @@
 # Symbols & Packages
 
 **Root:** `/Users/cdimonaco/code/github.com/cdimonaco/tokenpile`  
-**Generated:** 2026-07-05 15:08:03 UTC  
+**Generated:** 2026-07-05 15:20:00 UTC  
 
 ---
 
@@ -9,9 +9,9 @@
 
 | File | Symbols | Calls |
 |------|---------|-------|
-| `internal/store/sqlite.go` | 30 | 800 |
+| `internal/store/sqlite.go` | 33 | 834 |
 | `cmd/tokenpile/integration_test.go` | 31 | 793 |
-| `internal/store/sqlite_test.go` | 27 | 689 |
+| `internal/store/sqlite_test.go` | 30 | 758 |
 | `internal/tui/tui.go` | 53 | 547 |
 | `internal/tui/tui_test.go` | 40 | 511 |
 | `internal/export/export_test.go` | 22 | 425 |
@@ -34,9 +34,9 @@
 
 | Symbol | Kind | File | Line | Calls out |
 |--------|------|------|------|-----------|
-| `(*SQLiteStore).ListIssues` | method | `internal/store/sqlite.go` | 505 | 108 |
+| `(*SQLiteStore).ListIssues` | method | `internal/store/sqlite.go` | 524 | 108 |
 | `main` | function | `cmd/tokenpile/main.go` | 24 | 107 |
-| `(*SQLiteStore).ListUsageOverTime` | method | `internal/store/sqlite.go` | 642 | 98 |
+| `(*SQLiteStore).ListUsageOverTime` | method | `internal/store/sqlite.go` | 661 | 98 |
 | `reportCommand` | function | `cmd/tokenpile/cmd_report.go` | 15 | 95 |
 | `(*SQLiteStore).ListEntries` | method | `internal/store/sqlite.go` | 206 | 94 |
 | `(*GitHubAuthProvider).Login` | method | `internal/provider/github_auth.go` | 55 | 93 |
@@ -45,16 +45,16 @@
 | `runLog` | function | `cmd/tokenpile/cmd_log.go` | 73 | 89 |
 | `Build` | function | `internal/export/export.go` | 84 | 79 |
 | `TestTUI_DetailView_SessionsTab_ShowsNoteAndTags` | function | `internal/tui/tui_test.go` | 392 | 75 |
-| `(*SQLiteStore).ListSessions` | method | `internal/store/sqlite.go` | 363 | 68 |
 | `(Model).viewIssueList` | method | `internal/tui/tui.go` | 434 | 68 |
 | `(Model).loadIssues` | method | `internal/tui/tui.go` | 771 | 62 |
 | `runVerify` | function | `cmd/tokenpile/cmd_export.go` | 82 | 58 |
+| `scanSessions` | function | `internal/store/sqlite.go` | 393 | 58 |
 | `TestIntegration_ExportVerify_TamperedSessionFails` | function | `cmd/tokenpile/integration_test.go` | 587 | 56 |
 | `(Model).viewIssueDetail` | method | `internal/tui/tui.go` | 493 | 55 |
 | `TestGenerateFixtures` | function | `internal/export/gen_fixture_internal_test.go` | 14 | 53 |
-| `(*SQLiteStore).UpdateSessionAnnotations` | method | `internal/store/sqlite.go` | 440 | 53 |
+| `(*SQLiteStore).UpdateSessionAnnotations` | method | `internal/store/sqlite.go` | 459 | 53 |
 | `resolveSession` | function | `cmd/tokenpile/cmd_log.go` | 170 | 52 |
-| `(*SQLiteStore).GetReport` | method | `internal/store/sqlite.go` | 599 | 52 |
+| `(*SQLiteStore).GetReport` | method | `internal/store/sqlite.go` | 618 | 52 |
 | `marshalCanonical` | function | `internal/export/export.go` | 238 | 51 |
 | `TestInstall_Codex_AppendsToExistingFile` | function | `internal/skill/skill_test.go` | 95 | 51 |
 | `installShared` | function | `internal/skill/skill.go` | 124 | 51 |
@@ -76,7 +76,7 @@
 | `provider` | `internal/provider` | 7 | 35 |
 | `schema` | `internal/schema` | 1 | 1 |
 | `skill` | `internal/skill` | 2 | 18 |
-| `store` | `internal/store` | 3 | 31 |
+| `store` | `internal/store` | 3 | 34 |
 | `tui` | `internal/tui` | 2 | 93 |
-| `usage` | `internal/usage` | 1 | 13 |
+| `usage` | `internal/usage` | 1 | 14 |
 

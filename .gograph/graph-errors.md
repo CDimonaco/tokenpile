@@ -1,7 +1,7 @@
 # Errors & Panics
 
 **Root:** `/Users/cdimonaco/code/github.com/cdimonaco/tokenpile`  
-**Generated:** 2026-07-05 15:08:03 UTC  
+**Generated:** 2026-07-05 15:20:00 UTC  
 
 ---
 
@@ -140,28 +140,32 @@
 | `end session: %w` | `(*SQLiteStore).EndSessionAt` | `internal/store/sqlite.go` | 348 |
 | `end session rows affected: %w` | `(*SQLiteStore).EndSessionAt` | `internal/store/sqlite.go` | 353 |
 | `list sessions: %w` | `(*SQLiteStore).ListSessions` | `internal/store/sqlite.go` | 372 |
-| `scan session: %w` | `(*SQLiteStore).ListSessions` | `internal/store/sqlite.go` | 388 |
-| `parse session started_at: %w` | `(*SQLiteStore).ListSessions` | `internal/store/sqlite.go` | 393 |
-| `parse session ended_at: %w` | `(*SQLiteStore).ListSessions` | `internal/store/sqlite.go` | 399 |
-| `iterate sessions: %w` | `(*SQLiteStore).ListSessions` | `internal/store/sqlite.go` | 434 |
-| `fetch session tags: %w` | `(*SQLiteStore).UpdateSessionAnnotations` | `internal/store/sqlite.go` | 455 |
-| `marshal tags: %w` | `(*SQLiteStore).UpdateSessionAnnotations` | `internal/store/sqlite.go` | 483 |
-| `update session annotations: %w` | `(*SQLiteStore).UpdateSessionAnnotations` | `internal/store/sqlite.go` | 499 |
-| `list issues: %w` | `(*SQLiteStore).ListIssues` | `internal/store/sqlite.go` | 544 |
-| `scan issue: %w` | `(*SQLiteStore).ListIssues` | `internal/store/sqlite.go` | 557 |
-| `iterate issues: %w` | `(*SQLiteStore).ListIssues` | `internal/store/sqlite.go` | 584 |
-| `get report: %w` | `(*SQLiteStore).GetReport` | `internal/store/sqlite.go` | 609 |
-| `scan report row: %w` | `(*SQLiteStore).GetReport` | `internal/store/sqlite.go` | 621 |
-| `iterate report rows: %w` | `(*SQLiteStore).GetReport` | `internal/store/sqlite.go` | 634 |
-| `list usage over time: %w` | `(*SQLiteStore).ListUsageOverTime` | `internal/store/sqlite.go` | 691 |
-| `scan usage point: %w` | `(*SQLiteStore).ListUsageOverTime` | `internal/store/sqlite.go` | 712 |
-| `iterate usage points: %w` | `(*SQLiteStore).ListUsageOverTime` | `internal/store/sqlite.go` | 732 |
-| `list tracked issue refs: %w` | `(*SQLiteStore).ListTrackedIssueRefs` | `internal/store/sqlite.go` | 754 |
-| `scan tracked issue ref: %w` | `(*SQLiteStore).ListTrackedIssueRefs` | `internal/store/sqlite.go` | 763 |
-| `iterate tracked issue refs: %w` | `(*SQLiteStore).ListTrackedIssueRefs` | `internal/store/sqlite.go` | 770 |
-| `set budget: %w` | `(*SQLiteStore).SetBudget` | `internal/store/sqlite.go` | 888 |
-| `unset budget: %w` | `(*SQLiteStore).UnsetBudget` | `internal/store/sqlite.go` | 900 |
-| `get budget: %w` | `(*SQLiteStore).GetBudget` | `internal/store/sqlite.go` | 918 |
+| `list all sessions: %w` | `(*SQLiteStore).ListAllSessions` | `internal/store/sqlite.go` | 386 |
+| `scan session: %w` | `scanSessions` | `internal/store/sqlite.go` | 407 |
+| `parse session started_at: %w` | `scanSessions` | `internal/store/sqlite.go` | 412 |
+| `parse session ended_at: %w` | `scanSessions` | `internal/store/sqlite.go` | 418 |
+| `iterate sessions: %w` | `scanSessions` | `internal/store/sqlite.go` | 453 |
+| `fetch session tags: %w` | `(*SQLiteStore).UpdateSessionAnnotations` | `internal/store/sqlite.go` | 474 |
+| `marshal tags: %w` | `(*SQLiteStore).UpdateSessionAnnotations` | `internal/store/sqlite.go` | 502 |
+| `update session annotations: %w` | `(*SQLiteStore).UpdateSessionAnnotations` | `internal/store/sqlite.go` | 518 |
+| `list issues: %w` | `(*SQLiteStore).ListIssues` | `internal/store/sqlite.go` | 563 |
+| `scan issue: %w` | `(*SQLiteStore).ListIssues` | `internal/store/sqlite.go` | 576 |
+| `iterate issues: %w` | `(*SQLiteStore).ListIssues` | `internal/store/sqlite.go` | 603 |
+| `get report: %w` | `(*SQLiteStore).GetReport` | `internal/store/sqlite.go` | 628 |
+| `scan report row: %w` | `(*SQLiteStore).GetReport` | `internal/store/sqlite.go` | 640 |
+| `iterate report rows: %w` | `(*SQLiteStore).GetReport` | `internal/store/sqlite.go` | 653 |
+| `list usage over time: %w` | `(*SQLiteStore).ListUsageOverTime` | `internal/store/sqlite.go` | 710 |
+| `scan usage point: %w` | `(*SQLiteStore).ListUsageOverTime` | `internal/store/sqlite.go` | 731 |
+| `iterate usage points: %w` | `(*SQLiteStore).ListUsageOverTime` | `internal/store/sqlite.go` | 751 |
+| `list tracked issue refs: %w` | `(*SQLiteStore).ListTrackedIssueRefs` | `internal/store/sqlite.go` | 773 |
+| `scan tracked issue ref: %w` | `(*SQLiteStore).ListTrackedIssueRefs` | `internal/store/sqlite.go` | 782 |
+| `iterate tracked issue refs: %w` | `(*SQLiteStore).ListTrackedIssueRefs` | `internal/store/sqlite.go` | 789 |
+| `set budget: %w` | `(*SQLiteStore).SetBudget` | `internal/store/sqlite.go` | 907 |
+| `unset budget: %w` | `(*SQLiteStore).UnsetBudget` | `internal/store/sqlite.go` | 919 |
+| `list budgets: %w` | `(*SQLiteStore).ListBudgets` | `internal/store/sqlite.go` | 930 |
+| `scan budget: %w` | `(*SQLiteStore).ListBudgets` | `internal/store/sqlite.go` | 939 |
+| `iterate budgets: %w` | `(*SQLiteStore).ListBudgets` | `internal/store/sqlite.go` | 946 |
+| `get budget: %w` | `(*SQLiteStore).GetBudget` | `internal/store/sqlite.go` | 964 |
 | `open browser: %w` | `openBrowserCmd` | `internal/tui/tui.go` | 739 |
 | `` | `newTUITestStore` | `internal/tui/tui_test.go` | 43 |
 | `` | `newTUIModel` | `internal/tui/tui_test.go` | 55 |

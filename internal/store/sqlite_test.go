@@ -455,3 +455,42 @@ func TestSQLiteStore_ListIssues_NoBudget_IsNil(t *testing.T) {
 	require.Len(t, issues, 1)
 	assert.Nil(t, issues[0].Budget)
 }
+
+func TestSQLiteStore_ListAllSessions_AcrossRepos(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	_, err := s.StartSession(ctx, "owner/a", 1)
+	require.NoError(t, err)
+
+	_, err = s.StartSession(ctx, "owner/b", 2)
+	require.NoError(t, err)
+
+	sessions, err := s.ListAllSessions(ctx)
+	require.NoError(t, err)
+	require.Len(t, sessions, 2)
+	assert.Equal(t, "owner/a", sessions[0].Repo)
+	assert.Equal(t, "owner/b", sessions[1].Repo)
+}
+
+func TestSQLiteStore_ListBudgets_RoundTrip(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	require.NoError(t, s.SetBudget(ctx, "owner/a", 1, 10.5))
+	require.NoError(t, s.SetBudget(ctx, "owner/b", 2, 3.0))
+
+	budgets, err := s.ListBudgets(ctx)
+	require.NoError(t, err)
+	require.Len(t, budgets, 2)
+	assert.Equal(t, usage.IssueBudget{Repo: "owner/a", IssueNum: 1, Amount: 10.5}, budgets[0])
+	assert.Equal(t, usage.IssueBudget{Repo: "owner/b", IssueNum: 2, Amount: 3.0}, budgets[1])
+}
+
+func TestSQLiteStore_ListBudgets_Empty(t *testing.T) {
+	s := newTestStore(t)
+
+	budgets, err := s.ListBudgets(context.Background())
+	require.NoError(t, err)
+	assert.Empty(t, budgets)
+}

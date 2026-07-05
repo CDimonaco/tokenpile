@@ -84,6 +84,13 @@ type TrackedIssueRef struct {
 	IssueNum int
 }
 
+// IssueBudget is a stored budget row for an issue.
+type IssueBudget struct {
+	Repo     string
+	IssueNum int
+	Amount   float64
+}
+
 type Granularity string
 
 const (

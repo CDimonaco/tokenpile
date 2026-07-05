@@ -373,7 +373,26 @@ func (s *SQLiteStore) ListSessions(ctx context.Context, repo string, issueNum in
 	}
 	defer rows.Close()
 
+	return scanSessions(rows)
+}
+
+func (s *SQLiteStore) ListAllSessions(ctx context.Context) ([]usage.Session, error) {
+	rows, err := s.db.QueryContext(
+		ctx,
+		`SELECT id, repo, issue_num, started_at, ended_at, last_activity_at, note, tags
+		 FROM sessions ORDER BY repo, issue_num, started_at`,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("list all sessions: %w", err)
+	}
+	defer rows.Close()
+
+	return scanSessions(rows)
+}
+
+func scanSessions(rows *sql.Rows) ([]usage.Session, error) {
 	var sessions []usage.Session
+	var err error
 
 	for rows.Next() {
 		var sess usage.Session
@@ -901,6 +920,33 @@ func (s *SQLiteStore) UnsetBudget(ctx context.Context, repo string, issueNum int
 	}
 
 	return nil
+}
+
+func (s *SQLiteStore) ListBudgets(ctx context.Context) ([]usage.IssueBudget, error) {
+	rows, err := s.db.QueryContext(ctx,
+		`SELECT repo, issue_num, budget FROM issue_budgets ORDER BY repo, issue_num`,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("list budgets: %w", err)
+	}
+	defer rows.Close()
+
+	var budgets []usage.IssueBudget
+
+	for rows.Next() {
+		var b usage.IssueBudget
+		if err = rows.Scan(&b.Repo, &b.IssueNum, &b.Amount); err != nil {
+			return nil, fmt.Errorf("scan budget: %w", err)
+		}
+
+		budgets = append(budgets, b)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate budgets: %w", err)
+	}
+
+	return budgets, nil
 }
 
 func (s *SQLiteStore) GetBudget(ctx context.Context, repo string, issueNum int) (*float64, error) {

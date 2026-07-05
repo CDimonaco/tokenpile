@@ -20,6 +20,8 @@ type Store interface {
 	EndSession(ctx context.Context, sessionID string) error
 	EndSessionAt(ctx context.Context, sessionID string, at time.Time) error
 	ListSessions(ctx context.Context, repo string, issueNum int) ([]usage.Session, error)
+	ListAllSessions(ctx context.Context) ([]usage.Session, error)
+	ListBudgets(ctx context.Context) ([]usage.IssueBudget, error)
 	UpdateSessionAnnotations(ctx context.Context, sessionID string, note *string, tags []string) error
 	UpdateSessionActivity(ctx context.Context, sessionID string, at time.Time) error
 	ListUsageOverTime(ctx context.Context, filter usage.OverTimeFilter) ([]usage.Point, error)
