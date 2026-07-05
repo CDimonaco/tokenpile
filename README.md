@@ -29,7 +29,7 @@ Track LLM token usage and cost per GitHub issue. Any agent (Claude Code, OpenCod
 - TUI: issue list with clickable `#N` OSC 8 hyperlinks, per-issue detail with Summary and Sessions tabs, budget progress bar (green/yellow/red), token usage chart over time
 - Open issues in the browser with `o`, refresh cached metadata with `r`
 - Report and export include issue title and labels
-- Ed25519-signed JSON export (schema v2) with sessions and budgets blocks
+- Ed25519-signed JSON export (schema v3) with sessions and budgets blocks; the signature covers the whole document
 - Pricing config with built-in defaults and per-model overrides
 - SQLite storage — local, no external services required
 
@@ -202,7 +202,7 @@ Prices are per million tokens. Built-in defaults cover the most common Claude, G
 
 ### `tokenpile export`
 
-Export usage data as an Ed25519-signed JSON document (schema v2).
+Export usage data as an Ed25519-signed JSON document (schema v3).
 
 ```sh
 tokenpile export                              # all data, to stdout
@@ -211,13 +211,16 @@ tokenpile export --repo owner/repo --issue 42 --agent claude-code
 tokenpile export --from 2026-01-01T00:00:00Z --to 2026-07-01T00:00:00Z
 ```
 
-When filtered to a specific repo+issue, the export includes a `sessions` block (all sessions for that issue) and a `budgets` block (budget if set). The Ed25519 signature covers only the `entries` block; sessions and budgets are informational.
+When filtered to a specific repo+issue, the export includes a `sessions` block (all sessions for that issue) and a `budgets` block (budget if set). The Ed25519 signature covers the whole document (canonical JSON with the `signature` field emptied), so tampering with any field fails verification. Legacy schema v2 files still verify with a warning: their signature covers entries only.
 
 Verify a previously exported file:
 
 ```sh
 tokenpile export verify --file data.json
+tokenpile export verify --file data.json --pubkey ~/.config/tokenpile/identity.pub
 ```
+
+Without `--pubkey` the check proves internal consistency against the key embedded in the document. Pass `--pubkey` (base64 string or path to a PEM/base64 file) to also prove the export was signed by the expected identity.
 
 ### `tokenpile skill`
 
@@ -280,6 +283,8 @@ To test the GitHub auth flow locally, create your own OAuth App (GitHub → Sett
 export TOKENPILE_GITHUB_CLIENT_ID=your_dev_client_id
 export TOKENPILE_GITHUB_CLIENT_SECRET=your_dev_client_secret
 ```
+
+Set the OAuth App callback URL to `http://127.0.0.1/callback`: the login flow listens on an ephemeral loopback port, and GitHub ignores the port when matching loopback redirect URLs.
 
 These env vars override the baked-in values. Released binaries have the production credentials injected by goreleaser via ldflags — end users do not need to set anything.
 
