@@ -1,13 +1,83 @@
 package tui
 
 import (
+	"context"
+	"path/filepath"
+	"regexp"
+	"strings"
 	"testing"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/x/exp/teatest"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
+	"github.com/cdimonaco/tokenpile/internal/pricing"
+	"github.com/cdimonaco/tokenpile/internal/provider"
+	"github.com/cdimonaco/tokenpile/internal/store"
 	"github.com/cdimonaco/tokenpile/internal/usage"
 )
+
+// ansiRe strips ANSI CSI and basic OSC escape sequences for plain-text assertions.
+var ansiRe = regexp.MustCompile(`\x1b(?:\[[0-9;]*[a-zA-Z]|\][^\x07\x1b]*[\x07\x1b])`)
+
+func stripANSI(b []byte) string {
+	return string(ansiRe.ReplaceAll(b, nil))
+}
+
+// tuiStubProvider satisfies provider.IssueProvider without making network calls.
+type tuiStubProvider struct{}
+
+func (p *tuiStubProvider) ListIssues(_ context.Context, _ usage.Filter) ([]provider.Issue, error) {
+	return nil, nil
+}
+
+func (p *tuiStubProvider) GetIssue(_ context.Context, repo string, number int) (*provider.Issue, error) {
+	return &provider.Issue{Number: number, Repo: repo, Title: "TUI Test Issue"}, nil
+}
+
+func newTUITestStore(t *testing.T) *store.SQLiteStore {
+	t.Helper()
+
+	loader, err := pricing.NewLoader("")
+	require.NoError(t, err)
+
+	s, err := store.NewSQLiteStore(filepath.Join(t.TempDir(), "tui_test.db"), loader)
+	require.NoError(t, err)
+
+	t.Cleanup(func() { _ = s.Close() })
+
+	return s
+}
+
+func newTUIModel(s store.Store) Model {
+	loader, _ := pricing.NewLoader("")
+	// empty authToken: loadIssues uses DB only (no GitHub call)
+	return New(s, &tuiStubProvider{}, loader, "")
+}
+
+func seedIssueEntry(t *testing.T, s *store.SQLiteStore, repo string, issueNum int) {
+	t.Helper()
+
+	ctx := context.Background()
+
+	sess, err := s.StartSession(ctx, repo, issueNum)
+	require.NoError(t, err)
+
+	require.NoError(t, s.LogUsage(ctx, usage.Entry{
+		Repo:      repo,
+		IssueNum:  issueNum,
+		Agent:     "claude-code",
+		Model:     "claude-sonnet-4-6",
+		TokensIn:  1000,
+		TokensOut: 500,
+		SessionID: sess.ID,
+		At:        time.Now(),
+	}))
+
+	require.NoError(t, s.EndSession(ctx, sess.ID))
+}
 
 func baseModel() Model {
 	return Model{
@@ -228,6 +298,132 @@ func TestIssuesLoaded_ClearsLoadingFlag(t *testing.T) {
 	m2 := next.(Model)
 
 	assert.False(t, m2.loading)
+}
+
+// ---- budgetBar unit tests ----
+
+func TestBudgetBar_NilBudget_ReturnsEmpty(t *testing.T) {
+	assert.Empty(t, budgetBar(1.0, nil))
+}
+
+func TestBudgetBar_ZeroBudget_ReturnsEmpty(t *testing.T) {
+	zero := 0.0
+	assert.Empty(t, budgetBar(1.0, &zero))
+}
+
+func TestBudgetBar_BelowWarn_ContainsFilledAndEmpty(t *testing.T) {
+	budget := 100.0
+	out := budgetBar(50.0, &budget) // 50%
+	assert.NotEmpty(t, out)
+	assert.Contains(t, out, "#")
+	assert.Contains(t, out, "-")
+}
+
+func TestBudgetBar_AtWarn_NotEmpty(t *testing.T) {
+	budget := 100.0
+	out := budgetBar(80.0, &budget) // 80%
+	assert.NotEmpty(t, out)
+}
+
+func TestBudgetBar_FullyConsumed_NoEmptySlots(t *testing.T) {
+	budget := 10.0
+	out := budgetBar(10.0, &budget) // 100%
+	assert.NotEmpty(t, out)
+	assert.NotContains(t, out, "-")
+}
+
+func TestBudgetBar_OverBudget_ClampsToFull(t *testing.T) {
+	budget := 10.0
+	out := budgetBar(20.0, &budget) // 200% — must not panic or render extra chars
+	assert.NotEmpty(t, out)
+	assert.NotContains(t, out, "-")
+}
+
+// ---- TUI teatest integration tests ----
+
+func TestTUI_IssueList_ShowsTrackedIssues(t *testing.T) {
+	s := newTUITestStore(t)
+	seedIssueEntry(t, s, "owner/repo", 1)
+
+	tm := teatest.NewTestModel(t, newTUIModel(s), teatest.WithInitialTermSize(120, 40))
+	t.Cleanup(func() { _ = tm.Quit() })
+
+	teatest.WaitFor(t, tm.Output(), func(b []byte) bool {
+		return strings.Contains(stripANSI(b), "#1")
+	}, teatest.WithDuration(3*time.Second))
+}
+
+func TestTUI_IssueList_ShowsBudgetBar(t *testing.T) {
+	s := newTUITestStore(t)
+	seedIssueEntry(t, s, "owner/repo", 2)
+	require.NoError(t, s.SetBudget(context.Background(), "owner/repo", 2, 100.00))
+
+	tm := teatest.NewTestModel(t, newTUIModel(s), teatest.WithInitialTermSize(120, 40))
+	t.Cleanup(func() { _ = tm.Quit() })
+
+	// wait for list and the budget bar ('[' bracket) to appear alongside the issue
+	teatest.WaitFor(t, tm.Output(), func(b []byte) bool {
+		plain := stripANSI(b)
+		return strings.Contains(plain, "#2") && strings.Contains(plain, "[")
+	}, teatest.WithDuration(3*time.Second))
+}
+
+func TestTUI_DetailView_SummaryAndSessionsTabs(t *testing.T) {
+	s := newTUITestStore(t)
+	seedIssueEntry(t, s, "owner/repo", 3)
+
+	tm := teatest.NewTestModel(t, newTUIModel(s), teatest.WithInitialTermSize(120, 40))
+	t.Cleanup(func() { _ = tm.Quit() })
+
+	teatest.WaitFor(t, tm.Output(), func(b []byte) bool {
+		return strings.Contains(stripANSI(b), "#3")
+	}, teatest.WithDuration(3*time.Second))
+
+	tm.Send(tea.KeyMsg{Type: tea.KeyEnter})
+
+	// detail view shows both tab names
+	teatest.WaitFor(t, tm.Output(), func(b []byte) bool {
+		plain := stripANSI(b)
+		return strings.Contains(plain, "Summary") && strings.Contains(plain, "Sessions")
+	}, teatest.WithDuration(3*time.Second))
+}
+
+func TestTUI_DetailView_SessionsTab_ShowsNoteAndTags(t *testing.T) {
+	s := newTUITestStore(t)
+	ctx := context.Background()
+
+	sess, err := s.StartSession(ctx, "owner/repo", 4)
+	require.NoError(t, err)
+
+	require.NoError(t, s.LogUsage(ctx, usage.Entry{
+		Repo: "owner/repo", IssueNum: 4,
+		Agent: "claude-code", Model: "claude-sonnet-4-6",
+		TokensIn: 500, TokensOut: 250, SessionID: sess.ID, At: time.Now(),
+	}))
+
+	note := "session tab note"
+	require.NoError(t, s.UpdateSessionAnnotations(ctx, sess.ID, &note, []string{"test-tag"}))
+	require.NoError(t, s.EndSession(ctx, sess.ID))
+
+	tm := teatest.NewTestModel(t, newTUIModel(s), teatest.WithInitialTermSize(120, 40))
+	t.Cleanup(func() { _ = tm.Quit() })
+
+	teatest.WaitFor(t, tm.Output(), func(b []byte) bool {
+		return strings.Contains(stripANSI(b), "#4")
+	}, teatest.WithDuration(3*time.Second))
+
+	tm.Send(tea.KeyMsg{Type: tea.KeyEnter})
+
+	teatest.WaitFor(t, tm.Output(), func(b []byte) bool {
+		return strings.Contains(stripANSI(b), "Summary")
+	}, teatest.WithDuration(3*time.Second))
+
+	tm.Send(tea.KeyMsg{Type: tea.KeyTab})
+
+	teatest.WaitFor(t, tm.Output(), func(b []byte) bool {
+		plain := stripANSI(b)
+		return strings.Contains(plain, "Session 1") && strings.Contains(plain, "session tab note")
+	}, teatest.WithDuration(3*time.Second))
 }
 
 func TestViewList_EmptyState(t *testing.T) {

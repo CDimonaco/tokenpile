@@ -244,6 +244,36 @@ func TestIntegration_Report_ShowsBreakdown(t *testing.T) {
 	assert.Contains(t, out, "Total")
 }
 
+func runReportCmd(t *testing.T, s *store.SQLiteStore, args ...string) (string, error) {
+	t.Helper()
+
+	var buf bytes.Buffer
+
+	app := &cli.App{
+		Writer:   &buf,
+		Commands: []*cli.Command{reportCommand(s)},
+	}
+
+	err := app.RunContext(context.Background(), append([]string{"tok"}, args...))
+
+	return buf.String(), err
+}
+
+func runBudgetCmd(t *testing.T, s *store.SQLiteStore, args ...string) (string, error) {
+	t.Helper()
+
+	var buf bytes.Buffer
+
+	app := &cli.App{
+		Writer:   &buf,
+		Commands: []*cli.Command{budgetCommands(s)},
+	}
+
+	err := app.RunContext(context.Background(), append([]string{"tok"}, args...))
+
+	return buf.String(), err
+}
+
 func TestIntegration_Log_MultipleIssues(t *testing.T) {
 	s := newTestStore(t)
 	ctx := context.Background()
@@ -286,4 +316,84 @@ func TestIntegration_Log_MultipleIssues(t *testing.T) {
 	issues, err := s.ListIssues(ctx, usage.Filter{})
 	require.NoError(t, err)
 	assert.Len(t, issues, 2)
+}
+
+func TestIntegration_Log_WithNoteAndTag(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	err := runLogCmd(t, s,
+		"log",
+		"--issue", "20",
+		"--agent", "claude-code",
+		"--model", "claude-sonnet-4-6",
+		"--tokens-in", "1000",
+		"--tokens-out", "500",
+		"--repo", "owner/repo",
+		"--note", "refactored auth",
+		"--tag", "refactor",
+		"--tag", "feature",
+	)
+	require.NoError(t, err)
+
+	sessions, err := s.ListSessions(ctx, "owner/repo", 20)
+	require.NoError(t, err)
+	require.Len(t, sessions, 1)
+	assert.Equal(t, "refactored auth", sessions[0].Note)
+	assert.ElementsMatch(t, []string{"refactor", "feature"}, sessions[0].Tags)
+}
+
+func TestIntegration_Log_TagsAccumulate(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	require.NoError(t, runLogCmd(t, s,
+		"log", "--issue", "21", "--agent", "claude-code", "--model", "claude-sonnet-4-6",
+		"--tokens-in", "100", "--tokens-out", "50", "--repo", "owner/repo",
+		"--tag", "debug",
+	))
+
+	require.NoError(t, runLogCmd(t, s,
+		"log", "--issue", "21", "--agent", "claude-code", "--model", "claude-sonnet-4-6",
+		"--tokens-in", "200", "--tokens-out", "100", "--repo", "owner/repo",
+		"--tag", "feature",
+	))
+
+	sessions, err := s.ListSessions(ctx, "owner/repo", 21)
+	require.NoError(t, err)
+	require.Len(t, sessions, 1, "second call should reuse same session")
+	assert.ElementsMatch(t, []string{"debug", "feature"}, sessions[0].Tags)
+}
+
+func TestIntegration_Report_Sessions(t *testing.T) {
+	s := newTestStore(t)
+
+	require.NoError(t, runLogCmd(t, s,
+		"log", "--issue", "30", "--agent", "claude-code", "--model", "claude-sonnet-4-6",
+		"--tokens-in", "1000", "--tokens-out", "500", "--repo", "owner/repo",
+		"--note", "initial work", "--tag", "feature",
+	))
+
+	out, err := runReportCmd(t, s, "report", "--issue", "30", "--repo", "owner/repo", "--sessions")
+	require.NoError(t, err)
+	assert.Contains(t, out, "Session 1")
+	assert.Contains(t, out, "initial work")
+	assert.Contains(t, out, "feature")
+}
+
+func TestIntegration_Report_WithBudget(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	require.NoError(t, runLogCmd(t, s,
+		"log", "--issue", "40", "--agent", "claude-code", "--model", "claude-sonnet-4-6",
+		"--tokens-in", "1000", "--tokens-out", "500", "--repo", "owner/repo",
+	))
+
+	require.NoError(t, s.SetBudget(ctx, "owner/repo", 40, 50.00))
+
+	out, err := runReportCmd(t, s, "report", "--issue", "40", "--repo", "owner/repo")
+	require.NoError(t, err)
+	assert.Contains(t, out, "Budget")
+	assert.Contains(t, out, "$50.00")
 }
