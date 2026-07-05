@@ -16,6 +16,8 @@ import (
 	"os"
 	"os/exec"
 	"runtime"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/zalando/go-keyring"
@@ -253,11 +255,29 @@ func (p *GitHubAuthProvider) loadEncryptedToken() (string, error) {
 	return string(plaintext), nil
 }
 
+// machineKey derives the AES key for the encrypted-file fallback from
+// per-machine, per-user material. The credentials file is 0600, so the key
+// only matters for copies that leave the machine (backups, sync): machine-id
+// and uid do not travel with a home-directory copy, unlike the hostname.
 func machineKey() []byte {
-	hostname, _ := os.Hostname()
-	sum := sha256.Sum256([]byte("tokenpile-v1:" + hostname))
+	material := "tokenpile-v2:" + strconv.Itoa(os.Getuid()) + ":" + machineID()
+	sum := sha256.Sum256([]byte(material))
 
 	return sum[:]
+}
+
+func machineID() string {
+	for _, path := range []string{"/etc/machine-id", "/var/lib/dbus/machine-id"} {
+		if data, err := os.ReadFile(path); err == nil {
+			if id := strings.TrimSpace(string(data)); id != "" {
+				return id
+			}
+		}
+	}
+
+	hostname, _ := os.Hostname()
+
+	return hostname
 }
 
 func randomState() string {

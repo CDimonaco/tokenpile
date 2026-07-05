@@ -1,7 +1,7 @@
 # Test Coverage Edges
 
 **Root:** `/Users/cdimonaco/code/github.com/cdimonaco/tokenpile`  
-**Generated:** 2026-07-05 14:42:54 UTC  
+**Generated:** 2026-07-05 14:49:19 UTC  
 
 ---
 
@@ -16,6 +16,8 @@
 | `Encode` | `TestGitHubIssueProvider_ListIssues` | `internal/provider/github_issues_test.go` | 35 |
 | `Encode` | `TestGitHubIssueProvider_ListIssues_Paginated` | `internal/provider/github_issues_test.go` | 63 |
 | `Get` | `TestGitHubIssueProvider_ListIssues_Paginated` | `internal/provider/github_issues_test.go` | 62 |
+| `NewGitHubAuthProvider` | `TestEncryptedTokenRoundtrip` | `internal/provider/github_auth_internal_test.go` | 14 |
+| `NewGitHubAuthProvider` | `TestLoadEncryptedToken_CorruptedFile` | `internal/provider/github_auth_internal_test.go` | 25 |
 | `Output` | `TestSmoke_AuthStatus` | `cmd/tokenpile/smoke_test.go` | 71 |
 | `Output` | `TestSmoke_HelpFlag` | `cmd/tokenpile/smoke_test.go` | 34 |
 | `Output` | `TestSmoke_PricingList` | `cmd/tokenpile/smoke_test.go` | 46 |
@@ -94,6 +96,7 @@
 | `assert.Equal` | `TestBuild_SchemaVersionIsV2` | `internal/export/export_test.go` | 166 |
 | `assert.Equal` | `TestBuild_SessionsIncludedInDocument` | `internal/export/export_test.go` | 196 |
 | `assert.Equal` | `TestCanonicalJSON_DeterministicAcrossBuilds` | `internal/export/export_test.go` | 109 |
+| `assert.Equal` | `TestEncryptedTokenRoundtrip` | `internal/provider/github_auth_internal_test.go` | 20 |
 | `assert.Equal` | `TestExport_RoundTrip_EmptyEntries` | `internal/export/export_integration_test.go` | 24 |
 | `assert.Equal` | `TestGitHubIssueProvider_GetIssue` | `internal/provider/github_issues_test.go` | 102 |
 | `assert.Equal` | `TestGitHubIssueProvider_ListIssues` | `internal/provider/github_issues_test.go` | 33 |
@@ -115,6 +118,7 @@
 | `assert.Equal` | `TestIntegration_Log_WithNoteAndTag` | `cmd/tokenpile/integration_test.go` | 386 |
 | `assert.Equal` | `TestIssuesLoaded_UnauthenticatedFlag` | `internal/tui/tui_test.go` | 133 |
 | `assert.Equal` | `TestIssuesLoaded_UpdatesModel` | `internal/tui/tui_test.go` | 270 |
+| `assert.Equal` | `TestMachineKey_Deterministic` | `internal/provider/github_auth_internal_test.go` | 43 |
 | `assert.Equal` | `TestParseRemote_HTTPS` | `internal/provider/repoinfer_test.go` | 25 |
 | `assert.Equal` | `TestParseRemote_SSH` | `internal/provider/repoinfer_test.go` | 42 |
 | `assert.Equal` | `TestResolve_UsesEnvOverride` | `internal/config/paths_test.go` | 21 |
@@ -179,6 +183,7 @@
 | `assert.Len` | `TestIntegration_Log_NoteTruncatedOnRuneBoundary` | `cmd/tokenpile/integration_test.go` | 411 |
 | `assert.Len` | `TestIntegration_Log_ReuseSession` | `cmd/tokenpile/integration_test.go` | 174 |
 | `assert.Len` | `TestIssuesLoaded_Dedup` | `internal/tui/tui_test.go` | 148 |
+| `assert.Len` | `TestMachineKey_Deterministic` | `internal/provider/github_auth_internal_test.go` | 44 |
 | `assert.Len` | `TestSQLiteStore_ListIssues_MultipleIssues` | `internal/store/sqlite_test.go` | 147 |
 | `assert.Len` | `TestSQLiteStore_ListUsageOverTime_DayGranularity` | `internal/store/sqlite_test.go` | 188 |
 | `assert.Less` | `TestIntegration_Log_IdleSessionClosed_ByResolveSession` | `cmd/tokenpile/integration_test.go` | 590 |
@@ -370,6 +375,7 @@
 | `export.Verify` | `TestVerify_WrongKey` | `internal/export/export_test.go` | 145 |
 | `filepath.Dir` | `TestIsUpToDate_NoVersionComment_False` | `internal/skill/skill_test.go` | 239 |
 | `filepath.Dir` | `TestIsUpToDate_OutdatedFile_False` | `internal/skill/skill_test.go` | 226 |
+| `filepath.Join` | `TestEncryptedTokenRoundtrip` | `internal/provider/github_auth_internal_test.go` | 13 |
 | `filepath.Join` | `TestEnsureDirs_CreatesDirs` | `internal/config/paths_test.go` | 46 |
 | `filepath.Join` | `TestEnsureDirs_Idempotent` | `internal/config/paths_test.go` | 65 |
 | `filepath.Join` | `TestInstall_ClaudeCode_WritesFile` | `internal/skill/skill_test.go` | 43 |
@@ -379,6 +385,7 @@
 | `filepath.Join` | `TestIsInstalled_Codex_FalseWhenFileExistsWithoutMarker` | `internal/skill/skill_test.go` | 148 |
 | `filepath.Join` | `TestIsUpToDate_NoVersionComment_False` | `internal/skill/skill_test.go` | 238 |
 | `filepath.Join` | `TestIsUpToDate_OutdatedFile_False` | `internal/skill/skill_test.go` | 225 |
+| `filepath.Join` | `TestLoadEncryptedToken_CorruptedFile` | `internal/provider/github_auth_internal_test.go` | 24 |
 | `filepath.Join` | `TestNewLoader_DefaultFillsMissingOverride` | `internal/pricing/pricing_test.go` | 45 |
 | `filepath.Join` | `TestNewLoader_NoOverrideFile` | `internal/pricing/pricing_test.go` | 64 |
 | `filepath.Join` | `TestNewLoader_UserOverrideTakesPrecedence` | `internal/pricing/pricing_test.go` | 25 |
@@ -413,6 +420,7 @@
 | `l.ComputeCost` | `TestSetOverride_WritesAndUpdates` | `internal/pricing/pricing_test.go` | 99 |
 | `l.SetOverride` | `TestSetOverride_WritesAndUpdates` | `internal/pricing/pricing_test.go` | 96 |
 | `len` | `TestList_ContainsAllAgents` | `internal/skill/skill_test.go` | 17 |
+| `len` | `TestLoadEncryptedToken_CorruptedFile` | `internal/provider/github_auth_internal_test.go` | 32 |
 | `m.On` | `TestGitHubIssueProvider_ListIssues_UnauthenticatedError` | `internal/provider/github_issues_test.go` | 85 |
 | `m.Update` | `TestHandleKey_EnterDetail` | `internal/tui/tui_test.go` | 220 |
 | `m.Update` | `TestHandleKey_EscFromChart` | `internal/tui/tui_test.go` | 243 |
@@ -440,6 +448,7 @@
 | `m2.View` | `TestIssuesLoaded_StubTitleForInaccessible` | `internal/tui/tui_test.go` | 161 |
 | `m3.Update` | `TestHandleKey_ListNavigation` | `internal/tui/tui_test.go` | 205 |
 | `m4.Update` | `TestHandleKey_ListNavigation` | `internal/tui/tui_test.go` | 210 |
+| `machineKey` | `TestMachineKey_Deterministic` | `internal/provider/github_auth_internal_test.go` | 40 |
 | `make` | `TestExport_Verify_CorruptedSignature` | `internal/export/export_integration_test.go` | 117 |
 | `make` | `TestList_ContainsAllAgents` | `internal/skill/skill_test.go` | 17 |
 | `mock.AnythingOfType` | `TestLog_ClosesIdleSession_StartsNew` | `cmd/tokenpile/cmd_log_test.go` | 150 |
@@ -531,12 +540,14 @@
 | `os.ReadFile` | `TestInstall_Codex_UpdatesExistingBlock` | `internal/skill/skill_test.go` | 131 |
 | `os.ReadFile` | `TestInstall_OpenCode_CreatesFile` | `internal/skill/skill_test.go` | 174 |
 | `os.ReadFile` | `TestInstall_OpenCode_UpdatesExistingBlock` | `internal/skill/skill_test.go` | 193 |
+| `os.ReadFile` | `TestLoadEncryptedToken_CorruptedFile` | `internal/provider/github_auth_internal_test.go` | 29 |
 | `os.ReadFile` | `TestSetOverride_WritesAndUpdates` | `internal/pricing/pricing_test.go` | 103 |
 | `os.Stat` | `TestEnsureDirs_CreatesDirs` | `internal/config/paths_test.go` | 53 |
 | `os.WriteFile` | `TestInstall_Codex_AppendsToExistingFile` | `internal/skill/skill_test.go` | 104 |
 | `os.WriteFile` | `TestIsInstalled_Codex_FalseWhenFileExistsWithoutMarker` | `internal/skill/skill_test.go` | 150 |
 | `os.WriteFile` | `TestIsUpToDate_NoVersionComment_False` | `internal/skill/skill_test.go` | 242 |
 | `os.WriteFile` | `TestIsUpToDate_OutdatedFile_False` | `internal/skill/skill_test.go` | 229 |
+| `os.WriteFile` | `TestLoadEncryptedToken_CorruptedFile` | `internal/provider/github_auth_internal_test.go` | 33 |
 | `os.WriteFile` | `TestNewLoader_DefaultFillsMissingOverride` | `internal/pricing/pricing_test.go` | 47 |
 | `os.WriteFile` | `TestNewLoader_UserOverrideTakesPrecedence` | `internal/pricing/pricing_test.go` | 27 |
 | `p.Date.IsZero` | `TestSQLiteStore_ListUsageOverTime_WeekGranularity` | `internal/store/sqlite_test.go` | 225 |
@@ -545,6 +556,10 @@
 | `p.ListIssues` | `TestGitHubIssueProvider_ListIssues` | `internal/provider/github_issues_test.go` | 42 |
 | `p.ListIssues` | `TestGitHubIssueProvider_ListIssues_Paginated` | `internal/provider/github_issues_test.go` | 76 |
 | `p.ListIssues` | `TestGitHubIssueProvider_ListIssues_UnauthenticatedError` | `internal/provider/github_issues_test.go` | 89 |
+| `p.loadEncryptedToken` | `TestEncryptedTokenRoundtrip` | `internal/provider/github_auth_internal_test.go` | 18 |
+| `p.loadEncryptedToken` | `TestLoadEncryptedToken_CorruptedFile` | `internal/provider/github_auth_internal_test.go` | 35 |
+| `p.storeEncryptedToken` | `TestEncryptedTokenRoundtrip` | `internal/provider/github_auth_internal_test.go` | 16 |
+| `p.storeEncryptedToken` | `TestLoadEncryptedToken_CorruptedFile` | `internal/provider/github_auth_internal_test.go` | 27 |
 | `pricing.NewLoader` | `TestComputeCost_InOutSeparate` | `internal/pricing/pricing_test.go` | 81 |
 | `pricing.NewLoader` | `TestComputeCost_UnknownModel` | `internal/pricing/pricing_test.go` | 72 |
 | `pricing.NewLoader` | `TestNewLoader_DefaultFillsMissingOverride` | `internal/pricing/pricing_test.go` | 55 |
@@ -563,6 +578,7 @@
 | `reportCommand` | `TestIntegration_Report_ShowsBreakdown` | `cmd/tokenpile/integration_test.go` | 279 |
 | `require.Error` | `TestAuthLogin_Failure` | `cmd/tokenpile/cmd_auth_test.go` | 48 |
 | `require.Error` | `TestIntegration_Log_RejectsNegativeTokens` | `cmd/tokenpile/integration_test.go` | 117 |
+| `require.Error` | `TestLoadEncryptedToken_CorruptedFile` | `internal/provider/github_auth_internal_test.go` | 36 |
 | `require.Error` | `TestVerify_TamperedEntries` | `internal/export/export_test.go` | 83 |
 | `require.Error` | `TestVerify_TruncatedPublicKey` | `internal/export/export_test.go` | 157 |
 | `require.ErrorIs` | `TestIntegration_Budget_Unset` | `cmd/tokenpile/cmd_budget_test.go` | 50 |
@@ -610,6 +626,7 @@
 | `require.NoError` | `TestCanonicalJSON_DeterministicAcrossBuilds` | `internal/export/export_test.go` | 104 |
 | `require.NoError` | `TestComputeCost_InOutSeparate` | `internal/pricing/pricing_test.go` | 82 |
 | `require.NoError` | `TestComputeCost_UnknownModel` | `internal/pricing/pricing_test.go` | 73 |
+| `require.NoError` | `TestEncryptedTokenRoundtrip` | `internal/provider/github_auth_internal_test.go` | 16 |
 | `require.NoError` | `TestEnsureDirs_CreatesDirs` | `internal/config/paths_test.go` | 51 |
 | `require.NoError` | `TestEnsureDirs_Idempotent` | `internal/config/paths_test.go` | 69 |
 | `require.NoError` | `TestExport_RoundTrip_EmptyEntries` | `internal/export/export_integration_test.go` | 19 |
@@ -654,6 +671,7 @@
 | `require.NoError` | `TestIsUpToDate_NoVersionComment_False` | `internal/skill/skill_test.go` | 239 |
 | `require.NoError` | `TestIsUpToDate_OutdatedFile_False` | `internal/skill/skill_test.go` | 226 |
 | `require.NoError` | `TestIsUpToDate_SharedAgent_AfterInstall_True` | `internal/skill/skill_test.go` | 252 |
+| `require.NoError` | `TestLoadEncryptedToken_CorruptedFile` | `internal/provider/github_auth_internal_test.go` | 27 |
 | `require.NoError` | `TestLog_ClosesIdleSession_StartsNew` | `cmd/tokenpile/cmd_log_test.go` | 167 |
 | `require.NoError` | `TestLog_NoActiveSession_StartsNew` | `cmd/tokenpile/cmd_log_test.go` | 82 |
 | `require.NoError` | `TestLog_ReuseActiveSession` | `cmd/tokenpile/cmd_log_test.go` | 121 |
