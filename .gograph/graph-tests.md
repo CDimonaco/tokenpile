@@ -1,7 +1,7 @@
 # Test Coverage Edges
 
 **Root:** `/Users/cdimonaco/code/github.com/cdimonaco/tokenpile`  
-**Generated:** 2026-07-05 15:22:39 UTC  
+**Generated:** 2026-07-05 15:24:58 UTC  
 
 ---
 
@@ -18,10 +18,10 @@
 | `Get` | `TestGitHubIssueProvider_ListIssues_Paginated` | `internal/provider/github_issues_test.go` | 62 |
 | `NewGitHubAuthProvider` | `TestEncryptedTokenRoundtrip` | `internal/provider/github_auth_internal_test.go` | 14 |
 | `NewGitHubAuthProvider` | `TestLoadEncryptedToken_CorruptedFile` | `internal/provider/github_auth_internal_test.go` | 25 |
-| `Output` | `TestSmoke_AuthStatus` | `cmd/tokenpile/smoke_test.go` | 116 |
+| `Output` | `TestSmoke_AuthStatus` | `cmd/tokenpile/smoke_test.go` | 117 |
 | `Output` | `TestSmoke_HelpFlag` | `cmd/tokenpile/smoke_test.go` | 36 |
-| `Output` | `TestSmoke_PricingList` | `cmd/tokenpile/smoke_test.go` | 48 |
-| `Output` | `TestSmoke_SkillList` | `cmd/tokenpile/smoke_test.go` | 56 |
+| `Output` | `TestSmoke_PricingList` | `cmd/tokenpile/smoke_test.go` | 49 |
+| `Output` | `TestSmoke_SkillList` | `cmd/tokenpile/smoke_test.go` | 57 |
 | `Output` | `TestSmoke_Version` | `cmd/tokenpile/smoke_test.go` | 28 |
 | `Return` | `TestAuthLogin_Failure` | `cmd/tokenpile/cmd_auth_test.go` | 44 |
 | `Return` | `TestAuthLogin_Success` | `cmd/tokenpile/cmd_auth_test.go` | 33 |
@@ -43,7 +43,7 @@
 | `app.RunContext` | `TestIntegration_Report_ShowsBreakdown` | `cmd/tokenpile/integration_test.go` | 284 |
 | `append` | `TestGenerateFixtures` | `internal/export/gen_fixture_internal_test.go` | 61 |
 | `append` | `TestIntegration_Log_RejectsNegativeTokens` | `cmd/tokenpile/integration_test.go` | 110 |
-| `append` | `TestSmoke_ExportVerify` | `cmd/tokenpile/smoke_test.go` | 73 |
+| `append` | `TestSmoke_ExportVerify` | `cmd/tokenpile/smoke_test.go` | 74 |
 | `assert.Contains` | `TestAuthLogin_Success` | `cmd/tokenpile/cmd_auth_test.go` | 38 |
 | `assert.Contains` | `TestAuthLogout_Success` | `cmd/tokenpile/cmd_auth_test.go` | 59 |
 | `assert.Contains` | `TestAuthStatus_Authenticated` | `cmd/tokenpile/cmd_auth_test.go` | 70 |
@@ -64,14 +64,18 @@
 | `assert.Contains` | `TestIntegration_Report_Sessions_NoSessions` | `cmd/tokenpile/integration_test.go` | 700 |
 | `assert.Contains` | `TestIntegration_Report_ShowsBreakdown` | `cmd/tokenpile/integration_test.go` | 288 |
 | `assert.Contains` | `TestIntegration_Report_WithBudget` | `cmd/tokenpile/integration_test.go` | 467 |
+| `assert.Contains` | `TestIntegration_Reset_BackupFailureAbortsDestruction` | `cmd/tokenpile/cmd_reset_test.go` | 173 |
+| `assert.Contains` | `TestIntegration_Reset_ConfirmationAbort` | `cmd/tokenpile/cmd_reset_test.go` | 110 |
+| `assert.Contains` | `TestIntegration_Reset_SecondRunSucceeds` | `cmd/tokenpile/cmd_reset_test.go` | 164 |
+| `assert.Contains` | `TestIntegration_Reset_YesResetsAndBackupVerifies` | `cmd/tokenpile/cmd_reset_test.go` | 124 |
 | `assert.Contains` | `TestIssuesLoaded_StubTitleForInaccessible` | `internal/tui/tui_test.go` | 162 |
 | `assert.Contains` | `TestList_ContainsAllAgents` | `internal/skill/skill_test.go` | 23 |
 | `assert.Contains` | `TestLog_NoActiveSession_StartsNew` | `cmd/tokenpile/cmd_log_test.go` | 83 |
 | `assert.Contains` | `TestSetOverride_WritesAndUpdates` | `internal/pricing/pricing_test.go` | 105 |
-| `assert.Contains` | `TestSmoke_ExportVerify` | `cmd/tokenpile/smoke_test.go` | 92 |
+| `assert.Contains` | `TestSmoke_ExportVerify` | `cmd/tokenpile/smoke_test.go` | 93 |
 | `assert.Contains` | `TestSmoke_HelpFlag` | `cmd/tokenpile/smoke_test.go` | 38 |
-| `assert.Contains` | `TestSmoke_PricingList` | `cmd/tokenpile/smoke_test.go` | 50 |
-| `assert.Contains` | `TestSmoke_SkillList` | `cmd/tokenpile/smoke_test.go` | 58 |
+| `assert.Contains` | `TestSmoke_PricingList` | `cmd/tokenpile/smoke_test.go` | 51 |
+| `assert.Contains` | `TestSmoke_SkillList` | `cmd/tokenpile/smoke_test.go` | 59 |
 | `assert.Contains` | `TestSmoke_Version` | `cmd/tokenpile/smoke_test.go` | 30 |
 | `assert.Contains` | `TestUninstall_Codex_PreservesForeignContent` | `internal/skill/skill_test.go` | 290 |
 | `assert.Contains` | `TestVerify_TamperedEntries` | `internal/export/export_test.go` | 88 |
@@ -159,7 +163,7 @@
 | `assert.Error` | `TestIntegration_Budget_ZeroAmount_Fails` | `cmd/tokenpile/cmd_budget_test.go` | 30 |
 | `assert.Error` | `TestLog_MissingRequiredFlags` | `cmd/tokenpile/cmd_log_test.go` | 48 |
 | `assert.Error` | `TestParseRemote_NonGitHub` | `internal/provider/repoinfer_test.go` | 58 |
-| `assert.Error` | `TestSmoke_LogMissingFlags` | `cmd/tokenpile/smoke_test.go` | 66 |
+| `assert.Error` | `TestSmoke_LogMissingFlags` | `cmd/tokenpile/smoke_test.go` | 67 |
 | `assert.Error` | `TestVerify_InvalidSignature` | `internal/export/export_test.go` | 100 |
 | `assert.Error` | `TestVerify_LegacyV2Fixture_TamperedEntriesFail` | `internal/export/export_test.go` | 325 |
 | `assert.Error` | `TestVerify_TamperedBudgets` | `internal/export/export_test.go` | 274 |
@@ -176,6 +180,7 @@
 | `assert.False` | `TestInstall_Codex_AppendsToExistingFile` | `internal/skill/skill_test.go` | 108 |
 | `assert.False` | `TestInstall_Codex_CreatesFile` | `internal/skill/skill_test.go` | 84 |
 | `assert.False` | `TestInstall_OpenCode_CreatesFile` | `internal/skill/skill_test.go` | 172 |
+| `assert.False` | `TestIntegration_Reset_YesResetsAndBackupVerifies` | `cmd/tokenpile/cmd_reset_test.go` | 141 |
 | `assert.False` | `TestIsInstalled_ClaudeCode_False` | `internal/skill/skill_test.go` | 64 |
 | `assert.False` | `TestIsInstalled_Codex_False` | `internal/skill/skill_test.go` | 141 |
 | `assert.False` | `TestIsInstalled_Codex_FalseWhenFileExistsWithoutMarker` | `internal/skill/skill_test.go` | 152 |
@@ -187,6 +192,8 @@
 | `assert.False` | `TestSQLiteStore_ListUsageOverTime_WeekGranularity` | `internal/store/sqlite_test.go` | 225 |
 | `assert.False` | `TestUninstall_NotInstalled_NoOp` | `internal/skill/skill_test.go` | 315 |
 | `assert.False` | `TestVerify_ValidDocument` | `internal/export/export_test.go` | 74 |
+| `assert.FileExists` | `TestIntegration_Reset_BackupFailureAbortsDestruction` | `cmd/tokenpile/cmd_reset_test.go` | 176 |
+| `assert.FileExists` | `TestIntegration_Reset_ConfirmationAbort` | `cmd/tokenpile/cmd_reset_test.go` | 113 |
 | `assert.Greater` | `TestSQLiteStore_ListIssues_CostPopulated` | `internal/store/sqlite_test.go` | 263 |
 | `assert.Greater` | `TestSQLiteStore_ListUsageOverTime_CostPopulated` | `internal/store/sqlite_test.go` | 248 |
 | `assert.InDelta` | `TestComputeCost_InOutSeparate` | `internal/pricing/pricing_test.go` | 86 |
@@ -218,8 +225,13 @@
 | `assert.NoError` | `TestBuild_EmptyEntries` | `internal/export/export_test.go` | 129 |
 | `assert.NoError` | `TestIssuesLoaded_UpdatesModel` | `internal/tui/tui_test.go` | 271 |
 | `assert.NoError` | `TestVerify_SurvivesJSONRoundtrip` | `internal/export/export_test.go` | 118 |
+| `assert.NoFileExists` | `TestIntegration_Reset_ConfirmationAbort` | `cmd/tokenpile/cmd_reset_test.go` | 115 |
+| `assert.NoFileExists` | `TestIntegration_Reset_NoBackupSkipsFile` | `cmd/tokenpile/cmd_reset_test.go` | 153 |
+| `assert.NoFileExists` | `TestIntegration_Reset_YesResetsAndBackupVerifies` | `cmd/tokenpile/cmd_reset_test.go` | 130 |
 | `assert.NotContains` | `TestBudgetBar_FullyConsumed_NoEmptySlots` | `internal/tui/tui_test.go` | 333 |
 | `assert.NotContains` | `TestBudgetBar_OverBudget_ClampsToFull` | `internal/tui/tui_test.go` | 340 |
+| `assert.NotContains` | `TestIntegration_Reset_BackupFailureAbortsDestruction` | `cmd/tokenpile/cmd_reset_test.go` | 174 |
+| `assert.NotContains` | `TestIntegration_Reset_NoBackupSkipsFile` | `cmd/tokenpile/cmd_reset_test.go` | 152 |
 | `assert.NotContains` | `TestUninstall_Codex_PreservesForeignContent` | `internal/skill/skill_test.go` | 291 |
 | `assert.NotContains` | `TestViewList_LoadingState` | `internal/tui/tui_test.go` | 291 |
 | `assert.NotContains` | `TestView_Unauthenticated_EmptyDB_ShowsEmptyState` | `internal/tui/tui_test.go` | 113 |
@@ -229,7 +241,7 @@
 | `assert.NotEmpty` | `TestBudgetBar_OverBudget_ClampsToFull` | `internal/tui/tui_test.go` | 339 |
 | `assert.NotEmpty` | `TestBuild_ProducesValidDocument` | `internal/export/export_test.go` | 60 |
 | `assert.NotEmpty` | `TestBuild_SessionsIncludedInDocument` | `internal/export/export_test.go` | 211 |
-| `assert.NotEmpty` | `TestSmoke_AuthStatus` | `cmd/tokenpile/smoke_test.go` | 118 |
+| `assert.NotEmpty` | `TestSmoke_AuthStatus` | `cmd/tokenpile/smoke_test.go` | 119 |
 | `assert.NotEqual` | `TestBuild_SignatureChangesWhenEntriesChange` | `internal/export/export_test.go` | 144 |
 | `assert.NotNil` | `TestHandleKey_EnterDetail` | `internal/tui/tui_test.go` | 224 |
 | `assert.NotNil` | `TestHandleKey_Quit` | `internal/tui/tui_test.go` | 171 |
@@ -293,18 +305,18 @@
 | `budgetBar` | `TestBudgetBar_OverBudget_ClampsToFull` | `internal/tui/tui_test.go` | 338 |
 | `budgetBar` | `TestBudgetBar_ZeroBudget_ReturnsEmpty` | `internal/tui/tui_test.go` | 312 |
 | `buf.String` | `TestIntegration_Report_ShowsBreakdown` | `cmd/tokenpile/integration_test.go` | 287 |
-| `buildBinary` | `TestSmoke_AuthStatus` | `cmd/tokenpile/smoke_test.go` | 113 |
-| `buildBinary` | `TestSmoke_ExportVerify` | `cmd/tokenpile/smoke_test.go` | 70 |
+| `buildBinary` | `TestSmoke_AuthStatus` | `cmd/tokenpile/smoke_test.go` | 114 |
+| `buildBinary` | `TestSmoke_ExportVerify` | `cmd/tokenpile/smoke_test.go` | 71 |
 | `buildBinary` | `TestSmoke_HelpFlag` | `cmd/tokenpile/smoke_test.go` | 34 |
-| `buildBinary` | `TestSmoke_LogMissingFlags` | `cmd/tokenpile/smoke_test.go` | 62 |
-| `buildBinary` | `TestSmoke_PricingList` | `cmd/tokenpile/smoke_test.go` | 46 |
-| `buildBinary` | `TestSmoke_SkillList` | `cmd/tokenpile/smoke_test.go` | 54 |
+| `buildBinary` | `TestSmoke_LogMissingFlags` | `cmd/tokenpile/smoke_test.go` | 63 |
+| `buildBinary` | `TestSmoke_PricingList` | `cmd/tokenpile/smoke_test.go` | 47 |
+| `buildBinary` | `TestSmoke_SkillList` | `cmd/tokenpile/smoke_test.go` | 55 |
 | `buildBinary` | `TestSmoke_Version` | `cmd/tokenpile/smoke_test.go` | 26 |
 | `bytes.Repeat` | `TestGenerateFixtures` | `internal/export/gen_fixture_internal_test.go` | 19 |
 | `canonicalJSON` | `TestCanonicalJSON_PinnedBytes` | `internal/export/canonical_internal_test.go` | 30 |
 | `canonicalJSON` | `TestGenerateFixtures` | `internal/export/gen_fixture_internal_test.go` | 31 |
-| `cmd.CombinedOutput` | `TestSmoke_ExportVerify` | `cmd/tokenpile/smoke_test.go` | 82 |
-| `cmd.Run` | `TestSmoke_LogMissingFlags` | `cmd/tokenpile/smoke_test.go` | 65 |
+| `cmd.CombinedOutput` | `TestSmoke_ExportVerify` | `cmd/tokenpile/smoke_test.go` | 83 |
+| `cmd.Run` | `TestSmoke_LogMissingFlags` | `cmd/tokenpile/smoke_test.go` | 66 |
 | `config.EnsureDirs` | `TestEnsureDirs_CreatesDirs` | `internal/config/paths_test.go` | 50 |
 | `config.EnsureDirs` | `TestEnsureDirs_Idempotent` | `internal/config/paths_test.go` | 69 |
 | `config.Resolve` | `TestResolve_UsesEnvOverride` | `internal/config/paths_test.go` | 19 |
@@ -378,17 +390,19 @@
 | `ed25519.Sign` | `TestGenerateFixtures` | `internal/export/gen_fixture_internal_test.go` | 37 |
 | `err.Error` | `TestIntegration_ExportVerify_PubkeyMismatch` | `cmd/tokenpile/integration_test.go` | 685 |
 | `err.Error` | `TestIntegration_Log_RejectsNegativeTokens` | `cmd/tokenpile/integration_test.go` | 120 |
+| `err.Error` | `TestIntegration_Reset_BackupFailureAbortsDestruction` | `cmd/tokenpile/cmd_reset_test.go` | 173 |
+| `err.Error` | `TestIntegration_Reset_ConfirmationAbort` | `cmd/tokenpile/cmd_reset_test.go` | 110 |
 | `err.Error` | `TestVerify_TamperedEntries` | `internal/export/export_test.go` | 88 |
 | `err.Error` | `TestVerify_TruncatedPublicKey` | `internal/export/export_test.go` | 170 |
 | `err.Error` | `TestVerify_UnsupportedSchemaVersion` | `internal/export/export_test.go` | 299 |
 | `errors.New` | `TestAuthLogin_Failure` | `cmd/tokenpile/cmd_auth_test.go` | 44 |
 | `errors.New` | `TestAuthStatus_NotLoggedIn` | `cmd/tokenpile/cmd_auth_test.go` | 76 |
-| `exec.Command` | `TestSmoke_AuthStatus` | `cmd/tokenpile/smoke_test.go` | 116 |
-| `exec.Command` | `TestSmoke_ExportVerify` | `cmd/tokenpile/smoke_test.go` | 80 |
+| `exec.Command` | `TestSmoke_AuthStatus` | `cmd/tokenpile/smoke_test.go` | 117 |
+| `exec.Command` | `TestSmoke_ExportVerify` | `cmd/tokenpile/smoke_test.go` | 81 |
 | `exec.Command` | `TestSmoke_HelpFlag` | `cmd/tokenpile/smoke_test.go` | 36 |
-| `exec.Command` | `TestSmoke_LogMissingFlags` | `cmd/tokenpile/smoke_test.go` | 64 |
-| `exec.Command` | `TestSmoke_PricingList` | `cmd/tokenpile/smoke_test.go` | 48 |
-| `exec.Command` | `TestSmoke_SkillList` | `cmd/tokenpile/smoke_test.go` | 56 |
+| `exec.Command` | `TestSmoke_LogMissingFlags` | `cmd/tokenpile/smoke_test.go` | 65 |
+| `exec.Command` | `TestSmoke_PricingList` | `cmd/tokenpile/smoke_test.go` | 49 |
+| `exec.Command` | `TestSmoke_SkillList` | `cmd/tokenpile/smoke_test.go` | 57 |
 | `exec.Command` | `TestSmoke_Version` | `cmd/tokenpile/smoke_test.go` | 28 |
 | `export.Build` | `TestBuild_BudgetsIncludedInDocument` | `internal/export/export_test.go` | 232 |
 | `export.Build` | `TestBuild_BudgetsNilProducesEmptyBlock` | `internal/export/export_test.go` | 243 |
@@ -421,6 +435,7 @@
 | `export.Verify` | `TestExport_Verify_InvalidPublicKey` | `internal/export/export_integration_test.go` | 94 |
 | `export.Verify` | `TestExport_Verify_TamperedEntries` | `internal/export/export_integration_test.go` | 81 |
 | `export.Verify` | `TestExport_Verify_WrongPublicKey` | `internal/export/export_integration_test.go` | 114 |
+| `export.Verify` | `TestIntegration_Reset_YesResetsAndBackupVerifies` | `cmd/tokenpile/cmd_reset_test.go` | 139 |
 | `export.Verify` | `TestVerify_InvalidSignature` | `internal/export/export_test.go` | 99 |
 | `export.Verify` | `TestVerify_LegacyV2Fixture` | `internal/export/export_test.go` | 309 |
 | `export.Verify` | `TestVerify_LegacyV2Fixture_TamperedEntriesFail` | `internal/export/export_test.go` | 324 |
@@ -448,6 +463,9 @@
 | `filepath.Join` | `TestInstall_Codex_UpdatesExistingBlock` | `internal/skill/skill_test.go` | 130 |
 | `filepath.Join` | `TestInstall_OpenCode_UpdatesExistingBlock` | `internal/skill/skill_test.go` | 192 |
 | `filepath.Join` | `TestIntegration_ExportVerify_LegacyV2Warns` | `cmd/tokenpile/integration_test.go` | 651 |
+| `filepath.Join` | `TestIntegration_Reset_BackupFailureAbortsDestruction` | `cmd/tokenpile/cmd_reset_test.go` | 169 |
+| `filepath.Join` | `TestIntegration_Reset_ConfirmationAbort` | `cmd/tokenpile/cmd_reset_test.go` | 106 |
+| `filepath.Join` | `TestIntegration_Reset_YesResetsAndBackupVerifies` | `cmd/tokenpile/cmd_reset_test.go` | 120 |
 | `filepath.Join` | `TestIsInstalled_Codex_FalseWhenFileExistsWithoutMarker` | `internal/skill/skill_test.go` | 148 |
 | `filepath.Join` | `TestIsUpToDate_NoVersionComment_False` | `internal/skill/skill_test.go` | 238 |
 | `filepath.Join` | `TestIsUpToDate_OutdatedFile_False` | `internal/skill/skill_test.go` | 225 |
@@ -460,7 +478,7 @@
 | `filepath.Join` | `TestSQLiteStore_MigrationIdempotent` | `internal/store/sqlite_test.go` | 302 |
 | `filepath.Join` | `TestSQLiteStore_SchemaIdempotent` | `internal/store/sqlite_test.go` | 289 |
 | `filepath.Join` | `TestSetOverride_WritesAndUpdates` | `internal/pricing/pricing_test.go` | 91 |
-| `filepath.Join` | `TestSmoke_ExportVerify` | `cmd/tokenpile/smoke_test.go` | 74 |
+| `filepath.Join` | `TestSmoke_ExportVerify` | `cmd/tokenpile/smoke_test.go` | 75 |
 | `filepath.Join` | `TestUninstall_Codex_PreservesForeignContent` | `internal/skill/skill_test.go` | 277 |
 | `fmt.Printf` | `TestGenerateFixtures` | `internal/export/gen_fixture_internal_test.go` | 79 |
 | `http.HandlerFunc` | `TestGitHubIssueProvider_GetIssue` | `internal/provider/github_issues_test.go` | 101 |
@@ -485,6 +503,7 @@
 | `json.Unmarshal` | `TestIntegration_Export_SchemaV3_IncludesBudget` | `cmd/tokenpile/integration_test.go` | 531 |
 | `json.Unmarshal` | `TestIntegration_Export_SchemaV3_IncludesSessions` | `cmd/tokenpile/integration_test.go` | 508 |
 | `json.Unmarshal` | `TestIntegration_Export_Unfiltered_IncludesAllSessionsAndBudgets` | `cmd/tokenpile/integration_test.go` | 556 |
+| `json.Unmarshal` | `TestIntegration_Reset_YesResetsAndBackupVerifies` | `cmd/tokenpile/cmd_reset_test.go` | 137 |
 | `json.Unmarshal` | `TestVerify_LegacyV2Fixture` | `internal/export/export_test.go` | 307 |
 | `json.Unmarshal` | `TestVerify_LegacyV2Fixture_TamperedEntriesFail` | `internal/export/export_test.go` | 320 |
 | `json.Unmarshal` | `TestVerify_SurvivesJSONRoundtrip` | `internal/export/export_test.go` | 115 |
@@ -538,6 +557,11 @@
 | `newMockAuthProvider` | `TestGitHubIssueProvider_GetIssue` | `internal/provider/github_issues_test.go` | 108 |
 | `newMockAuthProvider` | `TestGitHubIssueProvider_ListIssues` | `internal/provider/github_issues_test.go` | 39 |
 | `newMockAuthProvider` | `TestGitHubIssueProvider_ListIssues_Paginated` | `internal/provider/github_issues_test.go` | 73 |
+| `newResetFixture` | `TestIntegration_Reset_BackupFailureAbortsDestruction` | `cmd/tokenpile/cmd_reset_test.go` | 168 |
+| `newResetFixture` | `TestIntegration_Reset_ConfirmationAbort` | `cmd/tokenpile/cmd_reset_test.go` | 105 |
+| `newResetFixture` | `TestIntegration_Reset_NoBackupSkipsFile` | `cmd/tokenpile/cmd_reset_test.go` | 148 |
+| `newResetFixture` | `TestIntegration_Reset_SecondRunSucceeds` | `cmd/tokenpile/cmd_reset_test.go` | 157 |
+| `newResetFixture` | `TestIntegration_Reset_YesResetsAndBackupVerifies` | `cmd/tokenpile/cmd_reset_test.go` | 119 |
 | `newTUIModel` | `TestTUI_DetailView_SessionsTab_ShowsNoteAndTags` | `internal/tui/tui_test.go` | 409 |
 | `newTUIModel` | `TestTUI_DetailView_SummaryAndSessionsTabs` | `internal/tui/tui_test.go` | 376 |
 | `newTUIModel` | `TestTUI_DetailView_SummaryTab_ShowsBudgetBar` | `internal/tui/tui_test.go` | 437 |
@@ -619,7 +643,7 @@
 | `newTestStore` | `TestSQLiteStore_UpdateSessionAnnotations_NoteAndTags` | `internal/store/sqlite_test.go` | 313 |
 | `newTestStore` | `TestSQLiteStore_UpdateSessionAnnotations_TagsUnion` | `internal/store/sqlite_test.go` | 331 |
 | `now.Add` | `TestBuild_SessionsIncludedInDocument` | `internal/export/export_test.go` | 185 |
-| `os.Environ` | `TestSmoke_ExportVerify` | `cmd/tokenpile/smoke_test.go` | 73 |
+| `os.Environ` | `TestSmoke_ExportVerify` | `cmd/tokenpile/smoke_test.go` | 74 |
 | `os.Getenv` | `TestGenerateFixtures` | `internal/export/gen_fixture_internal_test.go` | 15 |
 | `os.IsNotExist` | `TestUninstall_ClaudeCode_RemovesFile` | `internal/skill/skill_test.go` | 270 |
 | `os.IsNotExist` | `TestUninstall_Codex_RemovesFileWhenOnlyBlock` | `internal/skill/skill_test.go` | 306 |
@@ -636,9 +660,10 @@
 | `os.ReadFile` | `TestInstall_OpenCode_CreatesFile` | `internal/skill/skill_test.go` | 174 |
 | `os.ReadFile` | `TestInstall_OpenCode_UpdatesExistingBlock` | `internal/skill/skill_test.go` | 193 |
 | `os.ReadFile` | `TestIntegration_ExportVerify_TamperedSessionFails` | `cmd/tokenpile/integration_test.go` | 629 |
+| `os.ReadFile` | `TestIntegration_Reset_YesResetsAndBackupVerifies` | `cmd/tokenpile/cmd_reset_test.go` | 133 |
 | `os.ReadFile` | `TestLoadEncryptedToken_CorruptedFile` | `internal/provider/github_auth_internal_test.go` | 29 |
 | `os.ReadFile` | `TestSetOverride_WritesAndUpdates` | `internal/pricing/pricing_test.go` | 103 |
-| `os.ReadFile` | `TestSmoke_ExportVerify` | `cmd/tokenpile/smoke_test.go` | 100 |
+| `os.ReadFile` | `TestSmoke_ExportVerify` | `cmd/tokenpile/smoke_test.go` | 101 |
 | `os.ReadFile` | `TestUninstall_Codex_PreservesForeignContent` | `internal/skill/skill_test.go` | 288 |
 | `os.ReadFile` | `TestVerify_LegacyV2Fixture` | `internal/export/export_test.go` | 303 |
 | `os.ReadFile` | `TestVerify_LegacyV2Fixture_TamperedEntriesFail` | `internal/export/export_test.go` | 316 |
@@ -654,7 +679,7 @@
 | `os.WriteFile` | `TestLoadEncryptedToken_CorruptedFile` | `internal/provider/github_auth_internal_test.go` | 33 |
 | `os.WriteFile` | `TestNewLoader_DefaultFillsMissingOverride` | `internal/pricing/pricing_test.go` | 47 |
 | `os.WriteFile` | `TestNewLoader_UserOverrideTakesPrecedence` | `internal/pricing/pricing_test.go` | 27 |
-| `os.WriteFile` | `TestSmoke_ExportVerify` | `cmd/tokenpile/smoke_test.go` | 105 |
+| `os.WriteFile` | `TestSmoke_ExportVerify` | `cmd/tokenpile/smoke_test.go` | 106 |
 | `os.WriteFile` | `TestUninstall_Codex_PreservesForeignContent` | `internal/skill/skill_test.go` | 279 |
 | `p.Date.IsZero` | `TestSQLiteStore_ListUsageOverTime_WeekGranularity` | `internal/store/sqlite_test.go` | 225 |
 | `p.Date.Weekday` | `TestSQLiteStore_ListUsageOverTime_WeekGranularity` | `internal/store/sqlite_test.go` | 226 |
@@ -687,8 +712,10 @@
 | `require.Error` | `TestIntegration_ExportVerify_PubkeyMismatch` | `cmd/tokenpile/integration_test.go` | 684 |
 | `require.Error` | `TestIntegration_ExportVerify_TamperedSessionFails` | `cmd/tokenpile/integration_test.go` | 643 |
 | `require.Error` | `TestIntegration_Log_RejectsNegativeTokens` | `cmd/tokenpile/integration_test.go` | 119 |
+| `require.Error` | `TestIntegration_Reset_BackupFailureAbortsDestruction` | `cmd/tokenpile/cmd_reset_test.go` | 172 |
+| `require.Error` | `TestIntegration_Reset_ConfirmationAbort` | `cmd/tokenpile/cmd_reset_test.go` | 109 |
 | `require.Error` | `TestLoadEncryptedToken_CorruptedFile` | `internal/provider/github_auth_internal_test.go` | 36 |
-| `require.Error` | `TestSmoke_ExportVerify` | `cmd/tokenpile/smoke_test.go` | 108 |
+| `require.Error` | `TestSmoke_ExportVerify` | `cmd/tokenpile/smoke_test.go` | 109 |
 | `require.Error` | `TestVerify_TamperedEntries` | `internal/export/export_test.go` | 87 |
 | `require.Error` | `TestVerify_TruncatedPublicKey` | `internal/export/export_test.go` | 169 |
 | `require.Error` | `TestVerify_UnsupportedSchemaVersion` | `internal/export/export_test.go` | 298 |
@@ -709,6 +736,7 @@
 | `require.Len` | `TestIntegration_Log_NoteTruncatedOnRuneBoundary` | `cmd/tokenpile/integration_test.go` | 410 |
 | `require.Len` | `TestIntegration_Log_TagsAccumulate` | `cmd/tokenpile/integration_test.go` | 434 |
 | `require.Len` | `TestIntegration_Log_WithNoteAndTag` | `cmd/tokenpile/integration_test.go` | 387 |
+| `require.Len` | `TestIntegration_Reset_YesResetsAndBackupVerifies` | `cmd/tokenpile/cmd_reset_test.go` | 142 |
 | `require.Len` | `TestSQLiteStore_GetReport_ByAgentModel` | `internal/store/sqlite_test.go` | 119 |
 | `require.Len` | `TestSQLiteStore_ListAllSessions_AcrossRepos` | `internal/store/sqlite_test.go` | 471 |
 | `require.Len` | `TestSQLiteStore_ListBudgets_RoundTrip` | `internal/store/sqlite_test.go` | 485 |
@@ -785,6 +813,9 @@
 | `require.NoError` | `TestIntegration_Report_Sessions_NoSessions` | `cmd/tokenpile/integration_test.go` | 694 |
 | `require.NoError` | `TestIntegration_Report_ShowsBreakdown` | `cmd/tokenpile/integration_test.go` | 285 |
 | `require.NoError` | `TestIntegration_Report_WithBudget` | `cmd/tokenpile/integration_test.go` | 458 |
+| `require.NoError` | `TestIntegration_Reset_NoBackupSkipsFile` | `cmd/tokenpile/cmd_reset_test.go` | 151 |
+| `require.NoError` | `TestIntegration_Reset_SecondRunSucceeds` | `cmd/tokenpile/cmd_reset_test.go` | 160 |
+| `require.NoError` | `TestIntegration_Reset_YesResetsAndBackupVerifies` | `cmd/tokenpile/cmd_reset_test.go` | 123 |
 | `require.NoError` | `TestIsInstalled_ClaudeCode_True` | `internal/skill/skill_test.go` | 72 |
 | `require.NoError` | `TestIsInstalled_Codex_FalseWhenFileExistsWithoutMarker` | `internal/skill/skill_test.go` | 149 |
 | `require.NoError` | `TestIsInstalled_Codex_True` | `internal/skill/skill_test.go` | 160 |
@@ -829,11 +860,11 @@
 | `require.NoError` | `TestSQLiteStore_UpdateSessionAnnotations_NoteAndTags` | `internal/store/sqlite_test.go` | 317 |
 | `require.NoError` | `TestSQLiteStore_UpdateSessionAnnotations_TagsUnion` | `internal/store/sqlite_test.go` | 335 |
 | `require.NoError` | `TestSetOverride_WritesAndUpdates` | `internal/pricing/pricing_test.go` | 94 |
-| `require.NoError` | `TestSmoke_AuthStatus` | `cmd/tokenpile/smoke_test.go` | 117 |
-| `require.NoError` | `TestSmoke_ExportVerify` | `cmd/tokenpile/smoke_test.go` | 88 |
+| `require.NoError` | `TestSmoke_AuthStatus` | `cmd/tokenpile/smoke_test.go` | 118 |
+| `require.NoError` | `TestSmoke_ExportVerify` | `cmd/tokenpile/smoke_test.go` | 89 |
 | `require.NoError` | `TestSmoke_HelpFlag` | `cmd/tokenpile/smoke_test.go` | 37 |
-| `require.NoError` | `TestSmoke_PricingList` | `cmd/tokenpile/smoke_test.go` | 49 |
-| `require.NoError` | `TestSmoke_SkillList` | `cmd/tokenpile/smoke_test.go` | 57 |
+| `require.NoError` | `TestSmoke_PricingList` | `cmd/tokenpile/smoke_test.go` | 50 |
+| `require.NoError` | `TestSmoke_SkillList` | `cmd/tokenpile/smoke_test.go` | 58 |
 | `require.NoError` | `TestSmoke_Version` | `cmd/tokenpile/smoke_test.go` | 29 |
 | `require.NoError` | `TestTUI_DetailView_SessionsTab_ShowsNoteAndTags` | `internal/tui/tui_test.go` | 397 |
 | `require.NoError` | `TestTUI_DetailView_SummaryTab_ShowsBudgetBar` | `internal/tui/tui_test.go` | 435 |
@@ -856,7 +887,7 @@
 | `require.NoError` | `TestVerify_WrongKey` | `internal/export/export_test.go` | 152 |
 | `require.NotEmpty` | `TestIntegration_ExportVerify_TamperedSessionFails` | `cmd/tokenpile/integration_test.go` | 634 |
 | `require.NotEmpty` | `TestSQLiteStore_Session_StartEnd` | `internal/store/sqlite_test.go` | 83 |
-| `require.NotEqual` | `TestSmoke_ExportVerify` | `cmd/tokenpile/smoke_test.go` | 104 |
+| `require.NotEqual` | `TestSmoke_ExportVerify` | `cmd/tokenpile/smoke_test.go` | 105 |
 | `require.NotNil` | `TestIntegration_Budget_Overwrite` | `cmd/tokenpile/cmd_budget_test.go` | 64 |
 | `require.NotNil` | `TestIntegration_Budget_Set` | `cmd/tokenpile/cmd_budget_test.go` | 22 |
 | `require.NotNil` | `TestSQLiteStore_ListIssues_BudgetPopulated` | `internal/store/sqlite_test.go` | 440 |
@@ -867,7 +898,7 @@
 | `require.True` | `TestNewLoader_DefaultsLoaded` | `internal/pricing/pricing_test.go` | 19 |
 | `require.True` | `TestNewLoader_UserOverrideTakesPrecedence` | `internal/pricing/pricing_test.go` | 39 |
 | `require.True` | `TestSetOverride_WritesAndUpdates` | `internal/pricing/pricing_test.go` | 100 |
-| `run` | `TestSmoke_ExportVerify` | `cmd/tokenpile/smoke_test.go` | 87 |
+| `run` | `TestSmoke_ExportVerify` | `cmd/tokenpile/smoke_test.go` | 88 |
 | `runAuthApp` | `TestAuthLogin_Failure` | `cmd/tokenpile/cmd_auth_test.go` | 46 |
 | `runAuthApp` | `TestAuthLogin_Success` | `cmd/tokenpile/cmd_auth_test.go` | 35 |
 | `runAuthApp` | `TestAuthLogout_Success` | `cmd/tokenpile/cmd_auth_test.go` | 56 |
@@ -910,6 +941,11 @@
 | `runReportCmd` | `TestIntegration_Report_Sessions` | `cmd/tokenpile/integration_test.go` | 447 |
 | `runReportCmd` | `TestIntegration_Report_Sessions_NoSessions` | `cmd/tokenpile/integration_test.go` | 698 |
 | `runReportCmd` | `TestIntegration_Report_WithBudget` | `cmd/tokenpile/integration_test.go` | 465 |
+| `runResetCmd` | `TestIntegration_Reset_BackupFailureAbortsDestruction` | `cmd/tokenpile/cmd_reset_test.go` | 171 |
+| `runResetCmd` | `TestIntegration_Reset_ConfirmationAbort` | `cmd/tokenpile/cmd_reset_test.go` | 108 |
+| `runResetCmd` | `TestIntegration_Reset_NoBackupSkipsFile` | `cmd/tokenpile/cmd_reset_test.go` | 150 |
+| `runResetCmd` | `TestIntegration_Reset_SecondRunSucceeds` | `cmd/tokenpile/cmd_reset_test.go` | 159 |
+| `runResetCmd` | `TestIntegration_Reset_YesResetsAndBackupVerifies` | `cmd/tokenpile/cmd_reset_test.go` | 122 |
 | `s.AssertExpectations` | `TestLog_ClosesIdleSession_StartsNew` | `cmd/tokenpile/cmd_log_test.go` | 168 |
 | `s.AssertExpectations` | `TestLog_NoActiveSession_StartsNew` | `cmd/tokenpile/cmd_log_test.go` | 85 |
 | `s.AssertExpectations` | `TestLog_ReuseActiveSession` | `cmd/tokenpile/cmd_log_test.go` | 122 |
@@ -1054,11 +1090,11 @@
 | `string` | `TestInstall_OpenCode_CreatesFile` | `internal/skill/skill_test.go` | 176 |
 | `string` | `TestInstall_OpenCode_UpdatesExistingBlock` | `internal/skill/skill_test.go` | 195 |
 | `string` | `TestSetOverride_WritesAndUpdates` | `internal/pricing/pricing_test.go` | 105 |
-| `string` | `TestSmoke_AuthStatus` | `cmd/tokenpile/smoke_test.go` | 118 |
-| `string` | `TestSmoke_ExportVerify` | `cmd/tokenpile/smoke_test.go` | 84 |
+| `string` | `TestSmoke_AuthStatus` | `cmd/tokenpile/smoke_test.go` | 119 |
+| `string` | `TestSmoke_ExportVerify` | `cmd/tokenpile/smoke_test.go` | 85 |
 | `string` | `TestSmoke_HelpFlag` | `cmd/tokenpile/smoke_test.go` | 38 |
-| `string` | `TestSmoke_PricingList` | `cmd/tokenpile/smoke_test.go` | 50 |
-| `string` | `TestSmoke_SkillList` | `cmd/tokenpile/smoke_test.go` | 58 |
+| `string` | `TestSmoke_PricingList` | `cmd/tokenpile/smoke_test.go` | 51 |
+| `string` | `TestSmoke_SkillList` | `cmd/tokenpile/smoke_test.go` | 59 |
 | `string` | `TestSmoke_Version` | `cmd/tokenpile/smoke_test.go` | 30 |
 | `string` | `TestUninstall_Codex_PreservesForeignContent` | `internal/skill/skill_test.go` | 290 |
 | `strings.Contains` | `TestTUI_DetailView_SessionsTab_ShowsNoteAndTags` | `internal/tui/tui_test.go` | 413 |
@@ -1070,8 +1106,8 @@
 | `strings.Count` | `TestInstall_OpenCode_UpdatesExistingBlock` | `internal/skill/skill_test.go` | 195 |
 | `strings.HasPrefix` | `TestInstall_Codex_AppendsToExistingFile` | `internal/skill/skill_test.go` | 114 |
 | `strings.Repeat` | `TestIntegration_Log_NoteTruncatedOnRuneBoundary` | `cmd/tokenpile/integration_test.go` | 395 |
-| `strings.Replace` | `TestSmoke_ExportVerify` | `cmd/tokenpile/smoke_test.go` | 103 |
-| `strings.ToLower` | `TestSmoke_SkillList` | `cmd/tokenpile/smoke_test.go` | 58 |
+| `strings.Replace` | `TestSmoke_ExportVerify` | `cmd/tokenpile/smoke_test.go` | 104 |
+| `strings.ToLower` | `TestSmoke_SkillList` | `cmd/tokenpile/smoke_test.go` | 59 |
 | `stripANSI` | `TestTUI_DetailView_SessionsTab_ShowsNoteAndTags` | `internal/tui/tui_test.go` | 413 |
 | `stripANSI` | `TestTUI_DetailView_SummaryAndSessionsTabs` | `internal/tui/tui_test.go` | 380 |
 | `stripANSI` | `TestTUI_DetailView_SummaryTab_ShowsBudgetBar` | `internal/tui/tui_test.go` | 441 |

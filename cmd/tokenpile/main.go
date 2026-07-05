@@ -99,6 +99,7 @@ func main() {
 		exportCommands(sqliteStore, priv, version),
 		skillCommands(),
 		budgetCommands(sqliteStore),
+		resetCommand(sqliteStore, paths, authProvider, priv, version),
 	}
 
 	// Override default action to launch TUI, injecting composed deps.

@@ -16,11 +16,11 @@
 
 ## 4. Reset command
 
-- [ ] 4.1 New `cmd/tokenpile/cmd_reset.go`: enumerate existing state (DB + `-wal`/`-shm`, identity keypair, credentials, pricing override, keychain entry, installed skills), print the deletion list, prompt for `yes` on stdin unless `--yes`
-- [ ] 4.2 Backup step: build the full export (all entries, sessions, budgets) signed with the identity key, write to `tokenpile-backup-<timestamp>.json` (0600), `--output` override, `--no-backup` skip; abort everything if the backup write fails
-- [ ] 4.3 Destruction step: `Logout` (keychain + credentials), `skill.Uninstall` for every agent, remove pricing override, identity keypair, DB and sidecars; treat missing items as already removed; collect per-item errors, report all, exit non-zero if any
-- [ ] 4.4 Wire `resetCommand` in `main.go` with store, paths, auth provider, private key and version
-- [ ] 4.5 Integration tests with temp dirs: confirmation abort leaves everything intact; `--yes` resets and backup verifies with `export verify`; `--no-backup` skips the file; second run succeeds; backup failure aborts destruction
+- [x] 4.1 New `cmd/tokenpile/cmd_reset.go`: enumerate existing state (DB + `-wal`/`-shm`, identity keypair, credentials, pricing override, keychain entry, installed skills), print the deletion list, prompt for `yes` on stdin unless `--yes`
+- [x] 4.2 Backup step: build the full export (all entries, sessions, budgets) signed with the identity key, write to `tokenpile-backup-<timestamp>.json` (0600), `--output` override, `--no-backup` skip; abort everything if the backup write fails
+- [x] 4.3 Destruction step: `Logout` (keychain + credentials), `skill.Uninstall` for every agent, remove pricing override, identity keypair, DB and sidecars; treat missing items as already removed; collect per-item errors, report all, exit non-zero if any
+- [x] 4.4 Wire `resetCommand` in `main.go` with store, paths, auth provider, private key and version
+- [x] 4.5 Integration tests with temp dirs: confirmation abort leaves everything intact; `--yes` resets and backup verifies with `export verify`; `--no-backup` skips the file; second run succeeds; backup failure aborts destruction
 
 ## 5. Docs and checks
 

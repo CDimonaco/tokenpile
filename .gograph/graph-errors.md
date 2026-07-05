@@ -1,7 +1,7 @@
 # Errors & Panics
 
 **Root:** `/Users/cdimonaco/code/github.com/cdimonaco/tokenpile`  
-**Generated:** 2026-07-05 15:22:39 UTC  
+**Generated:** 2026-07-05 15:24:58 UTC  
 
 ---
 
@@ -56,9 +56,22 @@
 | `get issue cache: %w` | `reportCommand` | `cmd/tokenpile/cmd_report.go` | 62 |
 | `get budget: %w` | `reportCommand` | `cmd/tokenpile/cmd_report.go` | 101 |
 | `list sessions: %w` | `printSessionsReport` | `cmd/tokenpile/cmd_report.go` | 120 |
+| `reset aborted` | `runReset` | `cmd/tokenpile/cmd_reset.go` | 77 |
+| `backup failed, nothing was deleted: %w` | `runReset` | `cmd/tokenpile/cmd_reset.go` | 83 |
+| `reset incomplete: %d item(s) could not be removed` | `runReset` | `cmd/tokenpile/cmd_reset.go` | 95 |
+| `list entries: %w` | `writeResetBackup` | `cmd/tokenpile/cmd_reset.go` | 158 |
+| `list sessions: %w` | `writeResetBackup` | `cmd/tokenpile/cmd_reset.go` | 163 |
+| `list budgets: %w` | `writeResetBackup` | `cmd/tokenpile/cmd_reset.go` | 168 |
+| `build export: %w` | `writeResetBackup` | `cmd/tokenpile/cmd_reset.go` | 178 |
+| `marshal export: %w` | `writeResetBackup` | `cmd/tokenpile/cmd_reset.go` | 183 |
+| `write backup: %w` | `writeResetBackup` | `cmd/tokenpile/cmd_reset.go` | 192 |
+| `logout: %w` | `destroyState` | `cmd/tokenpile/cmd_reset.go` | 207 |
+| `uninstall skill %s: %w` | `destroyState` | `cmd/tokenpile/cmd_reset.go` | 215 |
+| `remove %s: %w` | `destroyState` | `cmd/tokenpile/cmd_reset.go` | 230 |
+| `` | `newResetFixture` | `cmd/tokenpile/cmd_reset_test.go` | 64 |
 | `install skill: %w` | `skillCommands` | `cmd/tokenpile/cmd_skill.go` | 41 |
 | `` | `newTestStore` | `cmd/tokenpile/integration_test.go` | 42 |
-| `tui: %w` | `main` | `cmd/tokenpile/main.go` | 112 |
+| `tui: %w` | `main` | `cmd/tokenpile/main.go` | 113 |
 | `generate ed25519 key: %w` | `generateIdentity` | `internal/config/identity.go` | 24 |
 | `write identity key: %w` | `generateIdentity` | `internal/config/identity.go` | 38 |
 | `write identity pub: %w` | `generateIdentity` | `internal/config/identity.go` | 42 |

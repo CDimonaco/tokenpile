@@ -40,6 +40,7 @@ func TestSmoke_HelpFlag(t *testing.T) {
 	assert.Contains(t, string(out), "auth")
 	assert.Contains(t, string(out), "export")
 	assert.Contains(t, string(out), "skill")
+	assert.Contains(t, string(out), "reset")
 }
 
 func TestSmoke_PricingList(t *testing.T) {
