@@ -1,3 +1,5 @@
+<!-- tokenpile-skill-version: 2 -->
+
 # tokenpile
 
 tokenpile tracks LLM token usage and cost per GitHub issue. Log your own usage after each response, and answer usage questions by running CLI commands.
@@ -13,6 +15,8 @@ tokenpile log \
   --model <model-id> \
   --tokens-in <input-tokens> \
   --tokens-out <output-tokens> \
+  --note "<one-line summary of what was done>" \
+  --tag <tag> \
   [--repo owner/repo]
 ```
 
@@ -21,6 +25,8 @@ tokenpile log \
 - `--agent`: always `opencode`
 - `--model`: the model currently in use (e.g. `claude-sonnet-4-6`, `gpt-4o`, `o3`). Use the exact model identifier configured in opencode.
 - `--tokens-in` / `--tokens-out`: estimate (~4 chars per token). For `--tokens-in`, estimate total context for this turn (conversation history + files read + tool outputs). For `--tokens-out`, estimate tokens in your response. Approximate counts are acceptable. Log automatically without asking the user.
+- `--note`: one-line description of what was done in this response (max 100 chars). Always include.
+- `--tag`: one or more tags from this vocabulary (repeat the flag for multiple): `refactor`, `debug`, `feature`, `test`, `docs`, `spike`, `review`. Choose all that apply.
 - `--repo`: optional if running inside a git repo with a GitHub remote
 
 **When to log:**

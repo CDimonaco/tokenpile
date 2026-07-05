@@ -56,16 +56,24 @@ func skillCommands() *cli.Command {
 				Action: func(c *cli.Context) error {
 					agents := skill.List()
 
-					fmt.Fprintf(c.App.Writer, "%-20s %s\n", "Agent", "Status")
-					fmt.Fprintf(c.App.Writer, "%s\n", "------------------------------")
+					fmt.Fprintf(c.App.Writer, "%-20s %-16s %s\n", "Agent", "Status", "Skill version")
+					fmt.Fprintf(c.App.Writer, "%s\n", "------------------------------------------------")
 
 					for _, a := range agents {
+						installed := skill.IsInstalled(a.Name)
 						status := "not installed"
-						if skill.IsInstalled(a.Name) {
+						versionNote := ""
+
+						if installed {
 							status = "installed"
+							if !skill.IsUpToDate(a.Name) {
+								versionNote = "outdated — run: tokenpile skill install --agent " + a.Name
+							} else {
+								versionNote = "up to date"
+							}
 						}
 
-						fmt.Fprintf(c.App.Writer, "%-20s %s\n", a.Name, status)
+						fmt.Fprintf(c.App.Writer, "%-20s %-16s %s\n", a.Name, status, versionNote)
 					}
 
 					return nil

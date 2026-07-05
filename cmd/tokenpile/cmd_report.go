@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/urfave/cli/v2"
 
@@ -27,6 +28,10 @@ func reportCommand(s store.Store) *cli.Command {
 				Aliases: []string{"r"},
 				Usage:   "repository in owner/repo format (inferred from git remote if absent)",
 			},
+			&cli.BoolFlag{
+				Name:  "sessions",
+				Usage: "show per-session breakdown instead of aggregated summary",
+			},
 		},
 		Action: func(c *cli.Context) error {
 			repo, err := provider.ResolveRepo(c.String("repo"))
@@ -42,6 +47,10 @@ func reportCommand(s store.Store) *cli.Command {
 
 			issueNum := c.Int("issue")
 			ctx := c.Context
+
+			if c.Bool("sessions") {
+				return printSessionsReport(c, s, repo, issueNum)
+			}
 
 			report, err := s.GetReport(ctx, repo, issueNum)
 			if err != nil {
@@ -87,7 +96,68 @@ func reportCommand(s store.Store) *cli.Command {
 				"Total", report.TotalTokensIn, report.TotalTokensOut, report.TotalCost)
 			fmt.Fprintf(c.App.Writer, "\nWall-clock time: %s\n", report.TotalTime.Round(1000000000))
 
+			budget, budgetErr := s.GetBudget(ctx, repo, issueNum)
+			if budgetErr != nil && !errors.Is(budgetErr, store.ErrBudgetNotFound) {
+				return fmt.Errorf("get budget: %w", budgetErr)
+			}
+
+			if budget != nil {
+				pct := report.TotalCost / *budget * 100
+				fmt.Fprintf(c.App.Writer, "Budget:          $%.2f / $%.2f (%.1f%%)\n",
+					report.TotalCost, *budget, pct)
+			}
+
 			return nil
 		},
 	}
+}
+
+func printSessionsReport(c *cli.Context, s store.Store, repo string, issueNum int) error {
+	ctx := c.Context
+
+	sessions, err := s.ListSessions(ctx, repo, issueNum)
+	if err != nil {
+		return fmt.Errorf("list sessions: %w", err)
+	}
+
+	fmt.Fprintf(c.App.Writer, "Sessions: %s #%d\n\n", repo, issueNum)
+
+	if len(sessions) == 0 {
+		fmt.Fprintln(c.App.Writer, "No sessions found.")
+
+		return nil
+	}
+
+	sep := strings.Repeat("-", 72)
+
+	for i, sess := range sessions {
+		end := "active"
+		duration := time.Since(sess.StartedAt).Round(time.Second)
+
+		if sess.EndedAt != nil {
+			end = sess.EndedAt.Local().Format("15:04:05")
+			duration = sess.EndedAt.Sub(sess.StartedAt).Round(time.Second)
+		}
+
+		tags := ""
+		if len(sess.Tags) > 0 {
+			tags = "[" + strings.Join(sess.Tags, "] [") + "]"
+		}
+
+		fmt.Fprintf(c.App.Writer, "Session %d  %s → %s  (%s)  %s\n",
+			i+1,
+			sess.StartedAt.Local().Format("2006-01-02 15:04:05"),
+			end,
+			duration,
+			tags,
+		)
+
+		if sess.Note != "" {
+			fmt.Fprintf(c.App.Writer, "  %s\n", sess.Note)
+		}
+
+		fmt.Fprintln(c.App.Writer, sep)
+	}
+
+	return nil
 }

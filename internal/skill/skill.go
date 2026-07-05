@@ -19,8 +19,9 @@ var codexTemplate []byte
 var opencodeTemplate []byte
 
 const (
-	markerStart = "<!-- tokenpile:start -->"
-	markerEnd   = "<!-- tokenpile:end -->"
+	markerStart         = "<!-- tokenpile:start -->"
+	markerEnd           = "<!-- tokenpile:end -->"
+	versionMarkerPrefix = "<!-- tokenpile-skill-version:"
 )
 
 var ErrUnsupportedAgent = errors.New("unsupported agent")
@@ -187,6 +188,58 @@ func IsInstalled(agentName string) bool {
 	_, err := os.Stat(target)
 
 	return err == nil
+}
+
+// IsUpToDate reports whether the installed skill file matches the embedded
+// template version. Returns false when the agent is not installed or the
+// installed file predates the version comment added in v2.
+func IsUpToDate(agentName string) bool {
+	agent, found := findAgent(agentName)
+	if !found {
+		return false
+	}
+
+	target := agent.InstallPath()
+	if target == "" {
+		return false
+	}
+
+	installedVersion := extractVersion(target, agent.Shared)
+	embeddedVersion := extractVersionFromBytes(agent.TemplateData)
+
+	return installedVersion != "" && installedVersion == embeddedVersion
+}
+
+func extractVersion(path string, shared bool) string {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return ""
+	}
+
+	if shared {
+		startIdx := strings.Index(string(data), markerStart)
+		endIdx := strings.Index(string(data), markerEnd)
+		if startIdx == -1 || endIdx == -1 || endIdx <= startIdx {
+			return ""
+		}
+
+		return extractVersionFromBytes(data[startIdx:endIdx])
+	}
+
+	return extractVersionFromBytes(data)
+}
+
+func extractVersionFromBytes(data []byte) string {
+	for line := range strings.SplitSeq(string(data), "\n") {
+		line = strings.TrimSpace(line)
+		if after, ok := strings.CutPrefix(line, versionMarkerPrefix); ok {
+			ver := strings.TrimSuffix(after, "-->")
+
+			return strings.TrimSpace(ver)
+		}
+	}
+
+	return ""
 }
 
 func findAgent(name string) (Agent, bool) {
