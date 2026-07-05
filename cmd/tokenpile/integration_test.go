@@ -481,6 +481,20 @@ func TestIntegration_Export_NoRepoIssueFilter_OmitsSessionsAndBudgets(t *testing
 	assert.Empty(t, doc.Budgets)
 }
 
+func TestIntegration_Report_Sessions_NoSessions(t *testing.T) {
+	s := newTestStore(t)
+
+	// issue exists in the cache but has no sessions
+	ctx := context.Background()
+	require.NoError(t, s.UpsertIssueCache(ctx, &usage.IssueCache{
+		Repo: "owner/repo", IssueNum: 55, Title: "Empty Issue",
+	}))
+
+	out, err := runReportCmd(t, s, "report", "--issue", "55", "--repo", "owner/repo", "--sessions")
+	require.NoError(t, err)
+	assert.Contains(t, out, "No sessions found")
+}
+
 func TestIntegration_Log_IdleSessionClosed_ByResolveSession(t *testing.T) {
 	s := newTestStore(t)
 	ctx := context.Background()

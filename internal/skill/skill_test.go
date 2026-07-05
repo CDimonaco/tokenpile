@@ -194,3 +194,62 @@ func TestInstall_OpenCode_UpdatesExistingBlock(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 1, strings.Count(string(data), "<!-- tokenpile:start -->"), "block must appear exactly once")
 }
+
+// --- IsUpToDate ---
+
+func TestIsUpToDate_UnknownAgent_False(t *testing.T) {
+	assert.False(t, skill.IsUpToDate("no-such-agent"))
+}
+
+func TestIsUpToDate_NotInstalled_False(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("HOME", dir)
+
+	assert.False(t, skill.IsUpToDate("claude-code"))
+}
+
+func TestIsUpToDate_AfterInstall_True(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("HOME", dir)
+
+	_, _, err := skill.Install("claude-code")
+	require.NoError(t, err)
+
+	assert.True(t, skill.IsUpToDate("claude-code"))
+}
+
+func TestIsUpToDate_OutdatedFile_False(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("HOME", dir)
+
+	skillPath := filepath.Join(dir, ".claude", "skills", "tokenpile.md")
+	require.NoError(t, os.MkdirAll(filepath.Dir(skillPath), 0o750))
+
+	// write a file with a stale version number
+	require.NoError(t, os.WriteFile(skillPath, []byte("<!-- tokenpile-skill-version: 1 -->\n# tokenpile\n"), 0o644))
+
+	assert.False(t, skill.IsUpToDate("claude-code"))
+}
+
+func TestIsUpToDate_NoVersionComment_False(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("HOME", dir)
+
+	skillPath := filepath.Join(dir, ".claude", "skills", "tokenpile.md")
+	require.NoError(t, os.MkdirAll(filepath.Dir(skillPath), 0o750))
+
+	// file without any version marker (pre-v2 install)
+	require.NoError(t, os.WriteFile(skillPath, []byte("# tokenpile\ntokenpile log ...\n"), 0o644))
+
+	assert.False(t, skill.IsUpToDate("claude-code"))
+}
+
+func TestIsUpToDate_SharedAgent_AfterInstall_True(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("HOME", dir)
+
+	_, _, err := skill.Install("codex")
+	require.NoError(t, err)
+
+	assert.True(t, skill.IsUpToDate("codex"))
+}
