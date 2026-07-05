@@ -1,7 +1,7 @@
 # Errors & Panics
 
 **Root:** `/Users/cdimonaco/code/github.com/cdimonaco/tokenpile`  
-**Generated:** 2026-07-05 14:40:13 UTC  
+**Generated:** 2026-07-05 14:41:00 UTC  
 
 ---
 
@@ -102,7 +102,7 @@
 | `list issues: %w` | `(*GitHubIssueProvider).ListIssues` | `internal/provider/github_issues.go` | 80 |
 | `invalid repo format %q: expected owner/repo` | `(*GitHubIssueProvider).GetIssue` | `internal/provider/github_issues.go` | 121 |
 | `get issue: %w` | `(*GitHubIssueProvider).GetIssue` | `internal/provider/github_issues.go` | 133 |
-| `cannot infer repo from remote %q: not a GitHub remote; pass --repo owner/repo` | `ParseRemote` | `internal/provider/repoinfer.go` | 44 |
+| `cannot infer repo from remote %q: not a GitHub remote; pass --repo owner/repo` | `ParseRemote` | `internal/provider/repoinfer.go` | 46 |
 | `%w: %s` | `Install` | `internal/skill/skill.go` | 94 |
 | `cannot determine install path for agent %s` | `Install` | `internal/skill/skill.go` | 99 |
 | `create skill directory: %w` | `Install` | `internal/skill/skill.go` | 103 |

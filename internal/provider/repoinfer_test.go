@@ -48,6 +48,9 @@ func TestParseRemote_NonGitHub(t *testing.T) {
 		"https://gitlab.com/owner/repo.git",
 		"git@bitbucket.org:owner/repo.git",
 		"https://example.com/repo.git",
+		"https://fakegithub.com/owner/repo",
+		"https://evil.com/github.com/owner/repo",
+		"git@fakegithub.com:owner/repo.git",
 	}
 
 	for _, remote := range cases {

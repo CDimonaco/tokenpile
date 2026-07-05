@@ -7,9 +7,11 @@ import (
 	"strings"
 )
 
+// Anchored on the host so lookalike domains (e.g. fakegithub.com) or
+// github.com appearing in a path segment do not match.
 var (
-	httpsPattern = regexp.MustCompile(`github\.com[/:]([^/]+/[^/]+?)(?:\.git)?$`)
-	sshPattern   = regexp.MustCompile(`git@github\.com:([^/]+/[^/]+?)(?:\.git)?$`)
+	httpsPattern = regexp.MustCompile(`^(?:https?|ssh|git)://(?:[^@/]+@)?github\.com/([^/]+/[^/]+?)(?:\.git)?/?$`)
+	sshPattern   = regexp.MustCompile(`^git@github\.com:([^/]+/[^/]+?)(?:\.git)?$`)
 )
 
 func InferRepo() (string, error) {

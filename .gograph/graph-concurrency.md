@@ -1,7 +1,7 @@
 # Concurrency Primitives
 
 **Root:** `/Users/cdimonaco/code/github.com/cdimonaco/tokenpile`  
-**Generated:** 2026-07-05 14:40:13 UTC  
+**Generated:** 2026-07-05 14:41:00 UTC  
 
 ---
 

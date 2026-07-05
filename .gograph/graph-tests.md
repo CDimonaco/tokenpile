@@ -1,7 +1,7 @@
 # Test Coverage Edges
 
 **Root:** `/Users/cdimonaco/code/github.com/cdimonaco/tokenpile`  
-**Generated:** 2026-07-05 14:40:13 UTC  
+**Generated:** 2026-07-05 14:41:00 UTC  
 
 ---
 
@@ -137,7 +137,7 @@
 | `assert.Error` | `TestIntegration_Budget_NegativeAmount_Fails` | `cmd/tokenpile/cmd_budget_test.go` | 37 |
 | `assert.Error` | `TestIntegration_Budget_ZeroAmount_Fails` | `cmd/tokenpile/cmd_budget_test.go` | 30 |
 | `assert.Error` | `TestLog_MissingRequiredFlags` | `cmd/tokenpile/cmd_log_test.go` | 48 |
-| `assert.Error` | `TestParseRemote_NonGitHub` | `internal/provider/repoinfer_test.go` | 55 |
+| `assert.Error` | `TestParseRemote_NonGitHub` | `internal/provider/repoinfer_test.go` | 58 |
 | `assert.Error` | `TestSmoke_LogMissingFlags` | `cmd/tokenpile/smoke_test.go` | 64 |
 | `assert.Error` | `TestVerify_InvalidSignature` | `internal/export/export_test.go` | 96 |
 | `assert.Error` | `TestVerify_WrongKey` | `internal/export/export_test.go` | 145 |
@@ -553,7 +553,7 @@
 | `provider.NewGitHubIssueProviderWithURL` | `TestGitHubIssueProvider_ListIssues` | `internal/provider/github_issues_test.go` | 40 |
 | `provider.NewGitHubIssueProviderWithURL` | `TestGitHubIssueProvider_ListIssues_Paginated` | `internal/provider/github_issues_test.go` | 74 |
 | `provider.ParseRemote` | `TestParseRemote_HTTPS` | `internal/provider/repoinfer_test.go` | 23 |
-| `provider.ParseRemote` | `TestParseRemote_NonGitHub` | `internal/provider/repoinfer_test.go` | 54 |
+| `provider.ParseRemote` | `TestParseRemote_NonGitHub` | `internal/provider/repoinfer_test.go` | 57 |
 | `provider.ParseRemote` | `TestParseRemote_SSH` | `internal/provider/repoinfer_test.go` | 40 |
 | `r.URL.Query` | `TestGitHubIssueProvider_ListIssues_Paginated` | `internal/provider/github_issues_test.go` | 62 |
 | `reportCommand` | `TestIntegration_Report_ShowsBreakdown` | `cmd/tokenpile/integration_test.go` | 277 |
