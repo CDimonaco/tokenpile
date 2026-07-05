@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/ed25519"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -125,7 +126,27 @@ func runExport(c *cli.Context, s store.Store, priv ed25519.PrivateKey, version s
 		return fmt.Errorf("list entries: %w", err)
 	}
 
-	doc, err := export.Build(entries, priv, version)
+	var sessions []usage.Session
+	if filter.Repo != "" && filter.IssueNum > 0 {
+		sessions, err = s.ListSessions(ctx, filter.Repo, filter.IssueNum)
+		if err != nil {
+			return fmt.Errorf("list sessions: %w", err)
+		}
+	}
+
+	var budgets []export.IssueBudget
+	if filter.Repo != "" && filter.IssueNum > 0 {
+		b, budgetErr := s.GetBudget(ctx, filter.Repo, filter.IssueNum)
+		if budgetErr != nil && !errors.Is(budgetErr, store.ErrBudgetNotFound) {
+			return fmt.Errorf("get budget: %w", budgetErr)
+		}
+
+		if b != nil {
+			budgets = []export.IssueBudget{{Repo: filter.Repo, IssueNum: filter.IssueNum, Amount: *b}}
+		}
+	}
+
+	doc, err := export.Build(entries, sessions, budgets, priv, version)
 	if err != nil {
 		return fmt.Errorf("build export: %w", err)
 	}

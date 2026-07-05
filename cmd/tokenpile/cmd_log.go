@@ -55,6 +55,14 @@ func logCommand(s store.Store, ip provider.IssueProvider) *cli.Command {
 				Aliases: []string{"r"},
 				Usage:   "repository in owner/repo format (inferred from git remote if absent)",
 			},
+			&cli.StringFlag{
+				Name:  "note",
+				Usage: "brief description of what was done (max 200 chars)",
+			},
+			&cli.StringSliceFlag{
+				Name:  "tag",
+				Usage: "categorical tag (repeatable): refactor, debug, feature, test, docs, spike, review",
+			},
 		},
 		Action: func(c *cli.Context) error {
 			repo, err := provider.ResolveRepo(c.String("repo"))
@@ -118,11 +126,32 @@ func logCommand(s store.Store, ip provider.IssueProvider) *cli.Command {
 				return fmt.Errorf("log usage: %w", err)
 			}
 
+			applyAnnotations(ctx, s, sessionID, c.String("note"), c.StringSlice("tag"))
+
 			fmt.Fprintf(c.App.Writer, "Logged: %s #%d  in=%d out=%d  session=%s\n",
 				repo, issueNum, tokensIn, tokensOut, sessionID)
 
 			return nil
 		},
+	}
+}
+
+func applyAnnotations(ctx context.Context, s store.Store, sessionID, noteStr string, tags []string) {
+	if noteStr == "" && len(tags) == 0 {
+		return
+	}
+
+	if len(noteStr) > 200 {
+		noteStr = noteStr[:200]
+	}
+
+	var notePtr *string
+	if noteStr != "" {
+		notePtr = &noteStr
+	}
+
+	if err := s.UpdateSessionAnnotations(ctx, sessionID, notePtr, tags); err != nil {
+		slog.Warn("update session annotations", "err", err)
 	}
 }
 
@@ -132,7 +161,8 @@ func resolveSession(ctx context.Context, s store.Store, repo string, issueNum in
 		return "", fmt.Errorf("list sessions: %w", err)
 	}
 
-	idleThreshold := time.Now().Add(-sessionIdleTimeout)
+	now := time.Now()
+	idleThreshold := now.Add(-sessionIdleTimeout)
 	activeID := ""
 
 	for _, sess := range sessions {
@@ -140,8 +170,8 @@ func resolveSession(ctx context.Context, s store.Store, repo string, issueNum in
 			continue
 		}
 
-		if sess.StartedAt.Before(idleThreshold) {
-			if endErr := s.EndSession(ctx, sess.ID); endErr != nil {
+		if sess.LastActivityAt.Before(idleThreshold) {
+			if endErr := s.EndSessionAt(ctx, sess.ID, sess.LastActivityAt); endErr != nil {
 				return "", fmt.Errorf("end idle session: %w", endErr)
 			}
 		} else {
@@ -150,12 +180,20 @@ func resolveSession(ctx context.Context, s store.Store, repo string, issueNum in
 	}
 
 	if activeID != "" {
+		if actErr := s.UpdateSessionActivity(ctx, activeID, now); actErr != nil {
+			slog.Warn("update session activity", "err", actErr)
+		}
+
 		return activeID, nil
 	}
 
 	newSess, err := s.StartSession(ctx, repo, issueNum)
 	if err != nil {
 		return "", fmt.Errorf("start session: %w", err)
+	}
+
+	if actErr := s.UpdateSessionActivity(ctx, newSess.ID, now); actErr != nil {
+		slog.Warn("update session activity", "err", actErr)
 	}
 
 	return newSess.ID, nil

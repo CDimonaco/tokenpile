@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -18,6 +19,7 @@ import (
 var (
 	ErrSessionNotFound    = errors.New("session not found")
 	ErrIssueCacheNotFound = errors.New("issue not in cache")
+	ErrBudgetNotFound     = errors.New("budget not set")
 )
 
 const schema = `
@@ -51,10 +53,27 @@ CREATE TABLE IF NOT EXISTS issue_cache (
     PRIMARY KEY (repo, issue_num)
 );
 
+CREATE TABLE IF NOT EXISTS issue_budgets (
+    repo        TEXT NOT NULL,
+    issue_num   INTEGER NOT NULL,
+    budget      REAL NOT NULL,
+    PRIMARY KEY (repo, issue_num)
+);
+
 CREATE INDEX IF NOT EXISTS idx_usage_entries_repo_issue ON usage_entries (repo, issue_num);
 CREATE INDEX IF NOT EXISTS idx_usage_entries_at ON usage_entries (at);
 CREATE INDEX IF NOT EXISTS idx_sessions_repo_issue ON sessions (repo, issue_num);
 `
+
+// migrations holds ALTER TABLE statements for additive schema changes.
+// Each statement is run after the base schema is applied. SQLite returns
+// "duplicate column name" when the column already exists; that error is
+// silently ignored so the function is safe to run on every startup.
+var migrations = []string{
+	`ALTER TABLE sessions ADD COLUMN note TEXT`,
+	`ALTER TABLE sessions ADD COLUMN tags TEXT`,
+	`ALTER TABLE sessions ADD COLUMN last_activity_at TEXT`,
+}
 
 type SQLiteStore struct {
 	db      *sql.DB
@@ -78,7 +97,27 @@ func NewSQLiteStore(dbPath string, pricer Pricer) (*SQLiteStore, error) {
 		return nil, fmt.Errorf("apply schema: %w", err)
 	}
 
+	if err = runMigrations(db); err != nil {
+		_ = db.Close()
+		return nil, fmt.Errorf("run migrations: %w", err)
+	}
+
 	return &SQLiteStore{db: db, pricing: pricer}, nil
+}
+
+func runMigrations(db *sql.DB) error {
+	for _, stmt := range migrations {
+		if _, err := db.Exec(stmt); err != nil {
+			// SQLite returns "duplicate column name" when the column already exists.
+			if strings.Contains(err.Error(), "duplicate column name") {
+				continue
+			}
+
+			return fmt.Errorf("migration %q: %w", stmt, err)
+		}
+	}
+
+	return nil
 }
 
 func (s *SQLiteStore) Close() error {
@@ -288,10 +327,44 @@ func (s *SQLiteStore) EndSession(ctx context.Context, sessionID string) error {
 	return nil
 }
 
+func (s *SQLiteStore) UpdateSessionActivity(ctx context.Context, sessionID string, at time.Time) error {
+	_, err := s.db.ExecContext(ctx,
+		`UPDATE sessions SET last_activity_at = ? WHERE id = ? AND ended_at IS NULL`,
+		at.UTC().Format(time.RFC3339), sessionID,
+	)
+	if err != nil {
+		return fmt.Errorf("update session activity: %w", err)
+	}
+
+	return nil
+}
+
+func (s *SQLiteStore) EndSessionAt(ctx context.Context, sessionID string, at time.Time) error {
+	res, err := s.db.ExecContext(ctx,
+		`UPDATE sessions SET ended_at = ? WHERE id = ? AND ended_at IS NULL`,
+		at.UTC().Format(time.RFC3339), sessionID,
+	)
+	if err != nil {
+		return fmt.Errorf("end session: %w", err)
+	}
+
+	n, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("end session rows affected: %w", err)
+	}
+
+	if n == 0 {
+		return ErrSessionNotFound
+	}
+
+	return nil
+}
+
 func (s *SQLiteStore) ListSessions(ctx context.Context, repo string, issueNum int) ([]usage.Session, error) {
 	rows, err := s.db.QueryContext(
 		ctx,
-		`SELECT id, repo, issue_num, started_at, ended_at FROM sessions WHERE repo = ? AND issue_num = ? ORDER BY started_at`,
+		`SELECT id, repo, issue_num, started_at, ended_at, last_activity_at, note, tags
+		 FROM sessions WHERE repo = ? AND issue_num = ? ORDER BY started_at`,
 		repo,
 		issueNum,
 	)
@@ -305,9 +378,13 @@ func (s *SQLiteStore) ListSessions(ctx context.Context, repo string, issueNum in
 	for rows.Next() {
 		var sess usage.Session
 		var startedAt string
-		var endedAt sql.NullString
+		var endedAt, lastActivityAt, note, tagsJSON sql.NullString
 
-		if err = rows.Scan(&sess.ID, &sess.Repo, &sess.IssueNum, &startedAt, &endedAt); err != nil {
+		if err = rows.Scan(
+			&sess.ID, &sess.Repo, &sess.IssueNum,
+			&startedAt, &endedAt, &lastActivityAt,
+			&note, &tagsJSON,
+		); err != nil {
 			return nil, fmt.Errorf("scan session: %w", err)
 		}
 
@@ -325,6 +402,31 @@ func (s *SQLiteStore) ListSessions(ctx context.Context, repo string, issueNum in
 			sess.EndedAt = &t
 		}
 
+		if lastActivityAt.Valid && lastActivityAt.String != "" {
+			t, parseErr := time.Parse(time.RFC3339, lastActivityAt.String)
+			if parseErr == nil {
+				sess.LastActivityAt = t
+			}
+		}
+
+		if sess.LastActivityAt.IsZero() {
+			sess.LastActivityAt = sess.StartedAt
+		}
+
+		if note.Valid {
+			sess.Note = note.String
+		}
+
+		if tagsJSON.Valid && tagsJSON.String != "" {
+			if jsonErr := json.Unmarshal([]byte(tagsJSON.String), &sess.Tags); jsonErr != nil {
+				sess.Tags = []string{}
+			}
+		}
+
+		if sess.Tags == nil {
+			sess.Tags = []string{}
+		}
+
 		sessions = append(sessions, sess)
 	}
 
@@ -335,12 +437,78 @@ func (s *SQLiteStore) ListSessions(ctx context.Context, repo string, issueNum in
 	return sessions, nil
 }
 
+func (s *SQLiteStore) UpdateSessionAnnotations(
+	ctx context.Context,
+	sessionID string,
+	note *string,
+	tags []string,
+) error {
+	// Fetch existing tags to merge.
+	var existingTagsJSON sql.NullString
+
+	err := s.db.QueryRowContext(ctx, `SELECT tags FROM sessions WHERE id = ?`, sessionID).Scan(&existingTagsJSON)
+	if errors.Is(err, sql.ErrNoRows) {
+		return ErrSessionNotFound
+	}
+
+	if err != nil {
+		return fmt.Errorf("fetch session tags: %w", err)
+	}
+
+	// Merge tags: union of existing + new, no duplicates.
+	tagSet := make(map[string]struct{})
+
+	if existingTagsJSON.Valid && existingTagsJSON.String != "" {
+		var existing []string
+		if jsonErr := json.Unmarshal([]byte(existingTagsJSON.String), &existing); jsonErr == nil {
+			for _, t := range existing {
+				tagSet[t] = struct{}{}
+			}
+		}
+	}
+
+	for _, t := range tags {
+		if t != "" {
+			tagSet[t] = struct{}{}
+		}
+	}
+
+	merged := make([]string, 0, len(tagSet))
+	for t := range tagSet {
+		merged = append(merged, t)
+	}
+
+	tagsJSON, err := json.Marshal(merged)
+	if err != nil {
+		return fmt.Errorf("marshal tags: %w", err)
+	}
+
+	if note != nil {
+		_, err = s.db.ExecContext(ctx,
+			`UPDATE sessions SET note = ?, tags = ? WHERE id = ?`,
+			*note, string(tagsJSON), sessionID,
+		)
+	} else {
+		_, err = s.db.ExecContext(ctx,
+			`UPDATE sessions SET tags = ? WHERE id = ?`,
+			string(tagsJSON), sessionID,
+		)
+	}
+
+	if err != nil {
+		return fmt.Errorf("update session annotations: %w", err)
+	}
+
+	return nil
+}
+
 func (s *SQLiteStore) ListIssues(ctx context.Context, filter usage.Filter) ([]usage.TrackedIssue, error) {
 	query := `
 		SELECT ue.repo, ue.issue_num, ue.model, SUM(ue.tokens_in), SUM(ue.tokens_out),
-		       COALESCE(ic.title, ''), COALESCE(ic.labels, '[]')
+		       COALESCE(ic.title, ''), COALESCE(ic.labels, '[]'), ib.budget
 		FROM usage_entries ue
 		LEFT JOIN issue_cache ic ON ic.repo = ue.repo AND ic.issue_num = ue.issue_num
+		LEFT JOIN issue_budgets ib ON ib.repo = ue.repo AND ib.issue_num = ue.issue_num
 		WHERE 1=1`
 	args := []any{}
 
@@ -369,7 +537,7 @@ func (s *SQLiteStore) ListIssues(ctx context.Context, filter usage.Filter) ([]us
 		args = append(args, filter.To.UTC().Format(time.RFC3339))
 	}
 
-	query += " GROUP BY ue.repo, ue.issue_num, ue.model, ic.title, ic.labels ORDER BY ue.repo, ue.issue_num"
+	query += " GROUP BY ue.repo, ue.issue_num, ue.model, ic.title, ic.labels, ib.budget ORDER BY ue.repo, ue.issue_num"
 
 	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
@@ -387,8 +555,9 @@ func (s *SQLiteStore) ListIssues(ctx context.Context, filter usage.Filter) ([]us
 	for rows.Next() {
 		var repo, model, title, labelsJSON string
 		var issueNum, tokensIn, tokensOut int
+		var budget sql.NullFloat64
 
-		if err = rows.Scan(&repo, &issueNum, &model, &tokensIn, &tokensOut, &title, &labelsJSON); err != nil {
+		if err = rows.Scan(&repo, &issueNum, &model, &tokensIn, &tokensOut, &title, &labelsJSON, &budget); err != nil {
 			return nil, fmt.Errorf("scan issue: %w", err)
 		}
 
@@ -399,7 +568,13 @@ func (s *SQLiteStore) ListIssues(ctx context.Context, filter usage.Filter) ([]us
 				labels = nil
 			}
 
-			issueMap[k] = &usage.TrackedIssue{Repo: repo, IssueNum: issueNum, Title: title, Labels: labels}
+			ti := &usage.TrackedIssue{Repo: repo, IssueNum: issueNum, Title: title, Labels: labels}
+			if budget.Valid {
+				v := budget.Float64
+				ti.Budget = &v
+			}
+
+			issueMap[k] = ti
 			issueOrder = append(issueOrder, k)
 		}
 
@@ -643,4 +818,47 @@ func (s *SQLiteStore) totalTime(ctx context.Context, repo string, issueNum int) 
 	}
 
 	return total
+}
+
+func (s *SQLiteStore) SetBudget(ctx context.Context, repo string, issueNum int, budget float64) error {
+	_, err := s.db.ExecContext(ctx,
+		`INSERT INTO issue_budgets (repo, issue_num, budget) VALUES (?, ?, ?)
+		 ON CONFLICT(repo, issue_num) DO UPDATE SET budget = excluded.budget`,
+		repo, issueNum, budget,
+	)
+	if err != nil {
+		return fmt.Errorf("set budget: %w", err)
+	}
+
+	return nil
+}
+
+func (s *SQLiteStore) UnsetBudget(ctx context.Context, repo string, issueNum int) error {
+	_, err := s.db.ExecContext(ctx,
+		`DELETE FROM issue_budgets WHERE repo = ? AND issue_num = ?`,
+		repo, issueNum,
+	)
+	if err != nil {
+		return fmt.Errorf("unset budget: %w", err)
+	}
+
+	return nil
+}
+
+func (s *SQLiteStore) GetBudget(ctx context.Context, repo string, issueNum int) (*float64, error) {
+	var budget float64
+	err := s.db.QueryRowContext(ctx,
+		`SELECT budget FROM issue_budgets WHERE repo = ? AND issue_num = ?`,
+		repo, issueNum,
+	).Scan(&budget)
+
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, ErrBudgetNotFound
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("get budget: %w", err)
+	}
+
+	return &budget, nil
 }

@@ -297,3 +297,161 @@ func TestSQLiteStore_SchemaIdempotent(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, s2.Close())
 }
+
+func TestSQLiteStore_MigrationIdempotent(t *testing.T) {
+	dbPath := filepath.Join(t.TempDir(), "test.db")
+	pricer := fixedPricer{}
+
+	for range 3 {
+		s, err := store.NewSQLiteStore(dbPath, pricer)
+		require.NoError(t, err)
+		require.NoError(t, s.Close())
+	}
+}
+
+func TestSQLiteStore_UpdateSessionAnnotations_NoteAndTags(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	sess, err := s.StartSession(ctx, "o/r", 1)
+	require.NoError(t, err)
+
+	note := "refactored auth flow"
+	err = s.UpdateSessionAnnotations(ctx, sess.ID, &note, []string{"refactor", "debug"})
+	require.NoError(t, err)
+
+	sessions, err := s.ListSessions(ctx, "o/r", 1)
+	require.NoError(t, err)
+	require.Len(t, sessions, 1)
+	assert.Equal(t, "refactored auth flow", sessions[0].Note)
+	assert.ElementsMatch(t, []string{"refactor", "debug"}, sessions[0].Tags)
+}
+
+func TestSQLiteStore_UpdateSessionAnnotations_TagsUnion(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	sess, err := s.StartSession(ctx, "o/r", 1)
+	require.NoError(t, err)
+
+	note := "first"
+	err = s.UpdateSessionAnnotations(ctx, sess.ID, &note, []string{"refactor"})
+	require.NoError(t, err)
+
+	note2 := "second"
+	err = s.UpdateSessionAnnotations(ctx, sess.ID, &note2, []string{"debug"})
+	require.NoError(t, err)
+
+	sessions, err := s.ListSessions(ctx, "o/r", 1)
+	require.NoError(t, err)
+	require.Len(t, sessions, 1)
+	assert.Equal(t, "second", sessions[0].Note)
+	assert.ElementsMatch(t, []string{"refactor", "debug"}, sessions[0].Tags)
+}
+
+func TestSQLiteStore_UpdateSessionAnnotations_NilNotePreservesExisting(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	sess, err := s.StartSession(ctx, "o/r", 1)
+	require.NoError(t, err)
+
+	note := "keep me"
+	err = s.UpdateSessionAnnotations(ctx, sess.ID, &note, []string{"feature"})
+	require.NoError(t, err)
+
+	err = s.UpdateSessionAnnotations(ctx, sess.ID, nil, []string{"test"})
+	require.NoError(t, err)
+
+	sessions, err := s.ListSessions(ctx, "o/r", 1)
+	require.NoError(t, err)
+	require.Len(t, sessions, 1)
+	assert.Equal(t, "keep me", sessions[0].Note)
+	assert.ElementsMatch(t, []string{"feature", "test"}, sessions[0].Tags)
+}
+
+func TestSQLiteStore_ListSessions_EmptyTagsNonNil(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	_, err := s.StartSession(ctx, "o/r", 1)
+	require.NoError(t, err)
+
+	sessions, err := s.ListSessions(ctx, "o/r", 1)
+	require.NoError(t, err)
+	require.Len(t, sessions, 1)
+	assert.NotNil(t, sessions[0].Tags)
+	assert.Empty(t, sessions[0].Tags)
+}
+
+func TestSQLiteStore_SetBudget_And_GetBudget(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	_, err := s.GetBudget(ctx, "o/r", 1)
+	require.ErrorIs(t, err, store.ErrBudgetNotFound)
+
+	require.NoError(t, s.SetBudget(ctx, "o/r", 1, 50.0))
+
+	budget, err := s.GetBudget(ctx, "o/r", 1)
+	require.NoError(t, err)
+	require.NotNil(t, budget)
+	assert.InEpsilon(t, 50.0, *budget, 0.001)
+}
+
+func TestSQLiteStore_SetBudget_Upsert(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	require.NoError(t, s.SetBudget(ctx, "o/r", 1, 50.0))
+	require.NoError(t, s.SetBudget(ctx, "o/r", 1, 100.0))
+
+	budget, err := s.GetBudget(ctx, "o/r", 1)
+	require.NoError(t, err)
+	require.NotNil(t, budget)
+	assert.InEpsilon(t, 100.0, *budget, 0.001)
+}
+
+func TestSQLiteStore_UnsetBudget(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	require.NoError(t, s.SetBudget(ctx, "o/r", 1, 50.0))
+	require.NoError(t, s.UnsetBudget(ctx, "o/r", 1))
+
+	_, err := s.GetBudget(ctx, "o/r", 1)
+	require.ErrorIs(t, err, store.ErrBudgetNotFound)
+}
+
+func TestSQLiteStore_ListIssues_BudgetPopulated(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	require.NoError(t, s.LogUsage(ctx, usage.Entry{
+		Repo: "o/r", IssueNum: 1, Agent: "a", Model: "m",
+		TokensIn: 1000, TokensOut: 500, At: time.Now(),
+	}))
+
+	require.NoError(t, s.SetBudget(ctx, "o/r", 1, 25.0))
+
+	issues, err := s.ListIssues(ctx, usage.Filter{Repo: "o/r"})
+	require.NoError(t, err)
+	require.Len(t, issues, 1)
+	require.NotNil(t, issues[0].Budget)
+	assert.InEpsilon(t, 25.0, *issues[0].Budget, 0.001)
+}
+
+func TestSQLiteStore_ListIssues_NoBudget_IsNil(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	require.NoError(t, s.LogUsage(ctx, usage.Entry{
+		Repo: "o/r", IssueNum: 1, Agent: "a", Model: "m",
+		TokensIn: 1000, TokensOut: 500, At: time.Now(),
+	}))
+
+	issues, err := s.ListIssues(ctx, usage.Filter{Repo: "o/r"})
+	require.NoError(t, err)
+	require.Len(t, issues, 1)
+	assert.Nil(t, issues[0].Budget)
+}

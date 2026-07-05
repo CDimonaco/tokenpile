@@ -5,6 +5,7 @@ package mocks
 
 import (
 	"context"
+	"time"
 
 	"github.com/cdimonaco/tokenpile/internal/usage"
 	"github.com/stretchr/testify/mock"
@@ -107,6 +108,11 @@ func (_m *Store) ListSessions(ctx context.Context, repo string, issueNum int) ([
 	return r0, ret.Error(1)
 }
 
+func (_m *Store) UpdateSessionAnnotations(ctx context.Context, sessionID string, note *string, tags []string) error {
+	ret := _m.Called(ctx, sessionID, note, tags)
+	return ret.Error(0)
+}
+
 func (_m *Store) ListUsageOverTime(ctx context.Context, filter usage.OverTimeFilter) ([]usage.Point, error) {
 	ret := _m.Called(ctx, filter)
 
@@ -128,6 +134,40 @@ func (_m *Store) ListTrackedIssueRefs(ctx context.Context) ([]usage.TrackedIssue
 		r0 = rf(ctx)
 	} else if ret.Get(0) != nil {
 		r0 = ret.Get(0).([]usage.TrackedIssueRef)
+	}
+
+	return r0, ret.Error(1)
+}
+
+func (_m *Store) EndSessionAt(ctx context.Context, sessionID string, at time.Time) error {
+	ret := _m.Called(ctx, sessionID, at)
+	return ret.Error(0)
+}
+
+func (_m *Store) UpdateSessionActivity(ctx context.Context, sessionID string, at time.Time) error {
+	ret := _m.Called(ctx, sessionID, at)
+	return ret.Error(0)
+}
+
+func (_m *Store) SetBudget(ctx context.Context, repo string, issueNum int, budget float64) error {
+	ret := _m.Called(ctx, repo, issueNum, budget)
+	return ret.Error(0)
+}
+
+func (_m *Store) UnsetBudget(ctx context.Context, repo string, issueNum int) error {
+	ret := _m.Called(ctx, repo, issueNum)
+	return ret.Error(0)
+}
+
+func (_m *Store) GetBudget(ctx context.Context, repo string, issueNum int) (*float64, error) {
+	ret := _m.Called(ctx, repo, issueNum)
+
+	var r0 *float64
+	if rf, ok := ret.Get(0).(func(context.Context, string, int) *float64); ok {
+		r0 = rf(ctx, repo, issueNum)
+	} else if ret.Get(0) != nil {
+		v := ret.Get(0).(float64)
+		r0 = &v
 	}
 
 	return r0, ret.Error(1)

@@ -64,6 +64,7 @@ func TestLog_NoActiveSession_StartsNew(t *testing.T) {
 
 	s.On("ListSessions", mock.Anything, "owner/repo", 42).Return([]usage.Session{}, nil)
 	s.On("StartSession", mock.Anything, "owner/repo", 42).Return(sess, nil)
+	s.On("UpdateSessionActivity", mock.Anything, "sess-1", mock.AnythingOfType("time.Time")).Return(nil)
 	s.On("LogUsage", mock.Anything, mock.MatchedBy(func(e usage.Entry) bool {
 		return e.Repo == "owner/repo" && e.IssueNum == 42 && e.SessionID == "sess-1"
 	})).Return(nil)
@@ -94,13 +95,15 @@ func TestLog_ReuseActiveSession(t *testing.T) {
 
 	recentTime := time.Now().Add(-5 * time.Minute)
 	activeSess := usage.Session{
-		ID:        "sess-active",
-		Repo:      "owner/repo",
-		IssueNum:  7,
-		StartedAt: recentTime,
+		ID:             "sess-active",
+		Repo:           "owner/repo",
+		IssueNum:       7,
+		StartedAt:      recentTime,
+		LastActivityAt: recentTime,
 	}
 
 	s.On("ListSessions", mock.Anything, "owner/repo", 7).Return([]usage.Session{activeSess}, nil)
+	s.On("UpdateSessionActivity", mock.Anything, "sess-active", mock.AnythingOfType("time.Time")).Return(nil)
 	s.On("LogUsage", mock.Anything, mock.MatchedBy(func(e usage.Entry) bool {
 		return e.SessionID == "sess-active"
 	})).Return(nil)
@@ -129,10 +132,11 @@ func TestLog_ClosesIdleSession_StartsNew(t *testing.T) {
 
 	idleTime := time.Now().Add(-45 * time.Minute)
 	idleSess := usage.Session{
-		ID:        "sess-idle",
-		Repo:      "owner/repo",
-		IssueNum:  99,
-		StartedAt: idleTime,
+		ID:             "sess-idle",
+		Repo:           "owner/repo",
+		IssueNum:       99,
+		StartedAt:      idleTime,
+		LastActivityAt: idleTime,
 	}
 
 	newSess := &usage.Session{
@@ -143,8 +147,9 @@ func TestLog_ClosesIdleSession_StartsNew(t *testing.T) {
 	}
 
 	s.On("ListSessions", mock.Anything, "owner/repo", 99).Return([]usage.Session{idleSess}, nil)
-	s.On("EndSession", mock.Anything, "sess-idle").Return(nil)
+	s.On("EndSessionAt", mock.Anything, "sess-idle", mock.AnythingOfType("time.Time")).Return(nil)
 	s.On("StartSession", mock.Anything, "owner/repo", 99).Return(newSess, nil)
+	s.On("UpdateSessionActivity", mock.Anything, "sess-new", mock.AnythingOfType("time.Time")).Return(nil)
 	s.On("LogUsage", mock.Anything, mock.MatchedBy(func(e usage.Entry) bool {
 		return e.SessionID == "sess-new"
 	})).Return(nil)

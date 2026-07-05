@@ -44,6 +44,11 @@ type Model struct {
 	refreshing      bool
 	detailErr       error
 
+	detailTab      int // 0 = Summary, 1 = Sessions
+	sessions       []usage.Session
+	sessionsLoaded bool
+	sessionsOffset int
+
 	granularity usage.Granularity
 	filterAgent string
 	filterModel string
@@ -63,6 +68,7 @@ type (
 	}
 	reportLoadedMsg   struct{ report *usage.Report }
 	chartLoadedMsg    struct{ points []usage.Point }
+	sessionsLoadedMsg struct{ sessions []usage.Session }
 	issueRefreshedMsg struct {
 		repo     string
 		issueNum int
@@ -76,14 +82,48 @@ type (
 const contentWidth = 120
 
 var (
-	titleStyle    = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("12"))
-	selectedStyle = lipgloss.NewStyle().Background(lipgloss.Color("236")).Bold(true)
-	dimStyle      = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
-	errorStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("9"))
-	headerStyle   = lipgloss.NewStyle().Bold(true).Underline(true)
-	keyStyle      = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("12"))
-	footerSep     = lipgloss.NewStyle().Foreground(lipgloss.Color("238"))
+	titleStyle      = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("12"))
+	selectedStyle   = lipgloss.NewStyle().Background(lipgloss.Color("236")).Bold(true)
+	dimStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
+	errorStyle      = lipgloss.NewStyle().Foreground(lipgloss.Color("9"))
+	headerStyle     = lipgloss.NewStyle().Bold(true).Underline(true)
+	keyStyle        = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("12"))
+	footerSep       = lipgloss.NewStyle().Foreground(lipgloss.Color("238"))
+	activeTabStyle  = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("12")).Underline(true)
+	tagStyle        = lipgloss.NewStyle().Foreground(lipgloss.Color("6"))
+	budgetOkStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("10"))
+	budgetWarnStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("11"))
+	budgetOverStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("9"))
 )
+
+// budgetBar returns a short coloured progress indicator for a budget.
+// pct is cost/budget*100. Returns empty string when budget is nil.
+func budgetBar(cost float64, budget *float64) string {
+	if budget == nil || *budget <= 0 {
+		return ""
+	}
+
+	pct := cost / *budget * 100
+	width := 10
+	filled := int(pct / 100 * float64(width))
+
+	filled = min(filled, width)
+
+	bar := "[" + strings.Repeat("#", filled) + strings.Repeat("-", width-filled) + "]"
+
+	var style lipgloss.Style
+
+	switch {
+	case pct >= 100:
+		style = budgetOverStyle
+	case pct >= 80:
+		style = budgetWarnStyle
+	default:
+		style = budgetOkStyle
+	}
+
+	return style.Render(fmt.Sprintf("%s %.0f%%", bar, pct))
+}
 
 func New(s store.Store, ip provider.IssueProvider, p *pricing.Loader, authToken string) Model {
 	return Model{
@@ -122,6 +162,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case reportLoadedMsg:
 		m.report = msg.report
+
+		return m, nil
+
+	case sessionsLoadedMsg:
+		m.sessions = msg.sessions
+		m.sessionsLoaded = true
 
 		return m, nil
 
@@ -225,6 +271,10 @@ func (m Model) handleListKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.activeView = viewDetail
 			m.detailErr = nil
 			m.report = nil
+			m.detailTab = 0
+			m.sessions = nil
+			m.sessionsLoaded = false
+			m.sessionsOffset = 0
 
 			return m, m.loadReport(issue.Repo, issue.IssueNum)
 		}
@@ -245,6 +295,23 @@ func (m Model) handleListKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 func (m Model) handleDetailKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
+	case "tab":
+		m.detailTab = (m.detailTab + 1) % 2
+		m.sessionsOffset = 0
+
+		if m.detailTab == 1 && !m.sessionsLoaded && m.selected != nil {
+			return m, m.loadSessions(m.selected.Repo, m.selected.IssueNum)
+		}
+
+		return m, nil
+	case "up", "k":
+		if m.detailTab == 1 && m.sessionsOffset > 0 {
+			m.sessionsOffset--
+		}
+	case "down", "j":
+		if m.detailTab == 1 && m.sessionsOffset < len(m.sessions)-1 {
+			m.sessionsOffset++
+		}
 	case "c":
 		if m.selected != nil {
 			m.prevView = viewDetail
@@ -338,6 +405,7 @@ func (m Model) renderFooter() string {
 		}
 	case viewDetail:
 		keys = []string{
+			keyStyle.Render("tab") + " switch tab",
 			keyStyle.Render("o") + " open in browser",
 			keyStyle.Render("r") + " refresh issue",
 			keyStyle.Render("c") + " chart",
@@ -413,6 +481,10 @@ func (m Model) viewIssueList() string {
 		} else {
 			fmt.Fprintln(&b, mainLine+"  "+link)
 		}
+
+		if bar := budgetBar(issue.TotalCost, issue.Budget); bar != "" {
+			fmt.Fprintf(&b, "         %s\n", bar)
+		}
 	}
 
 	return b.String()
@@ -447,21 +519,47 @@ func (m Model) viewIssueDetail() string {
 
 	fmt.Fprintln(&b)
 
-	if m.report == nil {
-		fmt.Fprintln(&b, "Loading...")
+	// Tab bar
+	tabs := []string{"Summary", "Sessions"}
+	for i, tab := range tabs {
+		if i == m.detailTab {
+			fmt.Fprintf(&b, "%s", activeTabStyle.Render("[ "+tab+" ]"))
+		} else {
+			fmt.Fprintf(&b, "%s", dimStyle.Render("  "+tab+"  "))
+		}
 
-		return b.String()
+		fmt.Fprintf(&b, "  ")
+	}
+
+	fmt.Fprintln(&b)
+	fmt.Fprintln(&b)
+
+	switch m.detailTab {
+	case 0:
+		m.renderSummaryTab(&b)
+	case 1:
+		m.renderSessionsTab(&b)
+	}
+
+	return b.String()
+}
+
+func (m Model) renderSummaryTab(b *strings.Builder) {
+	if m.report == nil {
+		fmt.Fprintln(b, "Loading...")
+
+		return
 	}
 
 	fmt.Fprintln(
-		&b,
+		b,
 		headerStyle.Render(
 			fmt.Sprintf("%-16s %-24s %-8s %-12s %-12s %s", "Agent", "Model", "Calls", "In", "Out", "Cost"),
 		),
 	)
 
 	for _, row := range m.report.Rows {
-		fmt.Fprintf(&b, "%-16s %-24s %-8d %-12s %-12s $%.4f\n",
+		fmt.Fprintf(b, "%-16s %-24s %-8d %-12s %-12s $%.4f\n",
 			truncate(row.Agent, 16),
 			truncate(row.Model, 24),
 			row.Calls,
@@ -471,7 +569,7 @@ func (m Model) viewIssueDetail() string {
 		)
 	}
 
-	fmt.Fprintf(&b, "\n%s  in: %dk  out: %dk  cost: $%.4f  time: %s\n",
+	fmt.Fprintf(b, "\n%s  in: %dk  out: %dk  cost: $%.4f  time: %s\n",
 		headerStyle.Render("Total"),
 		m.report.TotalTokensIn/1000,
 		m.report.TotalTokensOut/1000,
@@ -479,7 +577,58 @@ func (m Model) viewIssueDetail() string {
 		formatDuration(m.report.TotalTime),
 	)
 
-	return b.String()
+	if m.selected != nil {
+		if bar := budgetBar(m.report.TotalCost, m.selected.Budget); bar != "" {
+			fmt.Fprintf(b, "%s  %s / $%.2f\n",
+				headerStyle.Render("Budget"),
+				bar,
+				*m.selected.Budget,
+			)
+		}
+	}
+}
+
+func (m Model) renderSessionsTab(b *strings.Builder) {
+	if !m.sessionsLoaded {
+		fmt.Fprintln(b, dimStyle.Render("Loading sessions..."))
+
+		return
+	}
+
+	if len(m.sessions) == 0 {
+		fmt.Fprintln(b, dimStyle.Render("No sessions recorded yet."))
+
+		return
+	}
+
+	for i, sess := range m.sessions {
+		end := dimStyle.Render("active")
+		duration := time.Since(sess.StartedAt).Round(time.Second)
+
+		if sess.EndedAt != nil {
+			end = sess.EndedAt.Local().Format("15:04:05")
+			duration = sess.EndedAt.Sub(sess.StartedAt).Round(time.Second)
+		}
+
+		var tagsBuilder strings.Builder
+		for _, t := range sess.Tags {
+			tagsBuilder.WriteString(tagStyle.Render("["+t+"]") + " ")
+		}
+
+		fmt.Fprintf(b, "%s  %s → %s  (%s)  %s\n",
+			headerStyle.Render(fmt.Sprintf("Session %d", i+1)),
+			sess.StartedAt.Local().Format("2006-01-02 15:04"),
+			end,
+			duration,
+			tagsBuilder.String(),
+		)
+
+		if sess.Note != "" {
+			fmt.Fprintf(b, "  %s\n", sess.Note)
+		}
+
+		fmt.Fprintln(b)
+	}
 }
 
 func (m Model) viewChart() string {
@@ -700,6 +849,19 @@ func (m Model) loadReport(repo string, issueNum int) tea.Cmd {
 		}
 
 		return reportLoadedMsg{report: report}
+	}
+}
+
+func (m Model) loadSessions(repo string, issueNum int) tea.Cmd {
+	return func() tea.Msg {
+		ctx := context.Background()
+
+		sessions, err := m.store.ListSessions(ctx, repo, issueNum)
+		if err != nil {
+			return errMsg{err: err}
+		}
+
+		return sessionsLoadedMsg{sessions: sessions}
 	}
 }
 

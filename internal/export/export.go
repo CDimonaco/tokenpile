@@ -16,7 +16,7 @@ import (
 
 var Schema = schema.ExportSchema
 
-const SchemaVersion = "1.0"
+const SchemaVersion = "2.0"
 
 type entryJSON struct {
 	ID          string   `json:"id"`
@@ -32,16 +32,47 @@ type entryJSON struct {
 	At          string   `json:"at"`
 }
 
-type Document struct {
-	SchemaVersion string      `json:"schema_version"`
-	ExportedAt    string      `json:"exported_at"`
-	ExportedBy    string      `json:"exported_by"`
-	PublicKey     string      `json:"public_key"`
-	Entries       []entryJSON `json:"entries"`
-	Signature     string      `json:"signature"`
+type sessionJSON struct {
+	ID        string   `json:"id"`
+	Repo      string   `json:"repo"`
+	IssueNum  int      `json:"issue_num"`
+	StartedAt string   `json:"started_at"`
+	EndedAt   string   `json:"ended_at,omitempty"`
+	Note      string   `json:"note,omitempty"`
+	Tags      []string `json:"tags,omitempty"`
 }
 
-func Build(entries []usage.Entry, priv ed25519.PrivateKey, version string) (*Document, error) {
+type budgetJSON struct {
+	Repo     string  `json:"repo"`
+	IssueNum int     `json:"issue_num"`
+	Amount   float64 `json:"amount"`
+}
+
+type Document struct {
+	SchemaVersion string        `json:"schema_version"`
+	ExportedAt    string        `json:"exported_at"`
+	ExportedBy    string        `json:"exported_by"`
+	PublicKey     string        `json:"public_key"`
+	Entries       []entryJSON   `json:"entries"`
+	Sessions      []sessionJSON `json:"sessions,omitempty"`
+	Budgets       []budgetJSON  `json:"budgets,omitempty"`
+	Signature     string        `json:"signature"`
+}
+
+// IssueBudget carries a budget amount for a specific issue, used in exports.
+type IssueBudget struct {
+	Repo     string
+	IssueNum int
+	Amount   float64
+}
+
+func Build(
+	entries []usage.Entry,
+	sessions []usage.Session,
+	budgets []IssueBudget,
+	priv ed25519.PrivateKey,
+	version string,
+) (*Document, error) {
 	jsonEntries := make([]entryJSON, len(entries))
 	for i, e := range entries {
 		jsonEntries[i] = entryJSON{
@@ -72,12 +103,37 @@ func Build(entries []usage.Entry, priv ed25519.PrivateKey, version string) (*Doc
 		return nil, errors.New("private key is not ed25519")
 	}
 
+	jsonSessions := make([]sessionJSON, 0, len(sessions))
+	for _, s := range sessions {
+		sj := sessionJSON{
+			ID:        s.ID,
+			Repo:      s.Repo,
+			IssueNum:  s.IssueNum,
+			StartedAt: s.StartedAt.UTC().Format(time.RFC3339),
+			Note:      s.Note,
+			Tags:      s.Tags,
+		}
+
+		if s.EndedAt != nil {
+			sj.EndedAt = s.EndedAt.UTC().Format(time.RFC3339)
+		}
+
+		jsonSessions = append(jsonSessions, sj)
+	}
+
+	jsonBudgets := make([]budgetJSON, 0, len(budgets))
+	for _, b := range budgets {
+		jsonBudgets = append(jsonBudgets, budgetJSON(b))
+	}
+
 	return &Document{
 		SchemaVersion: SchemaVersion,
 		ExportedAt:    time.Now().UTC().Format(time.RFC3339),
 		ExportedBy:    "tokenpile/" + version,
 		PublicKey:     base64.StdEncoding.EncodeToString(pub),
 		Entries:       jsonEntries,
+		Sessions:      jsonSessions,
+		Budgets:       jsonBudgets,
 		Signature:     base64.StdEncoding.EncodeToString(sig),
 	}, nil
 }

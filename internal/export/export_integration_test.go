@@ -18,7 +18,7 @@ func TestExport_RoundTrip_EmptyEntries(t *testing.T) {
 	_, priv, err := ed25519.GenerateKey(rand.Reader)
 	require.NoError(t, err)
 
-	doc, err := export.Build(nil, priv, "test")
+	doc, err := export.Build(nil, nil, nil, priv, "test")
 	require.NoError(t, err)
 
 	assert.Equal(t, export.SchemaVersion, doc.SchemaVersion)
@@ -54,7 +54,7 @@ func TestExport_RoundTrip_WithEntries(t *testing.T) {
 		},
 	}
 
-	doc, err := export.Build(entries, priv, "1.0.0")
+	doc, err := export.Build(entries, nil, nil, priv, "1.0.0")
 	require.NoError(t, err)
 	require.Len(t, doc.Entries, 2)
 	require.NoError(t, export.Verify(doc))
@@ -68,7 +68,7 @@ func TestExport_Verify_TamperedEntries(t *testing.T) {
 		{ID: "e1", Repo: "o/r", IssueNum: 1, Agent: "a", Model: "m", TokensIn: 100, TokensOut: 50, At: time.Now()},
 	}
 
-	doc, err := export.Build(entries, priv, "test")
+	doc, err := export.Build(entries, nil, nil, priv, "test")
 	require.NoError(t, err)
 
 	doc.Entries[0].TokensIn = 99999
@@ -80,7 +80,7 @@ func TestExport_Verify_InvalidPublicKey(t *testing.T) {
 	_, priv, err := ed25519.GenerateKey(rand.Reader)
 	require.NoError(t, err)
 
-	doc, err := export.Build(nil, priv, "test")
+	doc, err := export.Build(nil, nil, nil, priv, "test")
 	require.NoError(t, err)
 
 	doc.PublicKey = "not!valid!base64!!!"
@@ -99,7 +99,7 @@ func TestExport_Verify_WrongPublicKey(t *testing.T) {
 		{ID: "e1", Repo: "o/r", IssueNum: 1, Agent: "a", Model: "m", TokensIn: 100, TokensOut: 50, At: time.Now()},
 	}
 
-	doc, err := export.Build(entries, priv1, "test")
+	doc, err := export.Build(entries, nil, nil, priv1, "test")
 	require.NoError(t, err)
 
 	doc.PublicKey = base64.StdEncoding.EncodeToString(pub2)
@@ -111,7 +111,7 @@ func TestExport_Verify_CorruptedSignature(t *testing.T) {
 	_, priv, err := ed25519.GenerateKey(rand.Reader)
 	require.NoError(t, err)
 
-	doc, err := export.Build(nil, priv, "test")
+	doc, err := export.Build(nil, nil, nil, priv, "test")
 	require.NoError(t, err)
 
 	doc.Signature = base64.StdEncoding.EncodeToString(make([]byte, 64))

@@ -17,11 +17,14 @@ type Entry struct {
 }
 
 type Session struct {
-	ID        string
-	Repo      string
-	IssueNum  int
-	StartedAt time.Time
-	EndedAt   *time.Time
+	ID             string
+	Repo           string
+	IssueNum       int
+	StartedAt      time.Time
+	EndedAt        *time.Time
+	LastActivityAt time.Time
+	Note           string
+	Tags           []string
 }
 
 // Filter scopes queries over usage data.
@@ -73,6 +76,7 @@ type TrackedIssue struct {
 	TotalTokensOut int
 	TotalCost      float64
 	TotalTime      time.Duration
+	Budget         *float64
 }
 
 type TrackedIssueRef struct {

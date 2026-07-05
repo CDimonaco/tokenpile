@@ -98,6 +98,7 @@ func main() {
 		pricingCommands(pricingLoader, paths.PricingOverride),
 		exportCommands(sqliteStore, priv, version),
 		skillCommands(),
+		budgetCommands(sqliteStore),
 	}
 
 	// Override default action to launch TUI, injecting composed deps.
