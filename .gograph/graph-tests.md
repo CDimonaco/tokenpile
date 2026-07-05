@@ -1,7 +1,7 @@
 # Test Coverage Edges
 
 **Root:** `/Users/cdimonaco/code/github.com/cdimonaco/tokenpile`  
-**Generated:** 2026-07-05 14:37:41 UTC  
+**Generated:** 2026-07-05 14:39:27 UTC  
 
 ---
 
@@ -12,8 +12,10 @@
 | `Add` | `TestLog_ClosesIdleSession_StartsNew` | `cmd/tokenpile/cmd_log_test.go` | 133 |
 | `Add` | `TestLog_ReuseActiveSession` | `cmd/tokenpile/cmd_log_test.go` | 96 |
 | `Add` | `TestSQLiteStore_LogUsage_SetsTimestamp` | `internal/store/sqlite_test.go` | 64 |
-| `Encode` | `TestGitHubIssueProvider_GetIssue` | `internal/provider/github_issues_test.go` | 70 |
+| `Encode` | `TestGitHubIssueProvider_GetIssue` | `internal/provider/github_issues_test.go` | 104 |
 | `Encode` | `TestGitHubIssueProvider_ListIssues` | `internal/provider/github_issues_test.go` | 35 |
+| `Encode` | `TestGitHubIssueProvider_ListIssues_Paginated` | `internal/provider/github_issues_test.go` | 63 |
+| `Get` | `TestGitHubIssueProvider_ListIssues_Paginated` | `internal/provider/github_issues_test.go` | 62 |
 | `Output` | `TestSmoke_AuthStatus` | `cmd/tokenpile/smoke_test.go` | 71 |
 | `Output` | `TestSmoke_HelpFlag` | `cmd/tokenpile/smoke_test.go` | 34 |
 | `Output` | `TestSmoke_PricingList` | `cmd/tokenpile/smoke_test.go` | 46 |
@@ -24,12 +26,13 @@
 | `Return` | `TestAuthLogout_Success` | `cmd/tokenpile/cmd_auth_test.go` | 54 |
 | `Return` | `TestAuthStatus_Authenticated` | `cmd/tokenpile/cmd_auth_test.go` | 65 |
 | `Return` | `TestAuthStatus_NotLoggedIn` | `cmd/tokenpile/cmd_auth_test.go` | 76 |
-| `Return` | `TestGitHubIssueProvider_ListIssues_UnauthenticatedError` | `internal/provider/github_issues_test.go` | 51 |
+| `Return` | `TestGitHubIssueProvider_ListIssues_UnauthenticatedError` | `internal/provider/github_issues_test.go` | 85 |
 | `Return` | `TestLog_ClosesIdleSession_StartsNew` | `cmd/tokenpile/cmd_log_test.go` | 131 |
 | `Return` | `TestLog_NoActiveSession_StartsNew` | `cmd/tokenpile/cmd_log_test.go` | 56 |
 | `Return` | `TestLog_ReuseActiveSession` | `cmd/tokenpile/cmd_log_test.go` | 94 |
-| `Set` | `TestGitHubIssueProvider_GetIssue` | `internal/provider/github_issues_test.go` | 69 |
+| `Set` | `TestGitHubIssueProvider_GetIssue` | `internal/provider/github_issues_test.go` | 103 |
 | `Set` | `TestGitHubIssueProvider_ListIssues` | `internal/provider/github_issues_test.go` | 34 |
+| `Set` | `TestGitHubIssueProvider_ListIssues_Paginated` | `internal/provider/github_issues_test.go` | 60 |
 | `Truncate` | `TestExport_RoundTrip_WithEntries` | `internal/export/export_integration_test.go` | 43 |
 | `Truncate` | `TestSQLiteStore_ListUsageOverTime_DayGranularity` | `internal/store/sqlite_test.go` | 173 |
 | `UTC` | `TestExport_RoundTrip_WithEntries` | `internal/export/export_integration_test.go` | 43 |
@@ -92,8 +95,9 @@
 | `assert.Equal` | `TestBuild_SessionsIncludedInDocument` | `internal/export/export_test.go` | 196 |
 | `assert.Equal` | `TestCanonicalJSON_DeterministicAcrossBuilds` | `internal/export/export_test.go` | 109 |
 | `assert.Equal` | `TestExport_RoundTrip_EmptyEntries` | `internal/export/export_integration_test.go` | 24 |
-| `assert.Equal` | `TestGitHubIssueProvider_GetIssue` | `internal/provider/github_issues_test.go` | 68 |
+| `assert.Equal` | `TestGitHubIssueProvider_GetIssue` | `internal/provider/github_issues_test.go` | 102 |
 | `assert.Equal` | `TestGitHubIssueProvider_ListIssues` | `internal/provider/github_issues_test.go` | 33 |
+| `assert.Equal` | `TestGitHubIssueProvider_ListIssues_Paginated` | `internal/provider/github_issues_test.go` | 59 |
 | `assert.Equal` | `TestHandleKey_EnterDetail` | `internal/tui/tui_test.go` | 223 |
 | `assert.Equal` | `TestHandleKey_EscFromChart` | `internal/tui/tui_test.go` | 246 |
 | `assert.Equal` | `TestHandleKey_EscFromDetail` | `internal/tui/tui_test.go` | 235 |
@@ -137,7 +141,7 @@
 | `assert.Error` | `TestSmoke_LogMissingFlags` | `cmd/tokenpile/smoke_test.go` | 64 |
 | `assert.Error` | `TestVerify_InvalidSignature` | `internal/export/export_test.go` | 96 |
 | `assert.Error` | `TestVerify_WrongKey` | `internal/export/export_test.go` | 145 |
-| `assert.ErrorIs` | `TestGitHubIssueProvider_ListIssues_UnauthenticatedError` | `internal/provider/github_issues_test.go` | 56 |
+| `assert.ErrorIs` | `TestGitHubIssueProvider_ListIssues_UnauthenticatedError` | `internal/provider/github_issues_test.go` | 90 |
 | `assert.ErrorIs` | `TestInstall_UnsupportedAgent` | `internal/skill/skill_test.go` | 30 |
 | `assert.ErrorIs` | `TestSQLiteStore_EndSession_NotFound` | `internal/store/sqlite_test.go` | 100 |
 | `assert.False` | `TestComputeCost_UnknownModel` | `internal/pricing/pricing_test.go` | 76 |
@@ -266,9 +270,10 @@
 | `context.Background` | `TestAuthLogout_Success` | `cmd/tokenpile/cmd_auth_test.go` | 54 |
 | `context.Background` | `TestAuthStatus_Authenticated` | `cmd/tokenpile/cmd_auth_test.go` | 65 |
 | `context.Background` | `TestAuthStatus_NotLoggedIn` | `cmd/tokenpile/cmd_auth_test.go` | 76 |
-| `context.Background` | `TestGitHubIssueProvider_GetIssue` | `internal/provider/github_issues_test.go` | 77 |
+| `context.Background` | `TestGitHubIssueProvider_GetIssue` | `internal/provider/github_issues_test.go` | 111 |
 | `context.Background` | `TestGitHubIssueProvider_ListIssues` | `internal/provider/github_issues_test.go` | 42 |
-| `context.Background` | `TestGitHubIssueProvider_ListIssues_UnauthenticatedError` | `internal/provider/github_issues_test.go` | 51 |
+| `context.Background` | `TestGitHubIssueProvider_ListIssues_Paginated` | `internal/provider/github_issues_test.go` | 76 |
+| `context.Background` | `TestGitHubIssueProvider_ListIssues_UnauthenticatedError` | `internal/provider/github_issues_test.go` | 85 |
 | `context.Background` | `TestIntegration_Budget_Overwrite` | `cmd/tokenpile/cmd_budget_test.go` | 55 |
 | `context.Background` | `TestIntegration_Budget_Set` | `cmd/tokenpile/cmd_budget_test.go` | 20 |
 | `context.Background` | `TestIntegration_Budget_Unset` | `cmd/tokenpile/cmd_budget_test.go` | 42 |
@@ -379,17 +384,20 @@
 | `filepath.Join` | `TestSQLiteStore_MigrationIdempotent` | `internal/store/sqlite_test.go` | 302 |
 | `filepath.Join` | `TestSQLiteStore_SchemaIdempotent` | `internal/store/sqlite_test.go` | 289 |
 | `filepath.Join` | `TestSetOverride_WritesAndUpdates` | `internal/pricing/pricing_test.go` | 91 |
-| `http.HandlerFunc` | `TestGitHubIssueProvider_GetIssue` | `internal/provider/github_issues_test.go` | 67 |
+| `http.HandlerFunc` | `TestGitHubIssueProvider_GetIssue` | `internal/provider/github_issues_test.go` | 101 |
 | `http.HandlerFunc` | `TestGitHubIssueProvider_ListIssues` | `internal/provider/github_issues_test.go` | 32 |
-| `httptest.NewServer` | `TestGitHubIssueProvider_GetIssue` | `internal/provider/github_issues_test.go` | 67 |
+| `http.HandlerFunc` | `TestGitHubIssueProvider_ListIssues_Paginated` | `internal/provider/github_issues_test.go` | 58 |
+| `httptest.NewServer` | `TestGitHubIssueProvider_GetIssue` | `internal/provider/github_issues_test.go` | 101 |
 | `httptest.NewServer` | `TestGitHubIssueProvider_ListIssues` | `internal/provider/github_issues_test.go` | 32 |
+| `httptest.NewServer` | `TestGitHubIssueProvider_ListIssues_Paginated` | `internal/provider/github_issues_test.go` | 58 |
 | `info.IsDir` | `TestEnsureDirs_CreatesDirs` | `internal/config/paths_test.go` | 55 |
 | `int` | `TestSQLiteStore_ListUsageOverTime_WeekGranularity` | `internal/store/sqlite_test.go` | 226 |
 | `ip.AssertExpectations` | `TestLog_ClosesIdleSession_StartsNew` | `cmd/tokenpile/cmd_log_test.go` | 169 |
 | `ip.AssertExpectations` | `TestLog_NoActiveSession_StartsNew` | `cmd/tokenpile/cmd_log_test.go` | 86 |
 | `ip.AssertExpectations` | `TestLog_ReuseActiveSession` | `cmd/tokenpile/cmd_log_test.go` | 123 |
-| `json.NewEncoder` | `TestGitHubIssueProvider_GetIssue` | `internal/provider/github_issues_test.go` | 70 |
+| `json.NewEncoder` | `TestGitHubIssueProvider_GetIssue` | `internal/provider/github_issues_test.go` | 104 |
 | `json.NewEncoder` | `TestGitHubIssueProvider_ListIssues` | `internal/provider/github_issues_test.go` | 35 |
+| `json.NewEncoder` | `TestGitHubIssueProvider_ListIssues_Paginated` | `internal/provider/github_issues_test.go` | 63 |
 | `json.Unmarshal` | `TestIntegration_Export_NoRepoIssueFilter_OmitsSessionsAndBudgets` | `cmd/tokenpile/integration_test.go` | 517 |
 | `json.Unmarshal` | `TestIntegration_Export_SchemaV2_IncludesBudget` | `cmd/tokenpile/integration_test.go` | 497 |
 | `json.Unmarshal` | `TestIntegration_Export_SchemaV2_IncludesSessions` | `cmd/tokenpile/integration_test.go` | 474 |
@@ -402,7 +410,7 @@
 | `l.ComputeCost` | `TestSetOverride_WritesAndUpdates` | `internal/pricing/pricing_test.go` | 99 |
 | `l.SetOverride` | `TestSetOverride_WritesAndUpdates` | `internal/pricing/pricing_test.go` | 96 |
 | `len` | `TestList_ContainsAllAgents` | `internal/skill/skill_test.go` | 17 |
-| `m.On` | `TestGitHubIssueProvider_ListIssues_UnauthenticatedError` | `internal/provider/github_issues_test.go` | 51 |
+| `m.On` | `TestGitHubIssueProvider_ListIssues_UnauthenticatedError` | `internal/provider/github_issues_test.go` | 85 |
 | `m.Update` | `TestHandleKey_EnterDetail` | `internal/tui/tui_test.go` | 220 |
 | `m.Update` | `TestHandleKey_EscFromChart` | `internal/tui/tui_test.go` | 243 |
 | `m.Update` | `TestHandleKey_EscFromDetail` | `internal/tui/tui_test.go` | 232 |
@@ -437,9 +445,10 @@
 | `mock.MatchedBy` | `TestLog_ClosesIdleSession_StartsNew` | `cmd/tokenpile/cmd_log_test.go` | 153 |
 | `mock.MatchedBy` | `TestLog_NoActiveSession_StartsNew` | `cmd/tokenpile/cmd_log_test.go` | 68 |
 | `mock.MatchedBy` | `TestLog_ReuseActiveSession` | `cmd/tokenpile/cmd_log_test.go` | 107 |
-| `mocks.NewAuthProvider` | `TestGitHubIssueProvider_ListIssues_UnauthenticatedError` | `internal/provider/github_issues_test.go` | 50 |
-| `newMockAuthProvider` | `TestGitHubIssueProvider_GetIssue` | `internal/provider/github_issues_test.go` | 74 |
+| `mocks.NewAuthProvider` | `TestGitHubIssueProvider_ListIssues_UnauthenticatedError` | `internal/provider/github_issues_test.go` | 84 |
+| `newMockAuthProvider` | `TestGitHubIssueProvider_GetIssue` | `internal/provider/github_issues_test.go` | 108 |
 | `newMockAuthProvider` | `TestGitHubIssueProvider_ListIssues` | `internal/provider/github_issues_test.go` | 39 |
+| `newMockAuthProvider` | `TestGitHubIssueProvider_ListIssues_Paginated` | `internal/provider/github_issues_test.go` | 73 |
 | `newTUIModel` | `TestTUI_DetailView_SessionsTab_ShowsNoteAndTags` | `internal/tui/tui_test.go` | 409 |
 | `newTUIModel` | `TestTUI_DetailView_SummaryAndSessionsTabs` | `internal/tui/tui_test.go` | 376 |
 | `newTUIModel` | `TestTUI_DetailView_SummaryTab_ShowsBudgetBar` | `internal/tui/tui_test.go` | 437 |
@@ -528,9 +537,10 @@
 | `os.WriteFile` | `TestNewLoader_UserOverrideTakesPrecedence` | `internal/pricing/pricing_test.go` | 27 |
 | `p.Date.IsZero` | `TestSQLiteStore_ListUsageOverTime_WeekGranularity` | `internal/store/sqlite_test.go` | 225 |
 | `p.Date.Weekday` | `TestSQLiteStore_ListUsageOverTime_WeekGranularity` | `internal/store/sqlite_test.go` | 226 |
-| `p.GetIssue` | `TestGitHubIssueProvider_GetIssue` | `internal/provider/github_issues_test.go` | 77 |
+| `p.GetIssue` | `TestGitHubIssueProvider_GetIssue` | `internal/provider/github_issues_test.go` | 111 |
 | `p.ListIssues` | `TestGitHubIssueProvider_ListIssues` | `internal/provider/github_issues_test.go` | 42 |
-| `p.ListIssues` | `TestGitHubIssueProvider_ListIssues_UnauthenticatedError` | `internal/provider/github_issues_test.go` | 55 |
+| `p.ListIssues` | `TestGitHubIssueProvider_ListIssues_Paginated` | `internal/provider/github_issues_test.go` | 76 |
+| `p.ListIssues` | `TestGitHubIssueProvider_ListIssues_UnauthenticatedError` | `internal/provider/github_issues_test.go` | 89 |
 | `pricing.NewLoader` | `TestComputeCost_InOutSeparate` | `internal/pricing/pricing_test.go` | 81 |
 | `pricing.NewLoader` | `TestComputeCost_UnknownModel` | `internal/pricing/pricing_test.go` | 72 |
 | `pricing.NewLoader` | `TestNewLoader_DefaultFillsMissingOverride` | `internal/pricing/pricing_test.go` | 55 |
@@ -538,12 +548,14 @@
 | `pricing.NewLoader` | `TestNewLoader_NoOverrideFile` | `internal/pricing/pricing_test.go` | 64 |
 | `pricing.NewLoader` | `TestNewLoader_UserOverrideTakesPrecedence` | `internal/pricing/pricing_test.go` | 35 |
 | `pricing.NewLoader` | `TestSetOverride_WritesAndUpdates` | `internal/pricing/pricing_test.go` | 93 |
-| `provider.NewGitHubIssueProvider` | `TestGitHubIssueProvider_ListIssues_UnauthenticatedError` | `internal/provider/github_issues_test.go` | 53 |
-| `provider.NewGitHubIssueProviderWithURL` | `TestGitHubIssueProvider_GetIssue` | `internal/provider/github_issues_test.go` | 75 |
+| `provider.NewGitHubIssueProvider` | `TestGitHubIssueProvider_ListIssues_UnauthenticatedError` | `internal/provider/github_issues_test.go` | 87 |
+| `provider.NewGitHubIssueProviderWithURL` | `TestGitHubIssueProvider_GetIssue` | `internal/provider/github_issues_test.go` | 109 |
 | `provider.NewGitHubIssueProviderWithURL` | `TestGitHubIssueProvider_ListIssues` | `internal/provider/github_issues_test.go` | 40 |
+| `provider.NewGitHubIssueProviderWithURL` | `TestGitHubIssueProvider_ListIssues_Paginated` | `internal/provider/github_issues_test.go` | 74 |
 | `provider.ParseRemote` | `TestParseRemote_HTTPS` | `internal/provider/repoinfer_test.go` | 23 |
 | `provider.ParseRemote` | `TestParseRemote_NonGitHub` | `internal/provider/repoinfer_test.go` | 54 |
 | `provider.ParseRemote` | `TestParseRemote_SSH` | `internal/provider/repoinfer_test.go` | 40 |
+| `r.URL.Query` | `TestGitHubIssueProvider_ListIssues_Paginated` | `internal/provider/github_issues_test.go` | 62 |
 | `reportCommand` | `TestIntegration_Report_ShowsBreakdown` | `cmd/tokenpile/integration_test.go` | 277 |
 | `require.Error` | `TestAuthLogin_Failure` | `cmd/tokenpile/cmd_auth_test.go` | 48 |
 | `require.Error` | `TestIntegration_Log_RejectsNegativeTokens` | `cmd/tokenpile/integration_test.go` | 115 |
@@ -556,6 +568,7 @@
 | `require.Len` | `TestBuild_SessionsIncludedInDocument` | `internal/export/export_test.go` | 194 |
 | `require.Len` | `TestExport_RoundTrip_WithEntries` | `internal/export/export_integration_test.go` | 59 |
 | `require.Len` | `TestGitHubIssueProvider_ListIssues` | `internal/provider/github_issues_test.go` | 44 |
+| `require.Len` | `TestGitHubIssueProvider_ListIssues_Paginated` | `internal/provider/github_issues_test.go` | 78 |
 | `require.Len` | `TestIntegration_Export_SchemaV2_IncludesBudget` | `cmd/tokenpile/integration_test.go` | 499 |
 | `require.Len` | `TestIntegration_Export_SchemaV2_IncludesSessions` | `cmd/tokenpile/integration_test.go` | 477 |
 | `require.Len` | `TestIntegration_Log_CreatesSessionAndEntry` | `cmd/tokenpile/integration_test.go` | 76 |
@@ -600,8 +613,9 @@
 | `require.NoError` | `TestExport_Verify_InvalidPublicKey` | `internal/export/export_integration_test.go` | 81 |
 | `require.NoError` | `TestExport_Verify_TamperedEntries` | `internal/export/export_integration_test.go` | 65 |
 | `require.NoError` | `TestExport_Verify_WrongPublicKey` | `internal/export/export_integration_test.go` | 93 |
-| `require.NoError` | `TestGitHubIssueProvider_GetIssue` | `internal/provider/github_issues_test.go` | 78 |
+| `require.NoError` | `TestGitHubIssueProvider_GetIssue` | `internal/provider/github_issues_test.go` | 112 |
 | `require.NoError` | `TestGitHubIssueProvider_ListIssues` | `internal/provider/github_issues_test.go` | 43 |
+| `require.NoError` | `TestGitHubIssueProvider_ListIssues_Paginated` | `internal/provider/github_issues_test.go` | 77 |
 | `require.NoError` | `TestInstall_ClaudeCode_OverwritesExisting` | `internal/skill/skill_test.go` | 53 |
 | `require.NoError` | `TestInstall_ClaudeCode_WritesFile` | `internal/skill/skill_test.go` | 40 |
 | `require.NoError` | `TestInstall_Codex_AppendsToExistingFile` | `internal/skill/skill_test.go` | 100 |
@@ -840,8 +854,9 @@
 | `skill.IsUpToDate` | `TestIsUpToDate_SharedAgent_AfterInstall_True` | `internal/skill/skill_test.go` | 254 |
 | `skill.IsUpToDate` | `TestIsUpToDate_UnknownAgent_False` | `internal/skill/skill_test.go` | 201 |
 | `skill.List` | `TestList_ContainsAllAgents` | `internal/skill/skill_test.go` | 16 |
-| `srv.Close` | `TestGitHubIssueProvider_GetIssue` | `internal/provider/github_issues_test.go` | 72 |
+| `srv.Close` | `TestGitHubIssueProvider_GetIssue` | `internal/provider/github_issues_test.go` | 106 |
 | `srv.Close` | `TestGitHubIssueProvider_ListIssues` | `internal/provider/github_issues_test.go` | 37 |
+| `srv.Close` | `TestGitHubIssueProvider_ListIssues_Paginated` | `internal/provider/github_issues_test.go` | 71 |
 | `store.NewSQLiteStore` | `TestSQLiteStore_MigrationIdempotent` | `internal/store/sqlite_test.go` | 306 |
 | `store.NewSQLiteStore` | `TestSQLiteStore_SchemaIdempotent` | `internal/store/sqlite_test.go` | 292 |
 | `string` | `TestInstall_ClaudeCode_WritesFile` | `internal/skill/skill_test.go` | 45 |
@@ -940,6 +955,7 @@
 | `tm.Send` | `TestTUI_DetailView_SummaryAndSessionsTabs` | `internal/tui/tui_test.go` | 383 |
 | `tm.Send` | `TestTUI_DetailView_SummaryTab_ShowsBudgetBar` | `internal/tui/tui_test.go` | 444 |
 | `today.AddDate` | `TestSQLiteStore_ListUsageOverTime_DayGranularity` | `internal/store/sqlite_test.go` | 176 |
-| `w.Header` | `TestGitHubIssueProvider_GetIssue` | `internal/provider/github_issues_test.go` | 69 |
+| `w.Header` | `TestGitHubIssueProvider_GetIssue` | `internal/provider/github_issues_test.go` | 103 |
 | `w.Header` | `TestGitHubIssueProvider_ListIssues` | `internal/provider/github_issues_test.go` | 34 |
+| `w.Header` | `TestGitHubIssueProvider_ListIssues_Paginated` | `internal/provider/github_issues_test.go` | 60 |
 

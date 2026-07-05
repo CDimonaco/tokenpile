@@ -1,7 +1,7 @@
 # Errors & Panics
 
 **Root:** `/Users/cdimonaco/code/github.com/cdimonaco/tokenpile`  
-**Generated:** 2026-07-05 14:37:41 UTC  
+**Generated:** 2026-07-05 14:39:27 UTC  
 
 ---
 
@@ -98,9 +98,9 @@
 | `unsupported platform: %s` | `openBrowser` | `internal/provider/github_auth.go` | 266 |
 | `set base URL: %w` | `(*GitHubIssueProvider).client` | `internal/provider/github_issues.go` | 45 |
 | `invalid repo format %q: expected owner/repo` | `(*GitHubIssueProvider).ListIssues` | `internal/provider/github_issues.go` | 60 |
-| `list issues: %w` | `(*GitHubIssueProvider).ListIssues` | `internal/provider/github_issues.go` | 76 |
-| `invalid repo format %q: expected owner/repo` | `(*GitHubIssueProvider).GetIssue` | `internal/provider/github_issues.go` | 112 |
-| `get issue: %w` | `(*GitHubIssueProvider).GetIssue` | `internal/provider/github_issues.go` | 124 |
+| `list issues: %w` | `(*GitHubIssueProvider).ListIssues` | `internal/provider/github_issues.go` | 80 |
+| `invalid repo format %q: expected owner/repo` | `(*GitHubIssueProvider).GetIssue` | `internal/provider/github_issues.go` | 121 |
+| `get issue: %w` | `(*GitHubIssueProvider).GetIssue` | `internal/provider/github_issues.go` | 133 |
 | `cannot infer repo from remote %q: not a GitHub remote; pass --repo owner/repo` | `ParseRemote` | `internal/provider/repoinfer.go` | 44 |
 | `%w: %s` | `Install` | `internal/skill/skill.go` | 94 |
 | `cannot determine install path for agent %s` | `Install` | `internal/skill/skill.go` | 99 |

@@ -1,7 +1,7 @@
 # Symbols & Packages
 
 **Root:** `/Users/cdimonaco/code/github.com/cdimonaco/tokenpile`  
-**Generated:** 2026-07-05 14:37:41 UTC  
+**Generated:** 2026-07-05 14:39:27 UTC  
 
 ---
 
@@ -23,12 +23,12 @@
 | `cmd/tokenpile/cmd_log_test.go` | 6 | 154 |
 | `internal/export/export_integration_test.go` | 6 | 141 |
 | `cmd/tokenpile/cmd_report.go` | 2 | 143 |
+| `internal/provider/github_issues_test.go` | 5 | 135 |
 | `cmd/tokenpile/main.go` | 5 | 126 |
 | `internal/pricing/pricing_test.go` | 7 | 121 |
 | `cmd/tokenpile/cmd_export.go` | 2 | 120 |
 | `cmd/tokenpile/smoke_test.go` | 7 | 112 |
 | `internal/config/paths_test.go` | 4 | 112 |
-| `internal/provider/github_issues.go` | 6 | 104 |
 
 ## Important Symbols (top 30 by outgoing calls)
 
@@ -58,12 +58,12 @@
 | `TestIntegration_Log_IdleSessionClosed_ByResolveSession` | function | `cmd/tokenpile/integration_test.go` | 537 | 50 |
 | `budgetCommands` | function | `cmd/tokenpile/cmd_budget.go` | 13 | 49 |
 | `printSessionsReport` | function | `cmd/tokenpile/cmd_report.go` | 115 | 48 |
-| `(*GitHubIssueProvider).ListIssues` | method | `internal/provider/github_issues.go` | 52 | 48 |
 | `TestLog_ClosesIdleSession_StartsNew` | function | `cmd/tokenpile/cmd_log_test.go` | 126 | 45 |
 | `TestSQLiteStore_UpdateSessionAnnotations_TagsUnion` | function | `internal/store/sqlite_test.go` | 330 | 45 |
 | `TestResolve_UsesEnvOverride` | function | `internal/config/paths_test.go` | 14 | 44 |
+| `(*GitHubIssueProvider).ListIssues` | method | `internal/provider/github_issues.go` | 52 | 44 |
+| `TestGitHubIssueProvider_ListIssues_Paginated` | function | `internal/provider/github_issues_test.go` | 49 | 44 |
 | `TestSQLiteStore_ListTrackedIssueRefs` | function | `internal/store/sqlite_test.go` | 266 | 44 |
-| `pricingCommands` | function | `cmd/tokenpile/cmd_pricing.go` | 13 | 43 |
 
 ## Packages
 

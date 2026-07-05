@@ -46,6 +46,40 @@ func TestGitHubIssueProvider_ListIssues(t *testing.T) {
 	assert.Equal(t, "Bug fix", got[0].Title)
 }
 
+func TestGitHubIssueProvider_ListIssues_Paginated(t *testing.T) {
+	pageOne := []map[string]any{
+		{"number": 1, "title": "First", "state": "open", "html_url": "https://github.com/o/r/issues/1"},
+	}
+	pageTwo := []map[string]any{
+		{"number": 2, "title": "Second", "state": "open", "html_url": "https://github.com/o/r/issues/2"},
+	}
+
+	var srv *httptest.Server
+	srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/api/v3/repos/o/r/issues", r.URL.Path)
+		w.Header().Set("Content-Type", "application/json")
+
+		if r.URL.Query().Get("page") == "2" {
+			_ = json.NewEncoder(w).Encode(pageTwo)
+			return
+		}
+
+		w.Header().Set("Link",
+			`<`+srv.URL+`/api/v3/repos/o/r/issues?page=2>; rel="next", <`+srv.URL+`/api/v3/repos/o/r/issues?page=2>; rel="last"`)
+		_ = json.NewEncoder(w).Encode(pageOne)
+	}))
+	defer srv.Close()
+
+	auth := newMockAuthProvider(t, "test-token")
+	p := provider.NewGitHubIssueProviderWithURL(auth, srv.URL)
+
+	got, err := p.ListIssues(context.Background(), usage.Filter{Repo: "o/r", State: "open"})
+	require.NoError(t, err)
+	require.Len(t, got, 2)
+	assert.Equal(t, 1, got[0].Number)
+	assert.Equal(t, 2, got[1].Number)
+}
+
 func TestGitHubIssueProvider_ListIssues_UnauthenticatedError(t *testing.T) {
 	m := mocks.NewAuthProvider(t)
 	m.On("Token", context.Background()).Return("", provider.ErrUnauthenticated)

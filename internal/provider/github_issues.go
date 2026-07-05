@@ -63,39 +63,48 @@ func (p *GitHubIssueProvider) ListIssues(ctx context.Context, filter usage.Filte
 	owner, repo := parts[0], parts[1]
 
 	opts := &github.IssueListByRepoOptions{
-		State:    filter.State,
-		Assignee: filter.Assignee,
+		State:       filter.State,
+		Assignee:    filter.Assignee,
+		ListOptions: github.ListOptions{PerPage: 100},
 	}
 
 	if opts.State == "" {
 		opts.State = "open"
 	}
 
-	ghIssues, _, err := client.Issues.ListByRepo(ctx, owner, repo, opts)
-	if err != nil {
-		return nil, fmt.Errorf("list issues: %w", err)
-	}
+	var issues []Issue
 
-	issues := make([]Issue, 0, len(ghIssues))
-
-	for _, gi := range ghIssues {
-		if gi.PullRequestLinks != nil {
-			continue
+	for {
+		ghIssues, resp, listErr := client.Issues.ListByRepo(ctx, owner, repo, opts)
+		if listErr != nil {
+			return nil, fmt.Errorf("list issues: %w", listErr)
 		}
 
-		labels := make([]string, 0, len(gi.Labels))
-		for _, l := range gi.Labels {
-			labels = append(labels, l.GetName())
+		for _, gi := range ghIssues {
+			if gi.PullRequestLinks != nil {
+				continue
+			}
+
+			labels := make([]string, 0, len(gi.Labels))
+			for _, l := range gi.Labels {
+				labels = append(labels, l.GetName())
+			}
+
+			issues = append(issues, Issue{
+				Number: gi.GetNumber(),
+				Repo:   filter.Repo,
+				Title:  gi.GetTitle(),
+				State:  gi.GetState(),
+				URL:    gi.GetHTMLURL(),
+				Labels: labels,
+			})
 		}
 
-		issues = append(issues, Issue{
-			Number: gi.GetNumber(),
-			Repo:   filter.Repo,
-			Title:  gi.GetTitle(),
-			State:  gi.GetState(),
-			URL:    gi.GetHTMLURL(),
-			Labels: labels,
-		})
+		if resp.NextPage == 0 {
+			break
+		}
+
+		opts.Page = resp.NextPage
 	}
 
 	return issues, nil
