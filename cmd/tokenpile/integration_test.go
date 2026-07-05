@@ -83,6 +83,45 @@ func TestIntegration_Log_CreatesSessionAndEntry(t *testing.T) {
 	assert.Equal(t, 500, report.Rows[0].TokensOut)
 }
 
+func TestIntegration_Log_RejectsNegativeTokens(t *testing.T) {
+	s := newTestStore(t)
+
+	for _, tc := range []struct {
+		name string
+		args []string
+		want string
+	}{
+		{
+			name: "negative tokens-in",
+			args: []string{"--tokens-in", "-5", "--tokens-out", "500"},
+			want: "--tokens-in must be zero or greater",
+		},
+		{
+			name: "negative tokens-out",
+			args: []string{"--tokens-in", "1000", "--tokens-out", "-1"},
+			want: "--tokens-out must be zero or greater",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			args := append([]string{
+				"log",
+				"--issue", "1",
+				"--agent", "claude-code",
+				"--model", "claude-sonnet-4-6",
+				"--repo", "owner/repo",
+			}, tc.args...)
+
+			err := runLogCmd(t, s, args...)
+			require.Error(t, err)
+			assert.Contains(t, err.Error(), tc.want)
+
+			entries, listErr := s.ListEntries(context.Background(), usage.Filter{Repo: "owner/repo"})
+			require.NoError(t, listErr)
+			assert.Empty(t, entries)
+		})
+	}
+}
+
 func TestIntegration_Log_ReuseSession(t *testing.T) {
 	s := newTestStore(t)
 	ctx := context.Background()

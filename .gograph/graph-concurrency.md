@@ -1,13 +1,13 @@
 # Concurrency Primitives
 
 **Root:** `/Users/cdimonaco/code/github.com/cdimonaco/tokenpile`  
-**Generated:** 2026-07-05 14:32:47 UTC  
+**Generated:** 2026-07-05 14:37:41 UTC  
 
 ---
 
 | Kind | Function | File | Line | Detail |
 |------|----------|------|------|--------|
-| `waitgroup_add` | `resolveSession` | `cmd/tokenpile/cmd_log.go` | 165 | `now.Add` |
+| `waitgroup_add` | `resolveSession` | `cmd/tokenpile/cmd_log.go` | 177 | `now.Add` |
 | `waitgroup_add` | `TestBuild_SessionsIncludedInDocument` | `internal/export/export_test.go` | 173 | `now.Add` |
 | `waitgroup_add` | `TestBuild_SessionsIncludedInDocument` | `internal/export/export_test.go` | 188 | `now.Add` |
 | `channel_send` | `(*GitHubAuthProvider).Login` | `internal/provider/github_auth.go` | 85 | `errCh <-` |

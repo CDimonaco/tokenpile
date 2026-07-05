@@ -65,75 +65,87 @@ func logCommand(s store.Store, ip provider.IssueProvider) *cli.Command {
 			},
 		},
 		Action: func(c *cli.Context) error {
-			repo, err := provider.ResolveRepo(c.String("repo"))
-			if err != nil {
-				if errors.Is(err, provider.ErrNoRepo) {
-					return errors.New(
-						"cannot infer repo: pass --repo owner/repo or run from inside a GitHub repository",
-					)
-				}
-
-				return fmt.Errorf("infer repo: %w", err)
-			}
-
-			issueNum := c.Int("issue")
-			agent := c.String("agent")
-			model := c.String("model")
-			tokensIn := c.Int("tokens-in")
-			tokensOut := c.Int("tokens-out")
-			ctx := c.Context
-
-			issue, getErr := ip.GetIssue(ctx, repo, issueNum)
-			if getErr != nil {
-				if errors.Is(getErr, provider.ErrIssueNotFound) {
-					return fmt.Errorf("issue #%d not found in %s", issueNum, repo)
-				}
-
-				if errors.Is(getErr, provider.ErrUnauthenticated) {
-					return errors.New("GitHub authentication required to validate issues: run tokenpile auth login")
-				}
-
-				return fmt.Errorf("validate issue: %w", getErr)
-			}
-
-			if cacheErr := s.UpsertIssueCache(ctx, &usage.IssueCache{
-				Repo:     repo,
-				IssueNum: issueNum,
-				Title:    issue.Title,
-				Labels:   issue.Labels,
-			}); cacheErr != nil {
-				slog.Warn("upsert issue cache", "err", cacheErr)
-			}
-
-			sessionID, err := resolveSession(ctx, s, repo, issueNum)
-			if err != nil {
-				return fmt.Errorf("resolve session: %w", err)
-			}
-
-			entry := usage.Entry{
-				ID:        uuid.NewString(),
-				Repo:      repo,
-				IssueNum:  issueNum,
-				Agent:     agent,
-				Model:     model,
-				TokensIn:  tokensIn,
-				TokensOut: tokensOut,
-				SessionID: sessionID,
-				At:        time.Now().UTC(),
-			}
-
-			if err = s.LogUsage(ctx, entry); err != nil {
-				return fmt.Errorf("log usage: %w", err)
-			}
-
-			applyAnnotations(ctx, s, sessionID, c.String("note"), c.StringSlice("tag"))
-
-			fmt.Fprintf(c.App.Writer, "Logged: %s #%d  in=%d out=%d  session=%s\n",
-				repo, issueNum, tokensIn, tokensOut, sessionID)
-
-			return nil
+			return runLog(c, s, ip)
 		},
 	}
+}
+
+func runLog(c *cli.Context, s store.Store, ip provider.IssueProvider) error {
+	repo, err := provider.ResolveRepo(c.String("repo"))
+	if err != nil {
+		if errors.Is(err, provider.ErrNoRepo) {
+			return errors.New(
+				"cannot infer repo: pass --repo owner/repo or run from inside a GitHub repository",
+			)
+		}
+
+		return fmt.Errorf("infer repo: %w", err)
+	}
+
+	issueNum := c.Int("issue")
+	agent := c.String("agent")
+	model := c.String("model")
+	tokensIn := c.Int("tokens-in")
+	tokensOut := c.Int("tokens-out")
+	ctx := c.Context
+
+	if tokensIn < 0 {
+		return errors.New("--tokens-in must be zero or greater")
+	}
+
+	if tokensOut < 0 {
+		return errors.New("--tokens-out must be zero or greater")
+	}
+
+	issue, getErr := ip.GetIssue(ctx, repo, issueNum)
+	if getErr != nil {
+		if errors.Is(getErr, provider.ErrIssueNotFound) {
+			return fmt.Errorf("issue #%d not found in %s", issueNum, repo)
+		}
+
+		if errors.Is(getErr, provider.ErrUnauthenticated) {
+			return errors.New("GitHub authentication required to validate issues: run tokenpile auth login")
+		}
+
+		return fmt.Errorf("validate issue: %w", getErr)
+	}
+
+	if cacheErr := s.UpsertIssueCache(ctx, &usage.IssueCache{
+		Repo:     repo,
+		IssueNum: issueNum,
+		Title:    issue.Title,
+		Labels:   issue.Labels,
+	}); cacheErr != nil {
+		slog.Warn("upsert issue cache", "err", cacheErr)
+	}
+
+	sessionID, err := resolveSession(ctx, s, repo, issueNum)
+	if err != nil {
+		return fmt.Errorf("resolve session: %w", err)
+	}
+
+	entry := usage.Entry{
+		ID:        uuid.NewString(),
+		Repo:      repo,
+		IssueNum:  issueNum,
+		Agent:     agent,
+		Model:     model,
+		TokensIn:  tokensIn,
+		TokensOut: tokensOut,
+		SessionID: sessionID,
+		At:        time.Now().UTC(),
+	}
+
+	if err = s.LogUsage(ctx, entry); err != nil {
+		return fmt.Errorf("log usage: %w", err)
+	}
+
+	applyAnnotations(ctx, s, sessionID, c.String("note"), c.StringSlice("tag"))
+
+	fmt.Fprintf(c.App.Writer, "Logged: %s #%d  in=%d out=%d  session=%s\n",
+		repo, issueNum, tokensIn, tokensOut, sessionID)
+
+	return nil
 }
 
 func applyAnnotations(ctx context.Context, s store.Store, sessionID, noteStr string, tags []string) {

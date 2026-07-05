@@ -1,7 +1,7 @@
 # Errors & Panics
 
 **Root:** `/Users/cdimonaco/code/github.com/cdimonaco/tokenpile`  
-**Generated:** 2026-07-05 14:32:47 UTC  
+**Generated:** 2026-07-05 14:37:41 UTC  
 
 ---
 
@@ -29,16 +29,18 @@
 | `build export: %w` | `runExport` | `cmd/tokenpile/cmd_export.go` | 151 |
 | `marshal export: %w` | `runExport` | `cmd/tokenpile/cmd_export.go` | 156 |
 | `write output: %w` | `runExport` | `cmd/tokenpile/cmd_export.go` | 161 |
-| `cannot infer repo: pass --repo owner/repo or run from inside a GitHub repository` | `logCommand` | `cmd/tokenpile/cmd_log.go` | 71 |
-| `infer repo: %w` | `logCommand` | `cmd/tokenpile/cmd_log.go` | 76 |
-| `issue #%d not found in %s` | `logCommand` | `cmd/tokenpile/cmd_log.go` | 89 |
-| `GitHub authentication required to validate issues: run tokenpile auth login` | `logCommand` | `cmd/tokenpile/cmd_log.go` | 93 |
-| `validate issue: %w` | `logCommand` | `cmd/tokenpile/cmd_log.go` | 96 |
-| `resolve session: %w` | `logCommand` | `cmd/tokenpile/cmd_log.go` | 110 |
-| `log usage: %w` | `logCommand` | `cmd/tokenpile/cmd_log.go` | 126 |
-| `list sessions: %w` | `resolveSession` | `cmd/tokenpile/cmd_log.go` | 161 |
-| `end idle session: %w` | `resolveSession` | `cmd/tokenpile/cmd_log.go` | 175 |
-| `start session: %w` | `resolveSession` | `cmd/tokenpile/cmd_log.go` | 192 |
+| `cannot infer repo: pass --repo owner/repo or run from inside a GitHub repository` | `runLog` | `cmd/tokenpile/cmd_log.go` | 77 |
+| `infer repo: %w` | `runLog` | `cmd/tokenpile/cmd_log.go` | 82 |
+| `--tokens-in must be zero or greater` | `runLog` | `cmd/tokenpile/cmd_log.go` | 93 |
+| `--tokens-out must be zero or greater` | `runLog` | `cmd/tokenpile/cmd_log.go` | 97 |
+| `issue #%d not found in %s` | `runLog` | `cmd/tokenpile/cmd_log.go` | 103 |
+| `GitHub authentication required to validate issues: run tokenpile auth login` | `runLog` | `cmd/tokenpile/cmd_log.go` | 107 |
+| `validate issue: %w` | `runLog` | `cmd/tokenpile/cmd_log.go` | 110 |
+| `resolve session: %w` | `runLog` | `cmd/tokenpile/cmd_log.go` | 124 |
+| `log usage: %w` | `runLog` | `cmd/tokenpile/cmd_log.go` | 140 |
+| `list sessions: %w` | `resolveSession` | `cmd/tokenpile/cmd_log.go` | 173 |
+| `end idle session: %w` | `resolveSession` | `cmd/tokenpile/cmd_log.go` | 187 |
+| `start session: %w` | `resolveSession` | `cmd/tokenpile/cmd_log.go` | 204 |
 | `model name is required` | `pricingCommands` | `cmd/tokenpile/cmd_pricing.go` | 66 |
 | `set pricing: %w` | `pricingCommands` | `cmd/tokenpile/cmd_pricing.go` | 73 |
 | `cannot infer repo: pass --repo owner/repo or run from inside a GitHub repository` | `reportCommand` | `cmd/tokenpile/cmd_report.go` | 40 |
