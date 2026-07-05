@@ -1,4 +1,4 @@
-<!-- tokenpile-skill-version: 2 -->
+<!-- tokenpile-skill-version: 3 -->
 
 # tokenpile
 
@@ -34,15 +34,28 @@ tokenpile log \
 - Once per user turn, not after every tool call
 - Skip for one-liner answers or trivial replies
 
-**Sessions are automatic:** consecutive logs within 30 minutes share the same session. No action needed.
+**Sessions are automatic:** consecutive logs within 30 minutes of the previous log share the same session. Tags accumulate across log calls in the same session (union); the note is overwritten by the latest call. No action needed from you.
 
 ## 2. Answering questions about usage
 
-When the user asks about token usage, cost, or sessions, run the appropriate command and show the output.
+When the user asks about token usage, cost, sessions, or budget, run the appropriate command and show the output.
 
 **Report for a specific issue:**
 ```
 tokenpile report --issue <N> [--repo owner/repo]
+```
+Shows per-agent, per-model breakdown with tokens, cost, and wall-clock time. If a budget is set, shows how much has been consumed.
+
+**Per-session breakdown:**
+```
+tokenpile report --issue <N> --sessions [--repo owner/repo]
+```
+Shows each session with start/end time, duration, tags, and note.
+
+**Manage spending budget:**
+```
+tokenpile budget set --issue <N> --amount <USD>
+tokenpile budget unset --issue <N>
 ```
 
 **Export data:**

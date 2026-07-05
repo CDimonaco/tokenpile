@@ -1,4 +1,4 @@
-<!-- tokenpile-skill-version: 2 -->
+<!-- tokenpile-skill-version: 3 -->
 
 # tokenpile
 
@@ -34,21 +34,28 @@ tokenpile log \
 - Once per user turn, not after every tool call
 - Skip for one-liner answers or trivial replies
 
-**Sessions are automatic:** consecutive logs within 30 minutes share the same session. No action needed.
+**Sessions are automatic:** consecutive logs within 30 minutes of the previous log share the same session. Tags accumulate across log calls in the same session (union); the note is overwritten by the latest call. No action needed from you.
 
 ## 2. Answering questions about usage
 
-When the user asks about token usage, cost, or sessions, run the appropriate command and show the output.
+When the user asks about token usage, cost, sessions, or budget, run the appropriate command and show the output.
 
 **Report for a specific issue:**
 ```
 tokenpile report --issue <N> [--repo owner/repo]
 ```
-Shows per-agent, per-model breakdown with tokens, cost, and wall-clock time.
+Shows per-agent, per-model breakdown with tokens, cost, and wall-clock time. If a budget is set, shows how much has been consumed.
 
-**List all tracked issues:**
+**Per-session breakdown:**
 ```
-tokenpile report --issue <N>
+tokenpile report --issue <N> --sessions [--repo owner/repo]
+```
+Shows each session with start/end time, duration, tags, and note.
+
+**Manage spending budget:**
+```
+tokenpile budget set --issue <N> --amount <USD>
+tokenpile budget unset --issue <N>
 ```
 
 **Export data:**
@@ -64,8 +71,10 @@ tokenpile auth status
 **Example questions and how to handle them:**
 
 - "How many tokens did I spend on issue #42?" → run `tokenpile report --issue 42`
+- "Show me the sessions for this issue" → run `tokenpile report --issue <N> --sessions`
 - "What did this session cost?" → run `tokenpile report --issue <current-issue>`
-- "Show me usage for the last week" → run `tokenpile export --from <date>` or open TUI with `tokenpile`
+- "Show me usage for the last week" → run `tokenpile export --from <date>` or open the TUI with `tokenpile`
+- "Am I over budget?" → run `tokenpile report --issue <N>` and check the budget line
 - "Am I logged in?" → run `tokenpile auth status`
 
 Always run the command and include the output in your response. Do not guess or estimate when real data is available.
