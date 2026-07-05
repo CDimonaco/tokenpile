@@ -3,6 +3,8 @@ package main
 import (
 	"bytes"
 	"context"
+	"crypto/ed25519"
+	"encoding/json"
 	"path/filepath"
 	"testing"
 	"time"
@@ -11,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli/v2"
 
+	"github.com/cdimonaco/tokenpile/internal/export"
 	"github.com/cdimonaco/tokenpile/internal/pricing"
 	"github.com/cdimonaco/tokenpile/internal/provider"
 	"github.com/cdimonaco/tokenpile/internal/store"
@@ -396,4 +399,121 @@ func TestIntegration_Report_WithBudget(t *testing.T) {
 	require.NoError(t, err)
 	assert.Contains(t, out, "Budget")
 	assert.Contains(t, out, "$50.00")
+}
+
+func runExportCmd(t *testing.T, s *store.SQLiteStore, args ...string) (string, error) {
+	t.Helper()
+
+	_, priv, err := ed25519.GenerateKey(nil)
+	require.NoError(t, err)
+
+	var buf bytes.Buffer
+
+	app := &cli.App{
+		Writer:   &buf,
+		Commands: []*cli.Command{exportCommands(s, priv, "test")},
+	}
+
+	err = app.RunContext(context.Background(), append([]string{"tok"}, args...))
+
+	return buf.String(), err
+}
+
+func TestIntegration_Export_SchemaV2_IncludesSessions(t *testing.T) {
+	s := newTestStore(t)
+
+	require.NoError(t, runLogCmd(t, s,
+		"log", "--issue", "50", "--agent", "claude-code", "--model", "claude-sonnet-4-6",
+		"--tokens-in", "1000", "--tokens-out", "500", "--repo", "owner/repo",
+		"--note", "export test note", "--tag", "feature",
+	))
+
+	out, err := runExportCmd(t, s, "export", "--issue", "50", "--repo", "owner/repo")
+	require.NoError(t, err)
+
+	var doc export.Document
+	require.NoError(t, json.Unmarshal([]byte(out), &doc))
+
+	assert.Equal(t, "2.0", doc.SchemaVersion)
+	require.Len(t, doc.Sessions, 1)
+	assert.Equal(t, 50, doc.Sessions[0].IssueNum)
+	assert.Equal(t, "export test note", doc.Sessions[0].Note)
+	assert.Equal(t, []string{"feature"}, doc.Sessions[0].Tags)
+}
+
+func TestIntegration_Export_SchemaV2_IncludesBudget(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	require.NoError(t, runLogCmd(t, s,
+		"log", "--issue", "51", "--agent", "claude-code", "--model", "claude-sonnet-4-6",
+		"--tokens-in", "500", "--tokens-out", "250", "--repo", "owner/repo",
+	))
+	require.NoError(t, s.SetBudget(ctx, "owner/repo", 51, 25.00))
+
+	out, err := runExportCmd(t, s, "export", "--issue", "51", "--repo", "owner/repo")
+	require.NoError(t, err)
+
+	var doc export.Document
+	require.NoError(t, json.Unmarshal([]byte(out), &doc))
+
+	require.Len(t, doc.Budgets, 1)
+	assert.Equal(t, 51, doc.Budgets[0].IssueNum)
+	assert.InEpsilon(t, 25.00, doc.Budgets[0].Amount, 0.001)
+}
+
+func TestIntegration_Export_NoRepoIssueFilter_OmitsSessionsAndBudgets(t *testing.T) {
+	s := newTestStore(t)
+
+	require.NoError(t, runLogCmd(t, s,
+		"log", "--issue", "52", "--agent", "claude-code", "--model", "claude-sonnet-4-6",
+		"--tokens-in", "100", "--tokens-out", "50", "--repo", "owner/repo",
+	))
+
+	// export without --repo/--issue filter: sessions and budgets blocks must be absent
+	out, err := runExportCmd(t, s, "export")
+	require.NoError(t, err)
+
+	var doc export.Document
+	require.NoError(t, json.Unmarshal([]byte(out), &doc))
+
+	assert.Empty(t, doc.Sessions)
+	assert.Empty(t, doc.Budgets)
+}
+
+func TestIntegration_Log_IdleSessionClosed_ByResolveSession(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	// start a session and back-date its last_activity_at to simulate 40 min idle
+	sess, err := s.StartSession(ctx, "owner/repo", 60)
+	require.NoError(t, err)
+
+	idleTime := time.Now().Add(-40 * time.Minute)
+	require.NoError(t, s.UpdateSessionActivity(ctx, sess.ID, idleTime))
+
+	// next log call must close the idle session and open a new one
+	require.NoError(t, runLogCmd(t, s,
+		"log", "--issue", "60", "--agent", "claude-code", "--model", "claude-sonnet-4-6",
+		"--tokens-in", "100", "--tokens-out", "50", "--repo", "owner/repo",
+	))
+
+	sessions, err := s.ListSessions(ctx, "owner/repo", 60)
+	require.NoError(t, err)
+	require.Len(t, sessions, 2)
+
+	var closed, active int
+	for _, se := range sessions {
+		if se.EndedAt != nil {
+			closed++
+			// ended_at must reflect last_activity_at, not now — duration must be near zero
+			duration := se.EndedAt.Sub(se.StartedAt)
+			assert.Less(t, duration, time.Minute, "idle session duration should be ~0, not wall-clock time")
+		} else {
+			active++
+		}
+	}
+
+	assert.Equal(t, 1, closed)
+	assert.Equal(t, 1, active)
 }

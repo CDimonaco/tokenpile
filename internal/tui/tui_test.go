@@ -57,10 +57,11 @@ func newTUIModel(s store.Store) Model {
 	return New(s, &tuiStubProvider{}, loader, "")
 }
 
-func seedIssueEntry(t *testing.T, s *store.SQLiteStore, repo string, issueNum int) {
+func seedIssueEntry(t *testing.T, s *store.SQLiteStore, issueNum int) {
 	t.Helper()
 
 	ctx := context.Background()
+	const repo = "owner/repo"
 
 	sess, err := s.StartSession(ctx, repo, issueNum)
 	require.NoError(t, err)
@@ -343,7 +344,7 @@ func TestBudgetBar_OverBudget_ClampsToFull(t *testing.T) {
 
 func TestTUI_IssueList_ShowsTrackedIssues(t *testing.T) {
 	s := newTUITestStore(t)
-	seedIssueEntry(t, s, "owner/repo", 1)
+	seedIssueEntry(t, s, 1)
 
 	tm := teatest.NewTestModel(t, newTUIModel(s), teatest.WithInitialTermSize(120, 40))
 	t.Cleanup(func() { _ = tm.Quit() })
@@ -355,7 +356,7 @@ func TestTUI_IssueList_ShowsTrackedIssues(t *testing.T) {
 
 func TestTUI_IssueList_ShowsBudgetBar(t *testing.T) {
 	s := newTUITestStore(t)
-	seedIssueEntry(t, s, "owner/repo", 2)
+	seedIssueEntry(t, s, 2)
 	require.NoError(t, s.SetBudget(context.Background(), "owner/repo", 2, 100.00))
 
 	tm := teatest.NewTestModel(t, newTUIModel(s), teatest.WithInitialTermSize(120, 40))
@@ -370,7 +371,7 @@ func TestTUI_IssueList_ShowsBudgetBar(t *testing.T) {
 
 func TestTUI_DetailView_SummaryAndSessionsTabs(t *testing.T) {
 	s := newTUITestStore(t)
-	seedIssueEntry(t, s, "owner/repo", 3)
+	seedIssueEntry(t, s, 3)
 
 	tm := teatest.NewTestModel(t, newTUIModel(s), teatest.WithInitialTermSize(120, 40))
 	t.Cleanup(func() { _ = tm.Quit() })
@@ -423,6 +424,29 @@ func TestTUI_DetailView_SessionsTab_ShowsNoteAndTags(t *testing.T) {
 	teatest.WaitFor(t, tm.Output(), func(b []byte) bool {
 		plain := stripANSI(b)
 		return strings.Contains(plain, "Session 1") && strings.Contains(plain, "session tab note")
+	}, teatest.WithDuration(3*time.Second))
+}
+
+func TestTUI_DetailView_SummaryTab_ShowsBudgetBar(t *testing.T) {
+	s := newTUITestStore(t)
+	ctx := context.Background()
+
+	seedIssueEntry(t, s, 5)
+	require.NoError(t, s.SetBudget(ctx, "owner/repo", 5, 100.00))
+
+	tm := teatest.NewTestModel(t, newTUIModel(s), teatest.WithInitialTermSize(120, 40))
+	t.Cleanup(func() { _ = tm.Quit() })
+
+	teatest.WaitFor(t, tm.Output(), func(b []byte) bool {
+		return strings.Contains(stripANSI(b), "#5")
+	}, teatest.WithDuration(3*time.Second))
+
+	tm.Send(tea.KeyMsg{Type: tea.KeyEnter})
+
+	// Summary tab should show the Budget line with the bar
+	teatest.WaitFor(t, tm.Output(), func(b []byte) bool {
+		plain := stripANSI(b)
+		return strings.Contains(plain, "Budget") && strings.Contains(plain, "$100.00")
 	}, teatest.WithDuration(3*time.Second))
 }
 
