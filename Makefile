@@ -1,7 +1,8 @@
 BINARY := tokenpile
 CMD := ./cmd/tokenpile
+GOGRAPH := $(shell go env GOPATH)/bin/gograph
 
-.PHONY: build test lint fmt generate install clean release-check check status
+.PHONY: build test lint fmt generate install clean release-check check status tools map pack
 
 build:
 	go build -o $(BINARY) $(CMD)
@@ -27,10 +28,20 @@ clean:
 release-check:
 	goreleaser check
 
+tools:
+	go install github.com/ozgurcd/gograph/cmd/gograph@latest
+
+map:
+	$(GOGRAPH) build .
+
+pack:
+	npx --yes repomix@latest --compress --ignore ".gograph/**" --output .gograph/pack.md
+
 check:
 	$(MAKE) fmt
 	$(MAKE) lint
 	$(MAKE) test
+	$(MAKE) map
 
 status:
 	@echo "=== Branch ==="
