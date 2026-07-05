@@ -4,3 +4,4 @@ dist/
 # gograph: commit the markdown reports, exclude the binary database and repomix pack
 .gograph/graph.json
 .gograph/pack.md
+
