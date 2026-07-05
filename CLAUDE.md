@@ -194,7 +194,7 @@ Name packages after what they contain, not architectural layers. No `domain`, `m
 - Storage: `modernc.org/sqlite` (no CGO, easy cross-compilation)
 - CLI: `urfave/cli/v2`
 - TUI: Bubble Tea + lipgloss + ntcharts
-- OAuth: local callback server, not device flow
+- OAuth: local callback server, not device flow. Ephemeral loopback port (GitHub ignores the port on loopback redirects) plus PKCE (S256) so a captured authorization code cannot be exchanged. The OAuth client secret is embedded in release binaries: GitHub requires it at token exchange even with PKCE. Accepted limitation — with PKCE and an ephemeral port the extractable secret only allows app impersonation, not token theft.
 - OAuth tokens: OS keychain via `zalando/go-keyring`; headless Linux falls back to AES-256-GCM encrypted file
 - Signing keypair: Ed25519 files at `~/.config/tokenpile/identity.{key,pub}` (0600/0644), generated on first run
 - Cost: computed at report time from pricing config, never stored

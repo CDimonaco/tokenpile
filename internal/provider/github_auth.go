@@ -24,10 +24,9 @@ import (
 )
 
 const (
-	keychainService   = "tokenpile"
-	keychainKey       = "github-token"
-	oauthTimeout      = 2 * time.Minute
-	oauthCallbackPort = 9876
+	keychainService = "tokenpile"
+	keychainKey     = "github-token"
+	oauthTimeout    = 2 * time.Minute
 )
 
 type GitHubAuthProvider struct {
@@ -52,17 +51,24 @@ func NewGitHubAuthProvider(clientID, clientSecret, credPath string) *GitHubAuthP
 }
 
 func (p *GitHubAuthProvider) Login(ctx context.Context) error {
-	listener, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", oauthCallbackPort))
+	// Ephemeral port: GitHub ignores the port on loopback redirect URLs, and a
+	// runtime-chosen port prevents a local process from squatting the callback.
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
-		return fmt.Errorf("start callback server on port %d: %w", oauthCallbackPort, err)
+		return fmt.Errorf("start callback server: %w", err)
 	}
 
-	redirectURL := fmt.Sprintf("http://127.0.0.1:%d/callback", oauthCallbackPort)
+	addr, ok := listener.Addr().(*net.TCPAddr)
+	if !ok {
+		_ = listener.Close()
+		return fmt.Errorf("unexpected listener address type %T", listener.Addr())
+	}
 
-	p.oauthCfg.RedirectURL = redirectURL
+	p.oauthCfg.RedirectURL = fmt.Sprintf("http://127.0.0.1:%d/callback", addr.Port)
 
 	state := randomState()
-	authURL := p.oauthCfg.AuthCodeURL(state, oauth2.AccessTypeOffline)
+	verifier := oauth2.GenerateVerifier()
+	authURL := p.oauthCfg.AuthCodeURL(state, oauth2.AccessTypeOffline, oauth2.S256ChallengeOption(verifier))
 
 	codeCh := make(chan string, 1)
 	errCh := make(chan error, 1)
@@ -122,7 +128,7 @@ func (p *GitHubAuthProvider) Login(ctx context.Context) error {
 
 	_ = srv.Shutdown(ctx)
 
-	token, err := p.oauthCfg.Exchange(ctx, code)
+	token, err := p.oauthCfg.Exchange(ctx, code, oauth2.VerifierOption(verifier))
 	if err != nil {
 		return fmt.Errorf("exchange oauth code: %w", err)
 	}
