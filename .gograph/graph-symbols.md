@@ -1,7 +1,7 @@
 # Symbols & Packages
 
 **Root:** `/Users/cdimonaco/code/github.com/cdimonaco/tokenpile`  
-**Generated:** 2026-07-05 14:42:19 UTC  
+**Generated:** 2026-07-05 14:42:54 UTC  
 
 ---
 
@@ -16,7 +16,7 @@
 | `internal/tui/tui_test.go` | 40 | 511 |
 | `internal/skill/skill_test.go` | 20 | 349 |
 | `internal/export/export_test.go` | 17 | 318 |
-| `internal/provider/github_auth.go` | 14 | 215 |
+| `internal/provider/github_auth.go` | 14 | 214 |
 | `internal/skill/skill.go` | 18 | 168 |
 | `internal/export/export.go` | 11 | 169 |
 | `cmd/tokenpile/cmd_log.go` | 5 | 164 |
@@ -38,8 +38,8 @@
 | `main` | function | `cmd/tokenpile/main.go` | 24 | 107 |
 | `(*SQLiteStore).ListUsageOverTime` | method | `internal/store/sqlite.go` | 644 | 98 |
 | `reportCommand` | function | `cmd/tokenpile/cmd_report.go` | 15 | 95 |
-| `(*GitHubAuthProvider).Login` | method | `internal/provider/github_auth.go` | 53 | 94 |
 | `(*SQLiteStore).ListEntries` | method | `internal/store/sqlite.go` | 206 | 94 |
+| `(*GitHubAuthProvider).Login` | method | `internal/provider/github_auth.go` | 53 | 93 |
 | `runExport` | function | `cmd/tokenpile/cmd_export.go` | 97 | 89 |
 | `runLog` | function | `cmd/tokenpile/cmd_log.go` | 73 | 89 |
 | `Build` | function | `internal/export/export.go` | 69 | 75 |

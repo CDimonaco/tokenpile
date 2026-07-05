@@ -80,21 +80,30 @@ func (p *GitHubAuthProvider) Login(ctx context.Context) error {
 			return
 		}
 
+		// A state mismatch means the request is not our redirect: reject it
+		// without aborting the login, so a stray or malicious local request
+		// cannot cancel a legitimate flow still in progress.
 		if got := r.URL.Query().Get("state"); got != state {
 			http.Error(w, "invalid state", http.StatusBadRequest)
-			errCh <- errors.New("oauth state mismatch")
 			return
 		}
 
 		code := r.URL.Query().Get("code")
 		if code == "" {
 			http.Error(w, "missing code", http.StatusBadRequest)
-			errCh <- errors.New("oauth callback missing code")
+			select {
+			case errCh <- errors.New("oauth callback missing code"):
+			default:
+			}
+
 			return
 		}
 
 		fmt.Fprintln(w, "Login successful. You can close this tab.")
-		codeCh <- code
+		select {
+		case codeCh <- code:
+		default:
+		}
 	})
 
 	go func() {
