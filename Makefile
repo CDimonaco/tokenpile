@@ -2,7 +2,7 @@ BINARY := tokenpile
 CMD := ./cmd/tokenpile
 GOGRAPH := $(shell go env GOPATH)/bin/gograph
 
-.PHONY: build test lint fmt generate install clean release-check check status tools map pack
+.PHONY: build test lint fmt generate install uninstall clean release-check check status tools map pack
 
 build:
 	go build -o $(BINARY) $(CMD)
@@ -21,6 +21,9 @@ generate:
 
 install:
 	go install $(CMD)
+
+uninstall:
+	rm -f $(or $(shell go env GOBIN),$(shell go env GOPATH)/bin)/$(BINARY)
 
 clean:
 	rm -f $(BINARY)

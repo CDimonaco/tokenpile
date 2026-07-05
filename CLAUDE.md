@@ -181,6 +181,7 @@ Name packages after what they contain, not architectural layers. No `domain`, `m
 | `make fmt`      | Format all Go files                 |
 | `make generate` | Regenerate mocks via mockery        |
 | `make install`  | Install binary to `$GOPATH/bin`     |
+| `make uninstall` | Remove the binary installed by `make install` |
 | `make clean`    | Remove build artifacts              |
 | `make release-check` | Validate goreleaser config     |
 | `make check`    | fmt + lint + test + map (run before commit) |
