@@ -1,7 +1,7 @@
 # Test Coverage Edges
 
 **Root:** `/Users/cdimonaco/code/github.com/cdimonaco/tokenpile`  
-**Generated:** 2026-07-05 15:21:41 UTC  
+**Generated:** 2026-07-05 15:22:39 UTC  
 
 ---
 
@@ -73,6 +73,7 @@
 | `assert.Contains` | `TestSmoke_PricingList` | `cmd/tokenpile/smoke_test.go` | 50 |
 | `assert.Contains` | `TestSmoke_SkillList` | `cmd/tokenpile/smoke_test.go` | 58 |
 | `assert.Contains` | `TestSmoke_Version` | `cmd/tokenpile/smoke_test.go` | 30 |
+| `assert.Contains` | `TestUninstall_Codex_PreservesForeignContent` | `internal/skill/skill_test.go` | 290 |
 | `assert.Contains` | `TestVerify_TamperedEntries` | `internal/export/export_test.go` | 88 |
 | `assert.Contains` | `TestVerify_TruncatedPublicKey` | `internal/export/export_test.go` | 170 |
 | `assert.Contains` | `TestVerify_UnsupportedSchemaVersion` | `internal/export/export_test.go` | 299 |
@@ -146,6 +147,7 @@
 | `assert.Equal` | `TestSQLiteStore_UpdateSessionAnnotations_NilNotePreservesExisting` | `internal/store/sqlite_test.go` | 369 |
 | `assert.Equal` | `TestSQLiteStore_UpdateSessionAnnotations_NoteAndTags` | `internal/store/sqlite_test.go` | 326 |
 | `assert.Equal` | `TestSQLiteStore_UpdateSessionAnnotations_TagsUnion` | `internal/store/sqlite_test.go` | 348 |
+| `assert.Equal` | `TestUninstall_ClaudeCode_RemovesFile` | `internal/skill/skill_test.go` | 267 |
 | `assert.Equal` | `TestVerify_LegacyV2Fixture` | `internal/export/export_test.go` | 312 |
 | `assert.Equal` | `TestVerify_ValidDocument` | `internal/export/export_test.go` | 75 |
 | `assert.Equal` | `TestWindowSize_UpdatesDimensions` | `internal/tui/tui_test.go` | 280 |
@@ -167,6 +169,7 @@
 | `assert.ErrorIs` | `TestGitHubIssueProvider_ListIssues_UnauthenticatedError` | `internal/provider/github_issues_test.go` | 90 |
 | `assert.ErrorIs` | `TestInstall_UnsupportedAgent` | `internal/skill/skill_test.go` | 30 |
 | `assert.ErrorIs` | `TestSQLiteStore_EndSession_NotFound` | `internal/store/sqlite_test.go` | 100 |
+| `assert.ErrorIs` | `TestUninstall_UnsupportedAgent` | `internal/skill/skill_test.go` | 324 |
 | `assert.False` | `TestComputeCost_UnknownModel` | `internal/pricing/pricing_test.go` | 76 |
 | `assert.False` | `TestExport_RoundTrip_EmptyEntries` | `internal/export/export_integration_test.go` | 29 |
 | `assert.False` | `TestInstall_ClaudeCode_WritesFile` | `internal/skill/skill_test.go` | 41 |
@@ -182,6 +185,7 @@
 | `assert.False` | `TestIsUpToDate_UnknownAgent_False` | `internal/skill/skill_test.go` | 201 |
 | `assert.False` | `TestIssuesLoaded_ClearsLoadingFlag` | `internal/tui/tui_test.go` | 301 |
 | `assert.False` | `TestSQLiteStore_ListUsageOverTime_WeekGranularity` | `internal/store/sqlite_test.go` | 225 |
+| `assert.False` | `TestUninstall_NotInstalled_NoOp` | `internal/skill/skill_test.go` | 315 |
 | `assert.False` | `TestVerify_ValidDocument` | `internal/export/export_test.go` | 74 |
 | `assert.Greater` | `TestSQLiteStore_ListIssues_CostPopulated` | `internal/store/sqlite_test.go` | 263 |
 | `assert.Greater` | `TestSQLiteStore_ListUsageOverTime_CostPopulated` | `internal/store/sqlite_test.go` | 248 |
@@ -216,6 +220,7 @@
 | `assert.NoError` | `TestVerify_SurvivesJSONRoundtrip` | `internal/export/export_test.go` | 118 |
 | `assert.NotContains` | `TestBudgetBar_FullyConsumed_NoEmptySlots` | `internal/tui/tui_test.go` | 333 |
 | `assert.NotContains` | `TestBudgetBar_OverBudget_ClampsToFull` | `internal/tui/tui_test.go` | 340 |
+| `assert.NotContains` | `TestUninstall_Codex_PreservesForeignContent` | `internal/skill/skill_test.go` | 291 |
 | `assert.NotContains` | `TestViewList_LoadingState` | `internal/tui/tui_test.go` | 291 |
 | `assert.NotContains` | `TestView_Unauthenticated_EmptyDB_ShowsEmptyState` | `internal/tui/tui_test.go` | 113 |
 | `assert.NotEmpty` | `TestBudgetBar_AtWarn_NotEmpty` | `internal/tui/tui_test.go` | 326 |
@@ -242,6 +247,9 @@
 | `assert.True` | `TestIsUpToDate_SharedAgent_AfterInstall_True` | `internal/skill/skill_test.go` | 254 |
 | `assert.True` | `TestIssuesLoaded_UnauthenticatedFlag` | `internal/tui/tui_test.go` | 132 |
 | `assert.True` | `TestNewLoader_NoOverrideFile` | `internal/pricing/pricing_test.go` | 68 |
+| `assert.True` | `TestUninstall_ClaudeCode_RemovesFile` | `internal/skill/skill_test.go` | 266 |
+| `assert.True` | `TestUninstall_Codex_PreservesForeignContent` | `internal/skill/skill_test.go` | 286 |
+| `assert.True` | `TestUninstall_Codex_RemovesFileWhenOnlyBlock` | `internal/skill/skill_test.go` | 303 |
 | `assert.True` | `TestVerify_LegacyV2Fixture` | `internal/export/export_test.go` | 311 |
 | `auth.AssertExpectations` | `TestAuthLogin_Failure` | `cmd/tokenpile/cmd_auth_test.go` | 49 |
 | `auth.AssertExpectations` | `TestAuthLogin_Success` | `cmd/tokenpile/cmd_auth_test.go` | 39 |
@@ -431,6 +439,7 @@
 | `exportToFile` | `TestIntegration_ExportVerify_TamperedSessionFails` | `cmd/tokenpile/integration_test.go` | 627 |
 | `filepath.Dir` | `TestIsUpToDate_NoVersionComment_False` | `internal/skill/skill_test.go` | 239 |
 | `filepath.Dir` | `TestIsUpToDate_OutdatedFile_False` | `internal/skill/skill_test.go` | 226 |
+| `filepath.Dir` | `TestUninstall_Codex_PreservesForeignContent` | `internal/skill/skill_test.go` | 278 |
 | `filepath.Join` | `TestEncryptedTokenRoundtrip` | `internal/provider/github_auth_internal_test.go` | 13 |
 | `filepath.Join` | `TestEnsureDirs_CreatesDirs` | `internal/config/paths_test.go` | 46 |
 | `filepath.Join` | `TestEnsureDirs_Idempotent` | `internal/config/paths_test.go` | 65 |
@@ -452,6 +461,7 @@
 | `filepath.Join` | `TestSQLiteStore_SchemaIdempotent` | `internal/store/sqlite_test.go` | 289 |
 | `filepath.Join` | `TestSetOverride_WritesAndUpdates` | `internal/pricing/pricing_test.go` | 91 |
 | `filepath.Join` | `TestSmoke_ExportVerify` | `cmd/tokenpile/smoke_test.go` | 74 |
+| `filepath.Join` | `TestUninstall_Codex_PreservesForeignContent` | `internal/skill/skill_test.go` | 277 |
 | `fmt.Printf` | `TestGenerateFixtures` | `internal/export/gen_fixture_internal_test.go` | 79 |
 | `http.HandlerFunc` | `TestGitHubIssueProvider_GetIssue` | `internal/provider/github_issues_test.go` | 101 |
 | `http.HandlerFunc` | `TestGitHubIssueProvider_ListIssues` | `internal/provider/github_issues_test.go` | 32 |
@@ -611,11 +621,14 @@
 | `now.Add` | `TestBuild_SessionsIncludedInDocument` | `internal/export/export_test.go` | 185 |
 | `os.Environ` | `TestSmoke_ExportVerify` | `cmd/tokenpile/smoke_test.go` | 73 |
 | `os.Getenv` | `TestGenerateFixtures` | `internal/export/gen_fixture_internal_test.go` | 15 |
+| `os.IsNotExist` | `TestUninstall_ClaudeCode_RemovesFile` | `internal/skill/skill_test.go` | 270 |
+| `os.IsNotExist` | `TestUninstall_Codex_RemovesFileWhenOnlyBlock` | `internal/skill/skill_test.go` | 306 |
 | `os.MkdirAll` | `TestGenerateFixtures` | `internal/export/gen_fixture_internal_test.go` | 57 |
 | `os.MkdirAll` | `TestInstall_Codex_AppendsToExistingFile` | `internal/skill/skill_test.go` | 100 |
 | `os.MkdirAll` | `TestIsInstalled_Codex_FalseWhenFileExistsWithoutMarker` | `internal/skill/skill_test.go` | 149 |
 | `os.MkdirAll` | `TestIsUpToDate_NoVersionComment_False` | `internal/skill/skill_test.go` | 239 |
 | `os.MkdirAll` | `TestIsUpToDate_OutdatedFile_False` | `internal/skill/skill_test.go` | 226 |
+| `os.MkdirAll` | `TestUninstall_Codex_PreservesForeignContent` | `internal/skill/skill_test.go` | 278 |
 | `os.ReadFile` | `TestInstall_ClaudeCode_WritesFile` | `internal/skill/skill_test.go` | 43 |
 | `os.ReadFile` | `TestInstall_Codex_AppendsToExistingFile` | `internal/skill/skill_test.go` | 110 |
 | `os.ReadFile` | `TestInstall_Codex_CreatesFile` | `internal/skill/skill_test.go` | 86 |
@@ -626,9 +639,12 @@
 | `os.ReadFile` | `TestLoadEncryptedToken_CorruptedFile` | `internal/provider/github_auth_internal_test.go` | 29 |
 | `os.ReadFile` | `TestSetOverride_WritesAndUpdates` | `internal/pricing/pricing_test.go` | 103 |
 | `os.ReadFile` | `TestSmoke_ExportVerify` | `cmd/tokenpile/smoke_test.go` | 100 |
+| `os.ReadFile` | `TestUninstall_Codex_PreservesForeignContent` | `internal/skill/skill_test.go` | 288 |
 | `os.ReadFile` | `TestVerify_LegacyV2Fixture` | `internal/export/export_test.go` | 303 |
 | `os.ReadFile` | `TestVerify_LegacyV2Fixture_TamperedEntriesFail` | `internal/export/export_test.go` | 316 |
 | `os.Stat` | `TestEnsureDirs_CreatesDirs` | `internal/config/paths_test.go` | 53 |
+| `os.Stat` | `TestUninstall_ClaudeCode_RemovesFile` | `internal/skill/skill_test.go` | 269 |
+| `os.Stat` | `TestUninstall_Codex_RemovesFileWhenOnlyBlock` | `internal/skill/skill_test.go` | 305 |
 | `os.WriteFile` | `TestGenerateFixtures` | `internal/export/gen_fixture_internal_test.go` | 61 |
 | `os.WriteFile` | `TestInstall_Codex_AppendsToExistingFile` | `internal/skill/skill_test.go` | 104 |
 | `os.WriteFile` | `TestIntegration_ExportVerify_TamperedSessionFails` | `cmd/tokenpile/integration_test.go` | 640 |
@@ -639,6 +655,7 @@
 | `os.WriteFile` | `TestNewLoader_DefaultFillsMissingOverride` | `internal/pricing/pricing_test.go` | 47 |
 | `os.WriteFile` | `TestNewLoader_UserOverrideTakesPrecedence` | `internal/pricing/pricing_test.go` | 27 |
 | `os.WriteFile` | `TestSmoke_ExportVerify` | `cmd/tokenpile/smoke_test.go` | 105 |
+| `os.WriteFile` | `TestUninstall_Codex_PreservesForeignContent` | `internal/skill/skill_test.go` | 279 |
 | `p.Date.IsZero` | `TestSQLiteStore_ListUsageOverTime_WeekGranularity` | `internal/store/sqlite_test.go` | 225 |
 | `p.Date.Weekday` | `TestSQLiteStore_ListUsageOverTime_WeekGranularity` | `internal/store/sqlite_test.go` | 226 |
 | `p.GetIssue` | `TestGitHubIssueProvider_GetIssue` | `internal/provider/github_issues_test.go` | 111 |
@@ -821,6 +838,10 @@
 | `require.NoError` | `TestTUI_DetailView_SessionsTab_ShowsNoteAndTags` | `internal/tui/tui_test.go` | 397 |
 | `require.NoError` | `TestTUI_DetailView_SummaryTab_ShowsBudgetBar` | `internal/tui/tui_test.go` | 435 |
 | `require.NoError` | `TestTUI_IssueList_ShowsBudgetBar` | `internal/tui/tui_test.go` | 360 |
+| `require.NoError` | `TestUninstall_ClaudeCode_RemovesFile` | `internal/skill/skill_test.go` | 262 |
+| `require.NoError` | `TestUninstall_Codex_PreservesForeignContent` | `internal/skill/skill_test.go` | 278 |
+| `require.NoError` | `TestUninstall_Codex_RemovesFileWhenOnlyBlock` | `internal/skill/skill_test.go` | 299 |
+| `require.NoError` | `TestUninstall_NotInstalled_NoOp` | `internal/skill/skill_test.go` | 314 |
 | `require.NoError` | `TestVerify_InvalidSignature` | `internal/export/export_test.go` | 95 |
 | `require.NoError` | `TestVerify_LegacyV2Fixture` | `internal/export/export_test.go` | 304 |
 | `require.NoError` | `TestVerify_LegacyV2Fixture_TamperedEntriesFail` | `internal/export/export_test.go` | 317 |
@@ -1000,6 +1021,9 @@
 | `skill.Install` | `TestIsInstalled_Codex_True` | `internal/skill/skill_test.go` | 159 |
 | `skill.Install` | `TestIsUpToDate_AfterInstall_True` | `internal/skill/skill_test.go` | 215 |
 | `skill.Install` | `TestIsUpToDate_SharedAgent_AfterInstall_True` | `internal/skill/skill_test.go` | 251 |
+| `skill.Install` | `TestUninstall_ClaudeCode_RemovesFile` | `internal/skill/skill_test.go` | 261 |
+| `skill.Install` | `TestUninstall_Codex_PreservesForeignContent` | `internal/skill/skill_test.go` | 281 |
+| `skill.Install` | `TestUninstall_Codex_RemovesFileWhenOnlyBlock` | `internal/skill/skill_test.go` | 298 |
 | `skill.IsInstalled` | `TestIsInstalled_ClaudeCode_False` | `internal/skill/skill_test.go` | 64 |
 | `skill.IsInstalled` | `TestIsInstalled_ClaudeCode_True` | `internal/skill/skill_test.go` | 73 |
 | `skill.IsInstalled` | `TestIsInstalled_Codex_False` | `internal/skill/skill_test.go` | 141 |
@@ -1012,6 +1036,11 @@
 | `skill.IsUpToDate` | `TestIsUpToDate_SharedAgent_AfterInstall_True` | `internal/skill/skill_test.go` | 254 |
 | `skill.IsUpToDate` | `TestIsUpToDate_UnknownAgent_False` | `internal/skill/skill_test.go` | 201 |
 | `skill.List` | `TestList_ContainsAllAgents` | `internal/skill/skill_test.go` | 16 |
+| `skill.Uninstall` | `TestUninstall_ClaudeCode_RemovesFile` | `internal/skill/skill_test.go` | 264 |
+| `skill.Uninstall` | `TestUninstall_Codex_PreservesForeignContent` | `internal/skill/skill_test.go` | 284 |
+| `skill.Uninstall` | `TestUninstall_Codex_RemovesFileWhenOnlyBlock` | `internal/skill/skill_test.go` | 301 |
+| `skill.Uninstall` | `TestUninstall_NotInstalled_NoOp` | `internal/skill/skill_test.go` | 313 |
+| `skill.Uninstall` | `TestUninstall_UnsupportedAgent` | `internal/skill/skill_test.go` | 323 |
 | `srv.Close` | `TestGitHubIssueProvider_GetIssue` | `internal/provider/github_issues_test.go` | 106 |
 | `srv.Close` | `TestGitHubIssueProvider_ListIssues` | `internal/provider/github_issues_test.go` | 37 |
 | `srv.Close` | `TestGitHubIssueProvider_ListIssues_Paginated` | `internal/provider/github_issues_test.go` | 71 |
@@ -1031,6 +1060,7 @@
 | `string` | `TestSmoke_PricingList` | `cmd/tokenpile/smoke_test.go` | 50 |
 | `string` | `TestSmoke_SkillList` | `cmd/tokenpile/smoke_test.go` | 58 |
 | `string` | `TestSmoke_Version` | `cmd/tokenpile/smoke_test.go` | 30 |
+| `string` | `TestUninstall_Codex_PreservesForeignContent` | `internal/skill/skill_test.go` | 290 |
 | `strings.Contains` | `TestTUI_DetailView_SessionsTab_ShowsNoteAndTags` | `internal/tui/tui_test.go` | 413 |
 | `strings.Contains` | `TestTUI_DetailView_SummaryAndSessionsTabs` | `internal/tui/tui_test.go` | 380 |
 | `strings.Contains` | `TestTUI_DetailView_SummaryTab_ShowsBudgetBar` | `internal/tui/tui_test.go` | 441 |

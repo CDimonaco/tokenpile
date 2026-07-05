@@ -1,7 +1,7 @@
 # Errors & Panics
 
 **Root:** `/Users/cdimonaco/code/github.com/cdimonaco/tokenpile`  
-**Generated:** 2026-07-05 15:21:41 UTC  
+**Generated:** 2026-07-05 15:22:39 UTC  
 
 ---
 
@@ -121,6 +121,12 @@
 | `write skill file: %w` | `installShared` | `internal/skill/skill.go` | 134 |
 | `update skill file: %w` | `installShared` | `internal/skill/skill.go` | 148 |
 | `append skill file: %w` | `installShared` | `internal/skill/skill.go` | 162 |
+| `%w: %s` | `Uninstall` | `internal/skill/skill.go` | 176 |
+| `cannot determine install path for agent %s` | `Uninstall` | `internal/skill/skill.go` | 181 |
+| `remove skill file: %w` | `uninstallDedicated` | `internal/skill/skill.go` | 197 |
+| `read %s: %w` | `uninstallShared` | `internal/skill/skill.go` | 210 |
+| `remove skill file: %w` | `uninstallShared` | `internal/skill/skill.go` | 225 |
+| `update skill file: %w` | `uninstallShared` | `internal/skill/skill.go` | 234 |
 | `open sqlite: %w` | `NewSQLiteStore` | `internal/store/sqlite.go` | 90 |
 | `apply schema: %w` | `NewSQLiteStore` | `internal/store/sqlite.go` | 97 |
 | `run migrations: %w` | `NewSQLiteStore` | `internal/store/sqlite.go` | 102 |

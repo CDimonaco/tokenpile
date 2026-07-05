@@ -1,7 +1,7 @@
 # SQL Queries
 
 **Root:** `/Users/cdimonaco/code/github.com/cdimonaco/tokenpile`  
-**Generated:** 2026-07-05 15:21:41 UTC  
+**Generated:** 2026-07-05 15:22:39 UTC  
 
 ---
 

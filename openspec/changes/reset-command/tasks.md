@@ -11,8 +11,8 @@
 
 ## 3. Skill uninstall
 
-- [ ] 3.1 Implement `skill.Uninstall(agentName) (string, bool, error)`: dedicated file removed; shared file loses only the marked block (file removed if nothing else remains); not-installed is success with removed=false
-- [ ] 3.2 Skill tests: dedicated removal, shared removal preserving foreign content, empty-after-removal deletes file, not-installed no-op
+- [x] 3.1 Implement `skill.Uninstall(agentName) (string, bool, error)`: dedicated file removed; shared file loses only the marked block (file removed if nothing else remains); not-installed is success with removed=false
+- [x] 3.2 Skill tests: dedicated removal, shared removal preserving foreign content, empty-after-removal deletes file, not-installed no-op
 
 ## 4. Reset command
 

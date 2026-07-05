@@ -165,6 +165,78 @@ func installShared(target string, data []byte) (string, bool, error) {
 	return target, false, nil
 }
 
+// Uninstall reverses Install for the named agent. Dedicated files are
+// removed; shared files lose only the marked tokenpile block, and are removed
+// entirely when nothing else remains. Uninstalling an agent with no installed
+// skill succeeds with removed=false.
+// Returns the install path, whether anything was removed, and any error.
+func Uninstall(agentName string) (string, bool, error) {
+	agent, found := findAgent(agentName)
+	if !found {
+		return "", false, fmt.Errorf("%w: %s", ErrUnsupportedAgent, agentName)
+	}
+
+	target := agent.InstallPath()
+	if target == "" {
+		return "", false, fmt.Errorf("cannot determine install path for agent %s", agentName)
+	}
+
+	if agent.Shared {
+		return uninstallShared(target)
+	}
+
+	return uninstallDedicated(target)
+}
+
+func uninstallDedicated(target string) (string, bool, error) {
+	if err := os.Remove(target); err != nil {
+		if os.IsNotExist(err) {
+			return target, false, nil
+		}
+
+		return target, false, fmt.Errorf("remove skill file: %w", err)
+	}
+
+	return target, true, nil
+}
+
+func uninstallShared(target string) (string, bool, error) {
+	existing, err := os.ReadFile(target)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return target, false, nil
+		}
+
+		return target, false, fmt.Errorf("read %s: %w", target, err)
+	}
+
+	content := string(existing)
+	startIdx := strings.Index(content, markerStart)
+	endIdx := strings.Index(content, markerEnd)
+
+	if startIdx == -1 || endIdx == -1 || endIdx <= startIdx {
+		return target, false, nil
+	}
+
+	remaining := content[:startIdx] + content[endIdx+len(markerEnd):]
+
+	if strings.TrimSpace(remaining) == "" {
+		if err = os.Remove(target); err != nil {
+			return target, false, fmt.Errorf("remove skill file: %w", err)
+		}
+
+		return target, true, nil
+	}
+
+	remaining = strings.TrimRight(remaining, "\n") + "\n"
+
+	if err = os.WriteFile(target, []byte(remaining), 0o644); err != nil { //nolint:gosec
+		return target, false, fmt.Errorf("update skill file: %w", err)
+	}
+
+	return target, true, nil
+}
+
 func IsInstalled(agentName string) bool {
 	agent, found := findAgent(agentName)
 	if !found {

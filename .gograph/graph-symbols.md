@@ -1,7 +1,7 @@
 # Symbols & Packages
 
 **Root:** `/Users/cdimonaco/code/github.com/cdimonaco/tokenpile`  
-**Generated:** 2026-07-05 15:21:41 UTC  
+**Generated:** 2026-07-05 15:22:39 UTC  
 
 ---
 
@@ -14,13 +14,13 @@
 | `internal/store/sqlite_test.go` | 30 | 758 |
 | `internal/tui/tui.go` | 53 | 547 |
 | `internal/tui/tui_test.go` | 40 | 511 |
+| `internal/skill/skill_test.go` | 25 | 464 |
 | `internal/export/export_test.go` | 22 | 425 |
-| `internal/skill/skill_test.go` | 20 | 349 |
+| `internal/skill/skill.go` | 21 | 228 |
 | `internal/provider/github_auth.go` | 15 | 228 |
 | `cmd/tokenpile/cmd_export.go` | 5 | 206 |
 | `cmd/tokenpile/smoke_test.go` | 8 | 202 |
 | `internal/export/export.go` | 14 | 189 |
-| `internal/skill/skill.go` | 18 | 168 |
 | `cmd/tokenpile/cmd_log.go` | 5 | 164 |
 | `cmd/tokenpile/cmd_log_test.go` | 6 | 154 |
 | `internal/export/export_integration_test.go` | 6 | 150 |
@@ -75,7 +75,7 @@
 | `pricing` | `internal/pricing` | 2 | 9 |
 | `provider` | `internal/provider` | 7 | 35 |
 | `schema` | `internal/schema` | 1 | 1 |
-| `skill` | `internal/skill` | 2 | 18 |
+| `skill` | `internal/skill` | 2 | 21 |
 | `store` | `internal/store` | 3 | 34 |
 | `tui` | `internal/tui` | 2 | 93 |
 | `usage` | `internal/usage` | 1 | 14 |

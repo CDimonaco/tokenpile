@@ -253,3 +253,73 @@ func TestIsUpToDate_SharedAgent_AfterInstall_True(t *testing.T) {
 
 	assert.True(t, skill.IsUpToDate("codex"))
 }
+
+func TestUninstall_ClaudeCode_RemovesFile(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("HOME", dir)
+
+	path, _, err := skill.Install("claude-code")
+	require.NoError(t, err)
+
+	gotPath, removed, err := skill.Uninstall("claude-code")
+	require.NoError(t, err)
+	assert.True(t, removed)
+	assert.Equal(t, path, gotPath)
+
+	_, statErr := os.Stat(path)
+	assert.True(t, os.IsNotExist(statErr))
+}
+
+func TestUninstall_Codex_PreservesForeignContent(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("HOME", dir)
+
+	target := filepath.Join(dir, ".codex", "AGENTS.md")
+	require.NoError(t, os.MkdirAll(filepath.Dir(target), 0o750))
+	require.NoError(t, os.WriteFile(target, []byte("# My agents\n\nkeep me\n"), 0o644))
+
+	_, _, err := skill.Install("codex")
+	require.NoError(t, err)
+
+	_, removed, err := skill.Uninstall("codex")
+	require.NoError(t, err)
+	assert.True(t, removed)
+
+	data, err := os.ReadFile(target)
+	require.NoError(t, err)
+	assert.Contains(t, string(data), "keep me")
+	assert.NotContains(t, string(data), "tokenpile:start")
+}
+
+func TestUninstall_Codex_RemovesFileWhenOnlyBlock(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("HOME", dir)
+
+	path, _, err := skill.Install("codex")
+	require.NoError(t, err)
+
+	_, removed, err := skill.Uninstall("codex")
+	require.NoError(t, err)
+	assert.True(t, removed)
+
+	_, statErr := os.Stat(path)
+	assert.True(t, os.IsNotExist(statErr))
+}
+
+func TestUninstall_NotInstalled_NoOp(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("HOME", dir)
+
+	_, removed, err := skill.Uninstall("claude-code")
+	require.NoError(t, err)
+	assert.False(t, removed)
+
+	_, removed, err = skill.Uninstall("codex")
+	require.NoError(t, err)
+	assert.False(t, removed)
+}
+
+func TestUninstall_UnsupportedAgent(t *testing.T) {
+	_, _, err := skill.Uninstall("unknown")
+	assert.ErrorIs(t, err, skill.ErrUnsupportedAgent)
+}
