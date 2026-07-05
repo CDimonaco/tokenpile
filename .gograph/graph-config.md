@@ -1,7 +1,7 @@
 # Environment Configuration
 
 **Root:** `/Users/cdimonaco/code/github.com/cdimonaco/tokenpile`  
-**Generated:** 2026-07-05 14:39:27 UTC  
+**Generated:** 2026-07-05 14:40:13 UTC  
 
 ---
 

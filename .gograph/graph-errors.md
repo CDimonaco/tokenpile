@@ -1,7 +1,7 @@
 # Errors & Panics
 
 **Root:** `/Users/cdimonaco/code/github.com/cdimonaco/tokenpile`  
-**Generated:** 2026-07-05 14:39:27 UTC  
+**Generated:** 2026-07-05 14:40:13 UTC  
 
 ---
 
@@ -85,17 +85,18 @@
 | `login timed out, please try again` | `(*GitHubAuthProvider).Login` | `internal/provider/github_auth.go` | 123 |
 | `exchange oauth code: %w` | `(*GitHubAuthProvider).Login` | `internal/provider/github_auth.go` | 133 |
 | `store token: %w` | `(*GitHubAuthProvider).Login` | `internal/provider/github_auth.go` | 137 |
-| `remove credentials file: %w` | `(*GitHubAuthProvider).Logout` | `internal/provider/github_auth.go` | 163 |
-| `create cipher: %w` | `(*GitHubAuthProvider).storeEncryptedToken` | `internal/provider/github_auth.go` | 185 |
-| `create GCM: %w` | `(*GitHubAuthProvider).storeEncryptedToken` | `internal/provider/github_auth.go` | 190 |
-| `generate nonce: %w` | `(*GitHubAuthProvider).storeEncryptedToken` | `internal/provider/github_auth.go` | 195 |
-| `write credentials: %w` | `(*GitHubAuthProvider).storeEncryptedToken` | `internal/provider/github_auth.go` | 201 |
-| `read credentials: %w` | `(*GitHubAuthProvider).loadEncryptedToken` | `internal/provider/github_auth.go` | 210 |
-| `create cipher: %w` | `(*GitHubAuthProvider).loadEncryptedToken` | `internal/provider/github_auth.go` | 217 |
-| `create GCM: %w` | `(*GitHubAuthProvider).loadEncryptedToken` | `internal/provider/github_auth.go` | 222 |
-| `credentials file corrupted` | `(*GitHubAuthProvider).loadEncryptedToken` | `internal/provider/github_auth.go` | 227 |
-| `decrypt credentials: %w` | `(*GitHubAuthProvider).loadEncryptedToken` | `internal/provider/github_auth.go` | 234 |
-| `unsupported platform: %s` | `openBrowser` | `internal/provider/github_auth.go` | 266 |
+| `delete token from keychain: %w` | `(*GitHubAuthProvider).Logout` | `internal/provider/github_auth.go` | 163 |
+| `remove credentials file: %w` | `(*GitHubAuthProvider).Logout` | `internal/provider/github_auth.go` | 170 |
+| `create cipher: %w` | `(*GitHubAuthProvider).storeEncryptedToken` | `internal/provider/github_auth.go` | 192 |
+| `create GCM: %w` | `(*GitHubAuthProvider).storeEncryptedToken` | `internal/provider/github_auth.go` | 197 |
+| `generate nonce: %w` | `(*GitHubAuthProvider).storeEncryptedToken` | `internal/provider/github_auth.go` | 202 |
+| `write credentials: %w` | `(*GitHubAuthProvider).storeEncryptedToken` | `internal/provider/github_auth.go` | 208 |
+| `read credentials: %w` | `(*GitHubAuthProvider).loadEncryptedToken` | `internal/provider/github_auth.go` | 217 |
+| `create cipher: %w` | `(*GitHubAuthProvider).loadEncryptedToken` | `internal/provider/github_auth.go` | 224 |
+| `create GCM: %w` | `(*GitHubAuthProvider).loadEncryptedToken` | `internal/provider/github_auth.go` | 229 |
+| `credentials file corrupted` | `(*GitHubAuthProvider).loadEncryptedToken` | `internal/provider/github_auth.go` | 234 |
+| `decrypt credentials: %w` | `(*GitHubAuthProvider).loadEncryptedToken` | `internal/provider/github_auth.go` | 241 |
+| `unsupported platform: %s` | `openBrowser` | `internal/provider/github_auth.go` | 273 |
 | `set base URL: %w` | `(*GitHubIssueProvider).client` | `internal/provider/github_issues.go` | 45 |
 | `invalid repo format %q: expected owner/repo` | `(*GitHubIssueProvider).ListIssues` | `internal/provider/github_issues.go` | 60 |
 | `list issues: %w` | `(*GitHubIssueProvider).ListIssues` | `internal/provider/github_issues.go` | 80 |

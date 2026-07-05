@@ -156,6 +156,13 @@ func (p *GitHubAuthProvider) Token(_ context.Context) (string, error) {
 
 func (p *GitHubAuthProvider) Logout(_ context.Context) error {
 	if err := keyring.Delete(keychainService, keychainKey); err != nil && !errors.Is(err, keyring.ErrNotFound) {
+		// A delete failure is only a real logout failure when the token is
+		// still readable; otherwise the keychain is simply unavailable
+		// (e.g. headless Linux) and the encrypted file is the actual storage.
+		if _, getErr := keyring.Get(keychainService, keychainKey); getErr == nil {
+			return fmt.Errorf("delete token from keychain: %w", err)
+		}
+
 		slog.Warn("could not delete token from keychain", "err", err)
 	}
 

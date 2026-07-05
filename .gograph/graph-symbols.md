@@ -1,7 +1,7 @@
 # Symbols & Packages
 
 **Root:** `/Users/cdimonaco/code/github.com/cdimonaco/tokenpile`  
-**Generated:** 2026-07-05 14:39:27 UTC  
+**Generated:** 2026-07-05 14:40:13 UTC  
 
 ---
 
@@ -16,7 +16,7 @@
 | `internal/tui/tui_test.go` | 40 | 511 |
 | `internal/skill/skill_test.go` | 20 | 349 |
 | `internal/export/export_test.go` | 17 | 318 |
-| `internal/provider/github_auth.go` | 14 | 208 |
+| `internal/provider/github_auth.go` | 14 | 215 |
 | `internal/skill/skill.go` | 18 | 168 |
 | `internal/export/export.go` | 11 | 169 |
 | `cmd/tokenpile/cmd_log.go` | 5 | 161 |
