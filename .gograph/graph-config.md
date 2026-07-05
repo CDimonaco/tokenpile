@@ -1,12 +1,13 @@
 # Environment Configuration
 
 **Root:** `/Users/cdimonaco/code/github.com/cdimonaco/tokenpile`  
-**Generated:** 2026-07-05 14:49:19 UTC  
+**Generated:** 2026-07-05 14:57:59 UTC  
 
 ---
 
 | Key | Accessor | File | Line | Function |
 |-----|----------|------|------|----------|
+| `GEN_FIXTURES` | `os.Getenv` | `internal/export/gen_fixture_internal_test.go` | 15 | `TestGenerateFixtures` |
 | `TOKENPILE_CONFIG_DIR` | `os.Getenv` | `internal/config/paths.go` | 34 | `configDir` |
 | `TOKENPILE_DATA_DIR` | `os.Getenv` | `internal/config/paths.go` | 50 | `dataDir` |
 | `TOKENPILE_GITHUB_CLIENT_ID` | `os.Getenv` | `cmd/tokenpile/main.go` | 82 | `main` |

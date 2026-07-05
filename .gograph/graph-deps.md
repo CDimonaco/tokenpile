@@ -1,7 +1,7 @@
 # Dependencies & Imports
 
 **Root:** `/Users/cdimonaco/code/github.com/cdimonaco/tokenpile`  
-**Generated:** 2026-07-05 14:49:19 UTC  
+**Generated:** 2026-07-05 14:57:59 UTC  
 
 ---
 
@@ -64,9 +64,9 @@
 |---------|--------|
 | `config` | `crypto/ed25519`, `crypto/rand`, `encoding/pem`, `errors`, `fmt`, `log/slog`, `os`, `path/filepath` |
 | `config_test` | `github.com/cdimonaco/tokenpile/internal/config`, `github.com/stretchr/testify/assert`, `github.com/stretchr/testify/require`, `os`, `path/filepath`, `testing` |
-| `export` | `crypto/ed25519`, `crypto/sha256`, `encoding/base64`, `encoding/json`, `errors`, `fmt`, `github.com/cdimonaco/tokenpile/internal/schema`, `github.com/cdimonaco/tokenpile/internal/usage`, `sort`, `time` |
-| `export_test` | `crypto/ed25519`, `crypto/rand`, `encoding/base64`, `github.com/cdimonaco/tokenpile/internal/export`, `github.com/cdimonaco/tokenpile/internal/usage`, `github.com/stretchr/testify/assert`, `github.com/stretchr/testify/require`, `testing`, `time` |
-| `main` | `bytes`, `context`, `crypto/ed25519`, `encoding/json`, `errors`, `fmt`, `github.com/cdimonaco/tokenpile/internal/config`, `github.com/cdimonaco/tokenpile/internal/export`, `github.com/cdimonaco/tokenpile/internal/mocks`, `github.com/cdimonaco/tokenpile/internal/pricing`, `github.com/cdimonaco/tokenpile/internal/provider`, `github.com/cdimonaco/tokenpile/internal/skill`, `github.com/cdimonaco/tokenpile/internal/store`, `github.com/cdimonaco/tokenpile/internal/tui`, `github.com/cdimonaco/tokenpile/internal/usage`, `github.com/charmbracelet/bubbletea`, `github.com/google/uuid`, `github.com/stretchr/testify/assert`, `github.com/stretchr/testify/mock`, `github.com/stretchr/testify/require`, `github.com/urfave/cli/v2`, `log/slog`, `os`, `os/exec`, `path/filepath`, `sort`, `strings`, `testing`, `time`, `unicode/utf8` |
+| `export` | `bytes`, `crypto/ed25519`, `crypto/sha256`, `encoding/base64`, `encoding/json`, `errors`, `fmt`, `github.com/cdimonaco/tokenpile/internal/schema`, `github.com/cdimonaco/tokenpile/internal/usage`, `github.com/stretchr/testify/assert`, `github.com/stretchr/testify/require`, `os`, `sort`, `testing`, `time` |
+| `export_test` | `crypto/ed25519`, `crypto/rand`, `encoding/base64`, `encoding/json`, `github.com/cdimonaco/tokenpile/internal/export`, `github.com/cdimonaco/tokenpile/internal/usage`, `github.com/stretchr/testify/assert`, `github.com/stretchr/testify/require`, `os`, `testing`, `time` |
+| `main` | `bytes`, `context`, `crypto/ed25519`, `crypto/subtle`, `encoding/base64`, `encoding/json`, `encoding/pem`, `errors`, `fmt`, `github.com/cdimonaco/tokenpile/internal/config`, `github.com/cdimonaco/tokenpile/internal/export`, `github.com/cdimonaco/tokenpile/internal/mocks`, `github.com/cdimonaco/tokenpile/internal/pricing`, `github.com/cdimonaco/tokenpile/internal/provider`, `github.com/cdimonaco/tokenpile/internal/skill`, `github.com/cdimonaco/tokenpile/internal/store`, `github.com/cdimonaco/tokenpile/internal/tui`, `github.com/cdimonaco/tokenpile/internal/usage`, `github.com/charmbracelet/bubbletea`, `github.com/google/uuid`, `github.com/stretchr/testify/assert`, `github.com/stretchr/testify/mock`, `github.com/stretchr/testify/require`, `github.com/urfave/cli/v2`, `log/slog`, `os`, `os/exec`, `path/filepath`, `sort`, `strings`, `testing`, `time`, `unicode/utf8` |
 | `pricing` | `embed`, `fmt`, `gopkg.in/yaml.v3`, `maps`, `os` |
 | `pricing_test` | `github.com/cdimonaco/tokenpile/internal/pricing`, `github.com/stretchr/testify/assert`, `github.com/stretchr/testify/require`, `os`, `path/filepath`, `testing` |
 | `provider` | `context`, `crypto/aes`, `crypto/cipher`, `crypto/rand`, `crypto/sha256`, `encoding/hex`, `errors`, `fmt`, `github.com/cdimonaco/tokenpile/internal/usage`, `github.com/google/go-github/v68/github`, `github.com/stretchr/testify/assert`, `github.com/stretchr/testify/require`, `github.com/zalando/go-keyring`, `golang.org/x/oauth2`, `golang.org/x/oauth2/github`, `io`, `log/slog`, `net`, `net/http`, `os`, `os/exec`, `path/filepath`, `regexp`, `runtime`, `strconv`, `strings`, `testing`, `time` |

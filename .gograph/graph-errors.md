@@ -1,7 +1,7 @@
 # Errors & Panics
 
 **Root:** `/Users/cdimonaco/code/github.com/cdimonaco/tokenpile`  
-**Generated:** 2026-07-05 14:49:19 UTC  
+**Generated:** 2026-07-05 14:57:59 UTC  
 
 ---
 
@@ -18,17 +18,24 @@
 | `cannot infer repo: pass --repo owner/repo or run from inside a GitHub repository` | `budgetCommands` | `cmd/tokenpile/cmd_budget.go` | 88 |
 | `infer repo: %w` | `budgetCommands` | `cmd/tokenpile/cmd_budget.go` | 93 |
 | `unset budget: %w` | `budgetCommands` | `cmd/tokenpile/cmd_budget.go` | 99 |
-| `read file: %w` | `exportCommands` | `cmd/tokenpile/cmd_export.go` | 71 |
-| `parse export: %w` | `exportCommands` | `cmd/tokenpile/cmd_export.go` | 76 |
-| `verification failed: %w` | `exportCommands` | `cmd/tokenpile/cmd_export.go` | 82 |
-| `parse --from: %w` | `runExport` | `cmd/tokenpile/cmd_export.go` | 109 |
-| `parse --to: %w` | `runExport` | `cmd/tokenpile/cmd_export.go` | 118 |
-| `list entries: %w` | `runExport` | `cmd/tokenpile/cmd_export.go` | 126 |
-| `list sessions: %w` | `runExport` | `cmd/tokenpile/cmd_export.go` | 133 |
-| `get budget: %w` | `runExport` | `cmd/tokenpile/cmd_export.go` | 141 |
-| `build export: %w` | `runExport` | `cmd/tokenpile/cmd_export.go` | 151 |
-| `marshal export: %w` | `runExport` | `cmd/tokenpile/cmd_export.go` | 156 |
-| `write output: %w` | `runExport` | `cmd/tokenpile/cmd_export.go` | 161 |
+| `read file: %w` | `runVerify` | `cmd/tokenpile/cmd_export.go` | 85 |
+| `parse export: %w` | `runVerify` | `cmd/tokenpile/cmd_export.go` | 90 |
+| `parse --pubkey: %w` | `runVerify` | `cmd/tokenpile/cmd_export.go` | 98 |
+| `decode document public key: %w` | `runVerify` | `cmd/tokenpile/cmd_export.go` | 103 |
+| `verification failed: document is not signed by the expected key` | `runVerify` | `cmd/tokenpile/cmd_export.go` | 109 |
+| `verification failed: %w` | `runVerify` | `cmd/tokenpile/cmd_export.go` | 119 |
+| `read pubkey file: %w` | `parseExpectedPubKey` | `cmd/tokenpile/cmd_export.go` | 152 |
+| `invalid public key size: got %d, want %d` | `parseExpectedPubKey` | `cmd/tokenpile/cmd_export.go` | 157 |
+| `decode pubkey file: %w` | `parseExpectedPubKey` | `cmd/tokenpile/cmd_export.go` | 165 |
+| `invalid public key size: got %d, want %d` | `parseExpectedPubKey` | `cmd/tokenpile/cmd_export.go` | 169 |
+| `parse --from: %w` | `runExport` | `cmd/tokenpile/cmd_export.go` | 187 |
+| `parse --to: %w` | `runExport` | `cmd/tokenpile/cmd_export.go` | 196 |
+| `list entries: %w` | `runExport` | `cmd/tokenpile/cmd_export.go` | 204 |
+| `list sessions: %w` | `runExport` | `cmd/tokenpile/cmd_export.go` | 211 |
+| `get budget: %w` | `runExport` | `cmd/tokenpile/cmd_export.go` | 219 |
+| `build export: %w` | `runExport` | `cmd/tokenpile/cmd_export.go` | 229 |
+| `marshal export: %w` | `runExport` | `cmd/tokenpile/cmd_export.go` | 234 |
+| `write output: %w` | `runExport` | `cmd/tokenpile/cmd_export.go` | 239 |
 | `cannot infer repo: pass --repo owner/repo or run from inside a GitHub repository` | `runLog` | `cmd/tokenpile/cmd_log.go` | 77 |
 | `infer repo: %w` | `runLog` | `cmd/tokenpile/cmd_log.go` | 82 |
 | `--tokens-in must be zero or greater` | `runLog` | `cmd/tokenpile/cmd_log.go` | 93 |
@@ -50,7 +57,7 @@
 | `get budget: %w` | `reportCommand` | `cmd/tokenpile/cmd_report.go` | 101 |
 | `list sessions: %w` | `printSessionsReport` | `cmd/tokenpile/cmd_report.go` | 120 |
 | `install skill: %w` | `skillCommands` | `cmd/tokenpile/cmd_skill.go` | 41 |
-| `` | `newTestStore` | `cmd/tokenpile/integration_test.go` | 40 |
+| `` | `newTestStore` | `cmd/tokenpile/integration_test.go` | 42 |
 | `tui: %w` | `main` | `cmd/tokenpile/main.go` | 112 |
 | `generate ed25519 key: %w` | `generateIdentity` | `internal/config/identity.go` | 24 |
 | `write identity key: %w` | `generateIdentity` | `internal/config/identity.go` | 38 |
@@ -59,13 +66,15 @@
 | `decode identity key PEM` | `loadIdentity` | `internal/config/identity.go` | 58 |
 | `invalid identity key size: got %d, want %d` | `loadIdentity` | `internal/config/identity.go` | 62 |
 | `private key is not ed25519` | `loadIdentity` | `internal/config/identity.go` | 69 |
-| `canonical JSON: %w` | `Build` | `internal/export/export.go` | 95 |
-| `private key is not ed25519` | `Build` | `internal/export/export.go` | 103 |
-| `decode public key: %w` | `Verify` | `internal/export/export.go` | 144 |
-| `invalid public key size: got %d, want %d` | `Verify` | `internal/export/export.go` | 148 |
-| `decode signature: %w` | `Verify` | `internal/export/export.go` | 155 |
-| `canonical JSON: %w` | `Verify` | `internal/export/export.go` | 160 |
-| `signature invalid: entries have been tampered with` | `Verify` | `internal/export/export.go` | 166 |
+| `private key is not ed25519` | `Build` | `internal/export/export.go` | 110 |
+| `canonical JSON: %w` | `documentDigest` | `internal/export/export.go` | 164 |
+| `decode public key: %w` | `Verify` | `internal/export/export.go` | 177 |
+| `invalid public key size: got %d, want %d` | `Verify` | `internal/export/export.go` | 181 |
+| `decode signature: %w` | `Verify` | `internal/export/export.go` | 188 |
+| `canonical JSON: %w` | `Verify` | `internal/export/export.go` | 204 |
+| `unsupported schema version %q` | `Verify` | `internal/export/export.go` | 210 |
+| `signature invalid: entries have been tampered with` | `Verify` | `internal/export/export.go` | 215 |
+| `signature invalid: document has been tampered with` | `Verify` | `internal/export/export.go` | 218 |
 | `parse default pricing: %w` | `NewLoader` | `internal/pricing/pricing.go` | 31 |
 | `read pricing override: %w` | `NewLoader` | `internal/pricing/pricing.go` | 40 |
 | `parse pricing override: %w` | `NewLoader` | `internal/pricing/pricing.go` | 46 |

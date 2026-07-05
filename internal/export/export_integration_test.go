@@ -23,7 +23,10 @@ func TestExport_RoundTrip_EmptyEntries(t *testing.T) {
 
 	assert.Equal(t, export.SchemaVersion, doc.SchemaVersion)
 	assert.Empty(t, doc.Entries)
-	require.NoError(t, export.Verify(doc))
+
+	res, err := export.Verify(doc)
+	require.NoError(t, err)
+	assert.False(t, res.Legacy)
 }
 
 func TestExport_RoundTrip_WithEntries(t *testing.T) {
@@ -57,7 +60,9 @@ func TestExport_RoundTrip_WithEntries(t *testing.T) {
 	doc, err := export.Build(entries, nil, nil, priv, "1.0.0")
 	require.NoError(t, err)
 	require.Len(t, doc.Entries, 2)
-	require.NoError(t, export.Verify(doc))
+
+	_, err = export.Verify(doc)
+	require.NoError(t, err)
 }
 
 func TestExport_Verify_TamperedEntries(t *testing.T) {
@@ -73,7 +78,8 @@ func TestExport_Verify_TamperedEntries(t *testing.T) {
 
 	doc.Entries[0].TokensIn = 99999
 
-	assert.Error(t, export.Verify(doc))
+	_, err = export.Verify(doc)
+	assert.Error(t, err)
 }
 
 func TestExport_Verify_InvalidPublicKey(t *testing.T) {
@@ -85,7 +91,8 @@ func TestExport_Verify_InvalidPublicKey(t *testing.T) {
 
 	doc.PublicKey = "not!valid!base64!!!"
 
-	assert.Error(t, export.Verify(doc))
+	_, err = export.Verify(doc)
+	assert.Error(t, err)
 }
 
 func TestExport_Verify_WrongPublicKey(t *testing.T) {
@@ -104,7 +111,8 @@ func TestExport_Verify_WrongPublicKey(t *testing.T) {
 
 	doc.PublicKey = base64.StdEncoding.EncodeToString(pub2)
 
-	assert.Error(t, export.Verify(doc))
+	_, err = export.Verify(doc)
+	assert.Error(t, err)
 }
 
 func TestExport_Verify_CorruptedSignature(t *testing.T) {
@@ -116,5 +124,6 @@ func TestExport_Verify_CorruptedSignature(t *testing.T) {
 
 	doc.Signature = base64.StdEncoding.EncodeToString(make([]byte, 64))
 
-	assert.Error(t, export.Verify(doc))
+	_, err = export.Verify(doc)
+	assert.Error(t, err)
 }

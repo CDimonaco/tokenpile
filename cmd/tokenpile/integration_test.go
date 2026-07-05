@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"context"
 	"crypto/ed25519"
+	"encoding/base64"
 	"encoding/json"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -472,6 +474,12 @@ func runExportCmd(t *testing.T, s *store.SQLiteStore, args ...string) (string, e
 	_, priv, err := ed25519.GenerateKey(nil)
 	require.NoError(t, err)
 
+	return runExportCmdWithKey(t, s, priv, args...)
+}
+
+func runExportCmdWithKey(t *testing.T, s *store.SQLiteStore, priv ed25519.PrivateKey, args ...string) (string, error) {
+	t.Helper()
+
 	var buf bytes.Buffer
 
 	app := &cli.App{
@@ -479,12 +487,12 @@ func runExportCmd(t *testing.T, s *store.SQLiteStore, args ...string) (string, e
 		Commands: []*cli.Command{exportCommands(s, priv, "test")},
 	}
 
-	err = app.RunContext(context.Background(), append([]string{"tok"}, args...))
+	err := app.RunContext(context.Background(), append([]string{"tok"}, args...))
 
 	return buf.String(), err
 }
 
-func TestIntegration_Export_SchemaV2_IncludesSessions(t *testing.T) {
+func TestIntegration_Export_SchemaV3_IncludesSessions(t *testing.T) {
 	s := newTestStore(t)
 
 	require.NoError(t, runLogCmd(t, s,
@@ -499,14 +507,14 @@ func TestIntegration_Export_SchemaV2_IncludesSessions(t *testing.T) {
 	var doc export.Document
 	require.NoError(t, json.Unmarshal([]byte(out), &doc))
 
-	assert.Equal(t, "2.0", doc.SchemaVersion)
+	assert.Equal(t, "3.0", doc.SchemaVersion)
 	require.Len(t, doc.Sessions, 1)
 	assert.Equal(t, 50, doc.Sessions[0].IssueNum)
 	assert.Equal(t, "export test note", doc.Sessions[0].Note)
 	assert.Equal(t, []string{"feature"}, doc.Sessions[0].Tags)
 }
 
-func TestIntegration_Export_SchemaV2_IncludesBudget(t *testing.T) {
+func TestIntegration_Export_SchemaV3_IncludesBudget(t *testing.T) {
 	s := newTestStore(t)
 	ctx := context.Background()
 
@@ -544,6 +552,104 @@ func TestIntegration_Export_NoRepoIssueFilter_OmitsSessionsAndBudgets(t *testing
 
 	assert.Empty(t, doc.Sessions)
 	assert.Empty(t, doc.Budgets)
+}
+
+func exportToFile(t *testing.T, s *store.SQLiteStore, priv ed25519.PrivateKey) string {
+	t.Helper()
+
+	require.NoError(t, runLogCmd(t, s,
+		"log", "--issue", "60", "--agent", "claude-code", "--model", "claude-sonnet-4-6",
+		"--tokens-in", "100", "--tokens-out", "50", "--repo", "owner/repo",
+		"--note", "verify test",
+	))
+
+	path := filepath.Join(t.TempDir(), "export.json")
+	_, err := runExportCmdWithKey(t, s, priv, "export", "--issue", "60", "--repo", "owner/repo", "--output", path)
+	require.NoError(t, err)
+
+	return path
+}
+
+func TestIntegration_ExportVerify_Roundtrip(t *testing.T) {
+	s := newTestStore(t)
+
+	_, priv, err := ed25519.GenerateKey(nil)
+	require.NoError(t, err)
+
+	path := exportToFile(t, s, priv)
+
+	out, err := runExportCmd(t, s, "export", "verify", "--file", path)
+	require.NoError(t, err)
+	assert.Contains(t, out, "OK: signature valid (schema 3.0, full document)")
+	assert.Contains(t, out, "Origin not verified")
+}
+
+func TestIntegration_ExportVerify_TamperedSessionFails(t *testing.T) {
+	s := newTestStore(t)
+
+	_, priv, err := ed25519.GenerateKey(nil)
+	require.NoError(t, err)
+
+	path := exportToFile(t, s, priv)
+
+	data, err := os.ReadFile(path)
+	require.NoError(t, err)
+
+	var doc export.Document
+	require.NoError(t, json.Unmarshal(data, &doc))
+	require.NotEmpty(t, doc.Sessions)
+
+	doc.Sessions[0].Note = "tampered"
+
+	tampered, err := json.Marshal(doc)
+	require.NoError(t, err)
+	require.NoError(t, os.WriteFile(path, tampered, 0o600))
+
+	out, err := runExportCmd(t, s, "export", "verify", "--file", path)
+	require.Error(t, err)
+	assert.Contains(t, out, "INVALID")
+}
+
+func TestIntegration_ExportVerify_LegacyV2Warns(t *testing.T) {
+	s := newTestStore(t)
+
+	out, err := runExportCmd(t, s, "export", "verify",
+		"--file", filepath.Join("..", "..", "internal", "export", "testdata", "export_v2.json"))
+	require.NoError(t, err)
+	assert.Contains(t, out, "OK: signature valid (schema 2.0, legacy)")
+	assert.Contains(t, out, "WARNING")
+}
+
+func TestIntegration_ExportVerify_PubkeyMatch(t *testing.T) {
+	s := newTestStore(t)
+
+	pub, priv, err := ed25519.GenerateKey(nil)
+	require.NoError(t, err)
+
+	path := exportToFile(t, s, priv)
+
+	out, err := runExportCmd(t, s, "export", "verify", "--file", path,
+		"--pubkey", base64.StdEncoding.EncodeToString(pub))
+	require.NoError(t, err)
+	assert.Contains(t, out, "Origin verified")
+}
+
+func TestIntegration_ExportVerify_PubkeyMismatch(t *testing.T) {
+	s := newTestStore(t)
+
+	_, priv, err := ed25519.GenerateKey(nil)
+	require.NoError(t, err)
+
+	otherPub, _, err := ed25519.GenerateKey(nil)
+	require.NoError(t, err)
+
+	path := exportToFile(t, s, priv)
+
+	out, err := runExportCmd(t, s, "export", "verify", "--file", path,
+		"--pubkey", base64.StdEncoding.EncodeToString(otherPub))
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "not signed by the expected key")
+	assert.Contains(t, out, "INVALID: public key mismatch")
 }
 
 func TestIntegration_Report_Sessions_NoSessions(t *testing.T) {

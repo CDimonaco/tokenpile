@@ -16,7 +16,22 @@ import (
 
 var Schema = schema.ExportSchema
 
-const SchemaVersion = "2.0"
+const (
+	// SchemaVersion is the version written by Build. The signature covers the
+	// canonical JSON of the whole document with the signature field emptied.
+	SchemaVersion = "3.0"
+	// legacySchemaVersion documents carry a signature over entries only.
+	legacySchemaVersion = "2.0"
+)
+
+// VerifyResult reports how a document was verified.
+type VerifyResult struct {
+	SchemaVersion string
+	// Legacy is true when the document was verified with the pre-3.0 rule,
+	// whose signature covers entries only: sessions, budgets and metadata
+	// are not protected against tampering.
+	Legacy bool
+}
 
 type entryJSON struct {
 	ID          string   `json:"id"`
@@ -90,14 +105,6 @@ func Build(
 		}
 	}
 
-	canonical, err := canonicalJSON(jsonEntries)
-	if err != nil {
-		return nil, fmt.Errorf("canonical JSON: %w", err)
-	}
-
-	digest := sha256.Sum256(canonical)
-	sig := ed25519.Sign(priv, digest[:])
-
 	pub, ok := priv.Public().(ed25519.PublicKey)
 	if !ok {
 		return nil, errors.New("private key is not ed25519")
@@ -126,7 +133,7 @@ func Build(
 		jsonBudgets = append(jsonBudgets, budgetJSON(b))
 	}
 
-	return &Document{
+	doc := &Document{
 		SchemaVersion: SchemaVersion,
 		ExportedAt:    time.Now().UTC().Format(time.RFC3339),
 		ExportedBy:    "tokenpile/" + version,
@@ -134,39 +141,84 @@ func Build(
 		Entries:       jsonEntries,
 		Sessions:      jsonSessions,
 		Budgets:       jsonBudgets,
-		Signature:     base64.StdEncoding.EncodeToString(sig),
-	}, nil
+	}
+
+	digest, err := documentDigest(doc)
+	if err != nil {
+		return nil, err
+	}
+
+	doc.Signature = base64.StdEncoding.EncodeToString(ed25519.Sign(priv, digest))
+
+	return doc, nil
 }
 
-func Verify(doc *Document) error {
+// documentDigest returns the SHA-256 digest of the canonical JSON of the
+// document with the signature field emptied, i.e. the bytes that get signed.
+func documentDigest(doc *Document) ([]byte, error) {
+	unsigned := *doc
+	unsigned.Signature = ""
+
+	canonical, err := canonicalJSON(unsigned)
+	if err != nil {
+		return nil, fmt.Errorf("canonical JSON: %w", err)
+	}
+
+	digest := sha256.Sum256(canonical)
+
+	return digest[:], nil
+}
+
+func Verify(doc *Document) (VerifyResult, error) {
+	res := VerifyResult{SchemaVersion: doc.SchemaVersion}
+
 	pubBytes, err := base64.StdEncoding.DecodeString(doc.PublicKey)
 	if err != nil {
-		return fmt.Errorf("decode public key: %w", err)
+		return res, fmt.Errorf("decode public key: %w", err)
 	}
 
 	if len(pubBytes) != ed25519.PublicKeySize {
-		return fmt.Errorf("invalid public key size: got %d, want %d", len(pubBytes), ed25519.PublicKeySize)
+		return res, fmt.Errorf("invalid public key size: got %d, want %d", len(pubBytes), ed25519.PublicKeySize)
 	}
 
 	pub := ed25519.PublicKey(pubBytes)
 
 	sigBytes, err := base64.StdEncoding.DecodeString(doc.Signature)
 	if err != nil {
-		return fmt.Errorf("decode signature: %w", err)
+		return res, fmt.Errorf("decode signature: %w", err)
 	}
 
-	canonical, err := canonicalJSON(doc.Entries)
-	if err != nil {
-		return fmt.Errorf("canonical JSON: %w", err)
+	var digest []byte
+
+	switch doc.SchemaVersion {
+	case SchemaVersion:
+		digest, err = documentDigest(doc)
+		if err != nil {
+			return res, err
+		}
+	case legacySchemaVersion:
+		res.Legacy = true
+
+		canonical, canErr := canonicalJSON(doc.Entries)
+		if canErr != nil {
+			return res, fmt.Errorf("canonical JSON: %w", canErr)
+		}
+
+		sum := sha256.Sum256(canonical)
+		digest = sum[:]
+	default:
+		return res, fmt.Errorf("unsupported schema version %q", doc.SchemaVersion)
 	}
 
-	digest := sha256.Sum256(canonical)
+	if !ed25519.Verify(pub, digest, sigBytes) {
+		if res.Legacy {
+			return res, errors.New("signature invalid: entries have been tampered with")
+		}
 
-	if !ed25519.Verify(pub, digest[:], sigBytes) {
-		return errors.New("signature invalid: entries have been tampered with")
+		return res, errors.New("signature invalid: document has been tampered with")
 	}
 
-	return nil
+	return res, nil
 }
 
 func canonicalJSON(v any) ([]byte, error) {

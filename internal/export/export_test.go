@@ -4,6 +4,8 @@ import (
 	"crypto/ed25519"
 	"crypto/rand"
 	"encoding/base64"
+	"encoding/json"
+	"os"
 	"testing"
 	"time"
 
@@ -54,7 +56,7 @@ func TestBuild_ProducesValidDocument(t *testing.T) {
 	doc, err := export.Build(testEntries(), nil, nil, priv, "0.1.0")
 	require.NoError(t, err)
 
-	assert.Equal(t, "2.0", doc.SchemaVersion)
+	assert.Equal(t, "3.0", doc.SchemaVersion)
 	assert.NotEmpty(t, doc.Signature)
 	assert.NotEmpty(t, doc.PublicKey)
 	assert.Len(t, doc.Entries, 2)
@@ -67,8 +69,10 @@ func TestVerify_ValidDocument(t *testing.T) {
 	doc, err := export.Build(testEntries(), nil, nil, priv, "0.1.0")
 	require.NoError(t, err)
 
-	err = export.Verify(doc)
-	assert.NoError(t, err)
+	res, err := export.Verify(doc)
+	require.NoError(t, err)
+	assert.False(t, res.Legacy)
+	assert.Equal(t, "3.0", res.SchemaVersion)
 }
 
 func TestVerify_TamperedEntries(t *testing.T) {
@@ -79,7 +83,7 @@ func TestVerify_TamperedEntries(t *testing.T) {
 
 	doc.Entries[0].TokensIn = 9999
 
-	err = export.Verify(doc)
+	_, err = export.Verify(doc)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "tampered")
 }
@@ -92,21 +96,26 @@ func TestVerify_InvalidSignature(t *testing.T) {
 
 	doc.Signature = "aW52YWxpZA=="
 
-	err = export.Verify(doc)
+	_, err = export.Verify(doc)
 	assert.Error(t, err)
 }
 
-func TestCanonicalJSON_DeterministicAcrossBuilds(t *testing.T) {
+func TestVerify_SurvivesJSONRoundtrip(t *testing.T) {
 	priv, _ := newTestKey(t)
-	entries := testEntries()
 
-	doc1, err := export.Build(entries, nil, nil, priv, "0.1.0")
+	doc, err := export.Build(testEntries(), nil, []export.IssueBudget{
+		{Repo: "o/r", IssueNum: 42, Amount: 12.5},
+	}, priv, "0.1.0")
 	require.NoError(t, err)
 
-	doc2, err := export.Build(entries, nil, nil, priv, "0.1.0")
+	data, err := json.Marshal(doc)
 	require.NoError(t, err)
 
-	assert.Equal(t, doc1.Signature, doc2.Signature)
+	var decoded export.Document
+	require.NoError(t, json.Unmarshal(data, &decoded))
+
+	_, err = export.Verify(&decoded)
+	assert.NoError(t, err)
 }
 
 func TestBuild_EmptyEntries(t *testing.T) {
@@ -115,7 +124,9 @@ func TestBuild_EmptyEntries(t *testing.T) {
 	doc, err := export.Build(nil, nil, nil, priv, "1.0.0")
 	require.NoError(t, err)
 	assert.Empty(t, doc.Entries)
-	assert.NoError(t, export.Verify(doc))
+
+	_, err = export.Verify(doc)
+	assert.NoError(t, err)
 }
 
 func TestBuild_SignatureChangesWhenEntriesChange(t *testing.T) {
@@ -142,7 +153,8 @@ func TestVerify_WrongKey(t *testing.T) {
 
 	doc.PublicKey = base64.StdEncoding.EncodeToString(pub2)
 
-	assert.Error(t, export.Verify(doc))
+	_, err = export.Verify(doc)
+	assert.Error(t, err)
 }
 
 func TestVerify_TruncatedPublicKey(t *testing.T) {
@@ -153,17 +165,17 @@ func TestVerify_TruncatedPublicKey(t *testing.T) {
 
 	doc.PublicKey = base64.StdEncoding.EncodeToString([]byte("tooshort"))
 
-	err = export.Verify(doc)
+	_, err = export.Verify(doc)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "invalid public key size")
 }
 
-func TestBuild_SchemaVersionIsV2(t *testing.T) {
+func TestBuild_SchemaVersionIsV3(t *testing.T) {
 	priv, _ := newTestKey(t)
 
 	doc, err := export.Build(testEntries(), nil, nil, priv, "0.2.0")
 	require.NoError(t, err)
-	assert.Equal(t, "2.0", doc.SchemaVersion)
+	assert.Equal(t, "3.0", doc.SchemaVersion)
 }
 
 func TestBuild_SessionsIncludedInDocument(t *testing.T) {
@@ -233,7 +245,7 @@ func TestBuild_BudgetsNilProducesEmptyBlock(t *testing.T) {
 	assert.Empty(t, doc.Budgets)
 }
 
-func TestVerify_SignatureCoversEntriesNotSessions(t *testing.T) {
+func TestVerify_TamperedSessions(t *testing.T) {
 	priv, _ := newTestKey(t)
 
 	now := time.Date(2026, 7, 1, 10, 0, 0, 0, time.UTC)
@@ -244,5 +256,71 @@ func TestVerify_SignatureCoversEntriesNotSessions(t *testing.T) {
 
 	doc.Sessions[0].Note = "tampered"
 
-	assert.NoError(t, export.Verify(doc), "tampering sessions must not invalidate signature")
+	_, err = export.Verify(doc)
+	assert.Error(t, err, "tampering sessions must invalidate the signature")
+}
+
+func TestVerify_TamperedBudgets(t *testing.T) {
+	priv, _ := newTestKey(t)
+
+	budgets := []export.IssueBudget{{Repo: "o/r", IssueNum: 42, Amount: 50.0}}
+
+	doc, err := export.Build(testEntries(), nil, budgets, priv, "0.2.0")
+	require.NoError(t, err)
+
+	doc.Budgets[0].Amount = 9999.0
+
+	_, err = export.Verify(doc)
+	assert.Error(t, err, "tampering budgets must invalidate the signature")
+}
+
+func TestVerify_TamperedExportedAt(t *testing.T) {
+	priv, _ := newTestKey(t)
+
+	doc, err := export.Build(testEntries(), nil, nil, priv, "0.2.0")
+	require.NoError(t, err)
+
+	doc.ExportedAt = "1999-01-01T00:00:00Z"
+
+	_, err = export.Verify(doc)
+	assert.Error(t, err, "tampering exported_at must invalidate the signature")
+}
+
+func TestVerify_UnsupportedSchemaVersion(t *testing.T) {
+	priv, _ := newTestKey(t)
+
+	doc, err := export.Build(testEntries(), nil, nil, priv, "0.2.0")
+	require.NoError(t, err)
+
+	doc.SchemaVersion = "9.9"
+
+	_, err = export.Verify(doc)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "unsupported schema version")
+}
+
+func TestVerify_LegacyV2Fixture(t *testing.T) {
+	data, err := os.ReadFile("testdata/export_v2.json")
+	require.NoError(t, err)
+
+	var doc export.Document
+	require.NoError(t, json.Unmarshal(data, &doc))
+
+	res, err := export.Verify(&doc)
+	require.NoError(t, err)
+	assert.True(t, res.Legacy)
+	assert.Equal(t, "2.0", res.SchemaVersion)
+}
+
+func TestVerify_LegacyV2Fixture_TamperedEntriesFail(t *testing.T) {
+	data, err := os.ReadFile("testdata/export_v2.json")
+	require.NoError(t, err)
+
+	var doc export.Document
+	require.NoError(t, json.Unmarshal(data, &doc))
+
+	doc.Entries[0].TokensIn = 424242
+
+	_, err = export.Verify(&doc)
+	assert.Error(t, err)
 }

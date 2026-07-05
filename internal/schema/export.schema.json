@@ -10,7 +10,7 @@
     "schema_version": {
       "type": "string",
       "description": "Schema version identifier",
-      "enum": ["1.0"]
+      "enum": ["3.0"]
     },
     "exported_at": {
       "type": "string",
@@ -32,9 +32,23 @@
         "$ref": "#/$defs/UsageEntry"
       }
     },
+    "sessions": {
+      "type": "array",
+      "description": "Work sessions included in this export",
+      "items": {
+        "$ref": "#/$defs/Session"
+      }
+    },
+    "budgets": {
+      "type": "array",
+      "description": "Issue budgets included in this export",
+      "items": {
+        "$ref": "#/$defs/IssueBudget"
+      }
+    },
     "signature": {
       "type": "string",
-      "description": "Base64-encoded Ed25519 signature over SHA-256 of canonical JSON of entries"
+      "description": "Base64-encoded Ed25519 signature over SHA-256 of the canonical JSON of the whole document with this field set to the empty string"
     }
   },
   "$defs": {
@@ -43,15 +57,41 @@
       "required": ["id", "repo", "issue_num", "agent", "model", "tokens_in", "tokens_out", "at"],
       "additionalProperties": false,
       "properties": {
+        "id":           { "type": "string" },
+        "repo":         { "type": "string" },
+        "issue_num":    { "type": "integer" },
+        "issue_title":  { "type": "string" },
+        "issue_labels": { "type": "array", "items": { "type": "string" } },
+        "agent":        { "type": "string" },
+        "model":        { "type": "string" },
+        "tokens_in":    { "type": "integer", "minimum": 0 },
+        "tokens_out":   { "type": "integer", "minimum": 0 },
+        "session_id":   { "type": "string" },
+        "at":           { "type": "string", "format": "date-time" }
+      }
+    },
+    "Session": {
+      "type": "object",
+      "required": ["id", "repo", "issue_num", "started_at"],
+      "additionalProperties": false,
+      "properties": {
         "id":         { "type": "string" },
         "repo":       { "type": "string" },
         "issue_num":  { "type": "integer" },
-        "agent":      { "type": "string" },
-        "model":      { "type": "string" },
-        "tokens_in":  { "type": "integer", "minimum": 0 },
-        "tokens_out": { "type": "integer", "minimum": 0 },
-        "session_id": { "type": "string" },
-        "at":         { "type": "string", "format": "date-time" }
+        "started_at": { "type": "string", "format": "date-time" },
+        "ended_at":   { "type": "string", "format": "date-time" },
+        "note":       { "type": "string" },
+        "tags":       { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "IssueBudget": {
+      "type": "object",
+      "required": ["repo", "issue_num", "amount"],
+      "additionalProperties": false,
+      "properties": {
+        "repo":      { "type": "string" },
+        "issue_num": { "type": "integer" },
+        "amount":    { "type": "number", "minimum": 0 }
       }
     }
   }

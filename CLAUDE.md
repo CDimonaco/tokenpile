@@ -197,6 +197,7 @@ Name packages after what they contain, not architectural layers. No `domain`, `m
 - OAuth: local callback server, not device flow. Ephemeral loopback port (GitHub ignores the port on loopback redirects) plus PKCE (S256) so a captured authorization code cannot be exchanged. The OAuth client secret is embedded in release binaries: GitHub requires it at token exchange even with PKCE. Accepted limitation — with PKCE and an ephemeral port the extractable secret only allows app impersonation, not token theft.
 - OAuth tokens: OS keychain via `zalando/go-keyring`; headless Linux falls back to AES-256-GCM encrypted file
 - Signing keypair: Ed25519 files at `~/.config/tokenpile/identity.{key,pub}` (0600/0644), generated on first run
+- Export signature (schema 3.0): covers the canonical JSON of the whole document with the `signature` field emptied. Legacy 2.0 files (entries-only signature) still verify, with a warning. `export verify --pubkey` checks the embedded key against an expected key to prove origin; without it, verification proves internal consistency only.
 - Cost: computed at report time from pricing config, never stored
 - Sessions: implicit, 30-minute idle auto-close
 - Repo: inferred from `git remote get-url origin` when not passed explicitly; fails with clear error if not inferable

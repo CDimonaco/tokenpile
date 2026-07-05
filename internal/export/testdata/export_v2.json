@@ -1,0 +1,35 @@
+{
+  "schema_version": "2.0",
+  "exported_at": "2026-07-01T12:00:00Z",
+  "exported_by": "tokenpile/0.9.0",
+  "public_key": "IVL40Zt5HSRFMkLhXy6rbLfP+ntqXtMAl5YOBpiB2xI=",
+  "entries": [
+    {
+      "id": "e1",
+      "repo": "o/r",
+      "issue_num": 42,
+      "agent": "claude-code",
+      "model": "claude-sonnet-4-6",
+      "tokens_in": 1000,
+      "tokens_out": 500,
+      "at": "2026-07-01T10:00:00Z"
+    }
+  ],
+  "sessions": [
+    {
+      "id": "s1",
+      "repo": "o/r",
+      "issue_num": 42,
+      "started_at": "2026-07-01T10:00:00Z",
+      "note": "legacy note"
+    }
+  ],
+  "budgets": [
+    {
+      "repo": "o/r",
+      "issue_num": 42,
+      "amount": 12.5
+    }
+  ],
+  "signature": "7f9yOjWEhmdfYuJMwTqaEgk49dyUhF5YmulHvgjVwU/R4XVPYtnmyp64nSI9CimWgqv0wzAG1BfZjx6dnBlDBQ=="
+}
