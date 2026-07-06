@@ -73,7 +73,7 @@ This opens a browser window for OAuth. The token is stored in your OS keychain (
 ### 2. Install the skill for your agent
 
 ```sh
-tokenpile skill install --agent claude-code    # writes ~/.claude/skills/tokenpile.md
+tokenpile skill install --agent claude-code    # writes ~/.claude/skills/tokenpile/SKILL.md
 tokenpile skill install --agent codex          # appends a block to ~/.codex/AGENTS.md
 tokenpile skill install --agent opencode       # appends a block to ~/.config/opencode/AGENTS.md
 ```
@@ -239,7 +239,7 @@ The backup is a standard signed export (schema v3) written to `tokenpile-backup-
 
 ```sh
 tokenpile skill list                          # show agents, install status, and skill version
-tokenpile skill install --agent claude-code   # dedicated file: ~/.claude/skills/tokenpile.md
+tokenpile skill install --agent claude-code   # dedicated file: ~/.claude/skills/tokenpile/SKILL.md
 tokenpile skill install --agent codex         # append/update block in ~/.codex/AGENTS.md
 tokenpile skill install --agent opencode      # append/update block in ~/.config/opencode/AGENTS.md
 ```

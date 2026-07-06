@@ -34,6 +34,10 @@ type Agent struct {
 	// Shared indicates the install target is a file shared with other content (e.g. AGENTS.md).
 	// When true, Install appends/updates a marked block instead of overwriting the whole file.
 	Shared bool
+	// LegacyInstallPath, when set, is a previous install location that Install
+	// removes on a best-effort basis so stale copies don't linger alongside
+	// the current one.
+	LegacyInstallPath func() string
 }
 
 var agents = []Agent{
@@ -41,6 +45,17 @@ var agents = []Agent{
 		Name:         "claude-code",
 		TemplateData: claudeCodeTemplate,
 		InstallPath: func() string {
+			home, err := os.UserHomeDir()
+			if err != nil {
+				return ""
+			}
+
+			// Claude Code only discovers skills laid out as <name>/SKILL.md
+			// with a YAML frontmatter (name, description); a flat file here
+			// is never listed as an invocable skill.
+			return filepath.Join(home, ".claude", "skills", "tokenpile", "SKILL.md")
+		},
+		LegacyInstallPath: func() string {
 			home, err := os.UserHomeDir()
 			if err != nil {
 				return ""
@@ -101,6 +116,12 @@ func Install(agentName string) (string, bool, error) {
 
 	if err := os.MkdirAll(filepath.Dir(target), 0o750); err != nil {
 		return "", false, fmt.Errorf("create skill directory: %w", err)
+	}
+
+	if agent.LegacyInstallPath != nil {
+		if legacy := agent.LegacyInstallPath(); legacy != "" && legacy != target {
+			_ = os.Remove(legacy)
+		}
 	}
 
 	if agent.Shared {
@@ -179,6 +200,12 @@ func Uninstall(agentName string) (string, bool, error) {
 	target := agent.InstallPath()
 	if target == "" {
 		return "", false, fmt.Errorf("cannot determine install path for agent %s", agentName)
+	}
+
+	if agent.LegacyInstallPath != nil {
+		if legacy := agent.LegacyInstallPath(); legacy != "" && legacy != target {
+			_ = os.Remove(legacy)
+		}
 	}
 
 	if agent.Shared {

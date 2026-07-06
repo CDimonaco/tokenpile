@@ -1,7 +1,7 @@
 # Symbols & Packages
 
 **Root:** `/Users/cdimonaco/code/github.com/cdimonaco/tokenpile`  
-**Generated:** 2026-07-06 09:49:36 UTC  
+**Generated:** 2026-07-06 19:29:44 UTC  
 
 ---
 
@@ -14,10 +14,10 @@
 | `internal/store/sqlite_test.go` | 30 | 758 |
 | `internal/tui/tui.go` | 53 | 547 |
 | `internal/tui/tui_test.go` | 40 | 511 |
-| `internal/skill/skill_test.go` | 25 | 464 |
+| `internal/skill/skill_test.go` | 26 | 499 |
 | `internal/export/export_test.go` | 22 | 425 |
 | `cmd/tokenpile/cmd_reset_test.go` | 8 | 272 |
-| `internal/skill/skill.go` | 21 | 228 |
+| `internal/skill/skill.go` | 21 | 239 |
 | `internal/provider/github_auth.go` | 15 | 228 |
 | `cmd/tokenpile/smoke_test.go` | 8 | 207 |
 | `cmd/tokenpile/cmd_reset.go` | 7 | 206 |
@@ -62,8 +62,8 @@
 | `(*SQLiteStore).GetReport` | method | `internal/store/sqlite.go` | 618 | 52 |
 | `TestIntegration_Export_Unfiltered_IncludesAllSessionsAndBudgets` | function | `cmd/tokenpile/integration_test.go` | 538 | 51 |
 | `marshalCanonical` | function | `internal/export/export.go` | 238 | 51 |
-| `TestInstall_Codex_AppendsToExistingFile` | function | `internal/skill/skill_test.go` | 95 | 51 |
-| `installShared` | function | `internal/skill/skill.go` | 124 | 51 |
+| `TestInstall_Codex_AppendsToExistingFile` | function | `internal/skill/skill_test.go` | 111 | 51 |
+| `installShared` | function | `internal/skill/skill.go` | 145 | 51 |
 
 ## Packages
 

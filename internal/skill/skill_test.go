@@ -40,9 +40,25 @@ func TestInstall_ClaudeCode_WritesFile(t *testing.T) {
 	require.NoError(t, err)
 	assert.False(t, existed)
 
-	data, err := os.ReadFile(filepath.Join(dir, ".claude", "skills", "tokenpile.md"))
+	data, err := os.ReadFile(filepath.Join(dir, ".claude", "skills", "tokenpile", "SKILL.md"))
 	require.NoError(t, err)
 	assert.Contains(t, string(data), "tokenpile log")
+	assert.Contains(t, string(data), "name: tokenpile")
+}
+
+func TestInstall_ClaudeCode_RemovesLegacyFlatFile(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("HOME", dir)
+
+	legacyPath := filepath.Join(dir, ".claude", "skills", "tokenpile.md")
+	require.NoError(t, os.MkdirAll(filepath.Dir(legacyPath), 0o750))
+	require.NoError(t, os.WriteFile(legacyPath, []byte("old flat skill\n"), 0o644))
+
+	_, _, err := skill.Install("claude-code")
+	require.NoError(t, err)
+
+	_, statErr := os.Stat(legacyPath)
+	assert.True(t, os.IsNotExist(statErr), "legacy flat file should be removed on install")
 }
 
 func TestInstall_ClaudeCode_OverwritesExisting(t *testing.T) {
@@ -222,7 +238,7 @@ func TestIsUpToDate_OutdatedFile_False(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("HOME", dir)
 
-	skillPath := filepath.Join(dir, ".claude", "skills", "tokenpile.md")
+	skillPath := filepath.Join(dir, ".claude", "skills", "tokenpile", "SKILL.md")
 	require.NoError(t, os.MkdirAll(filepath.Dir(skillPath), 0o750))
 
 	// write a file with a stale version number
@@ -235,7 +251,7 @@ func TestIsUpToDate_NoVersionComment_False(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("HOME", dir)
 
-	skillPath := filepath.Join(dir, ".claude", "skills", "tokenpile.md")
+	skillPath := filepath.Join(dir, ".claude", "skills", "tokenpile", "SKILL.md")
 	require.NoError(t, os.MkdirAll(filepath.Dir(skillPath), 0o750))
 
 	// file without any version marker (pre-v2 install)

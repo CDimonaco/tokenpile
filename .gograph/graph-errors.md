@@ -1,7 +1,7 @@
 # Errors & Panics
 
 **Root:** `/Users/cdimonaco/code/github.com/cdimonaco/tokenpile`  
-**Generated:** 2026-07-06 09:49:36 UTC  
+**Generated:** 2026-07-06 19:29:44 UTC  
 
 ---
 
@@ -126,20 +126,20 @@
 | `invalid repo format %q: expected owner/repo` | `(*GitHubIssueProvider).GetIssue` | `internal/provider/github_issues.go` | 121 |
 | `get issue: %w` | `(*GitHubIssueProvider).GetIssue` | `internal/provider/github_issues.go` | 133 |
 | `cannot infer repo from remote %q: not a GitHub remote; pass --repo owner/repo` | `ParseRemote` | `internal/provider/repoinfer.go` | 46 |
-| `%w: %s` | `Install` | `internal/skill/skill.go` | 94 |
-| `cannot determine install path for agent %s` | `Install` | `internal/skill/skill.go` | 99 |
-| `create skill directory: %w` | `Install` | `internal/skill/skill.go` | 103 |
-| `write skill file: %w` | `installDedicated` | `internal/skill/skill.go` | 118 |
-| `read %s: %w` | `installShared` | `internal/skill/skill.go` | 129 |
-| `write skill file: %w` | `installShared` | `internal/skill/skill.go` | 134 |
-| `update skill file: %w` | `installShared` | `internal/skill/skill.go` | 148 |
-| `append skill file: %w` | `installShared` | `internal/skill/skill.go` | 162 |
-| `%w: %s` | `Uninstall` | `internal/skill/skill.go` | 176 |
-| `cannot determine install path for agent %s` | `Uninstall` | `internal/skill/skill.go` | 181 |
-| `remove skill file: %w` | `uninstallDedicated` | `internal/skill/skill.go` | 197 |
-| `read %s: %w` | `uninstallShared` | `internal/skill/skill.go` | 210 |
-| `remove skill file: %w` | `uninstallShared` | `internal/skill/skill.go` | 225 |
-| `update skill file: %w` | `uninstallShared` | `internal/skill/skill.go` | 234 |
+| `%w: %s` | `Install` | `internal/skill/skill.go` | 109 |
+| `cannot determine install path for agent %s` | `Install` | `internal/skill/skill.go` | 114 |
+| `create skill directory: %w` | `Install` | `internal/skill/skill.go` | 118 |
+| `write skill file: %w` | `installDedicated` | `internal/skill/skill.go` | 139 |
+| `read %s: %w` | `installShared` | `internal/skill/skill.go` | 150 |
+| `write skill file: %w` | `installShared` | `internal/skill/skill.go` | 155 |
+| `update skill file: %w` | `installShared` | `internal/skill/skill.go` | 169 |
+| `append skill file: %w` | `installShared` | `internal/skill/skill.go` | 183 |
+| `%w: %s` | `Uninstall` | `internal/skill/skill.go` | 197 |
+| `cannot determine install path for agent %s` | `Uninstall` | `internal/skill/skill.go` | 202 |
+| `remove skill file: %w` | `uninstallDedicated` | `internal/skill/skill.go` | 224 |
+| `read %s: %w` | `uninstallShared` | `internal/skill/skill.go` | 237 |
+| `remove skill file: %w` | `uninstallShared` | `internal/skill/skill.go` | 252 |
+| `update skill file: %w` | `uninstallShared` | `internal/skill/skill.go` | 261 |
 | `open sqlite: %w` | `NewSQLiteStore` | `internal/store/sqlite.go` | 90 |
 | `apply schema: %w` | `NewSQLiteStore` | `internal/store/sqlite.go` | 97 |
 | `run migrations: %w` | `NewSQLiteStore` | `internal/store/sqlite.go` | 102 |
