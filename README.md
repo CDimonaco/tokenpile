@@ -84,6 +84,12 @@ Each agent gets a dedicated `SKILL.md` (name + description frontmatter) at the l
 
 See `tokenpile skill list` for supported agents and their installation status.
 
+#### Making the agent actually use it
+
+Skills are discovered when a session starts, not injected into one already running — start a new session (or restart your agent) after installing so it picks up the skill.
+
+Invocation is relevance-based, not a hardwired hook: the agent decides to load the skill by matching its `description` against what you're doing. It usually fires on its own after real work or a usage question, but if it doesn't, ask for it explicitly (e.g. "use the tokenpile skill" / "log this with tokenpile"). Codex also supports explicit invocation via `/skills` or `$tokenpile`.
+
 ### 3. Or log manually
 
 ```sh
