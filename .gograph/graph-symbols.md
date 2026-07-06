@@ -1,7 +1,7 @@
 # Symbols & Packages
 
 **Root:** `/Users/cdimonaco/code/github.com/cdimonaco/tokenpile`  
-**Generated:** 2026-07-06 19:29:44 UTC  
+**Generated:** 2026-07-06 20:37:37 UTC  
 
 ---
 
@@ -14,15 +14,15 @@
 | `internal/store/sqlite_test.go` | 30 | 758 |
 | `internal/tui/tui.go` | 53 | 547 |
 | `internal/tui/tui_test.go` | 40 | 511 |
-| `internal/skill/skill_test.go` | 26 | 499 |
+| `internal/skill/skill_test.go` | 26 | 483 |
 | `internal/export/export_test.go` | 22 | 425 |
 | `cmd/tokenpile/cmd_reset_test.go` | 8 | 272 |
-| `internal/skill/skill.go` | 21 | 239 |
 | `internal/provider/github_auth.go` | 15 | 228 |
 | `cmd/tokenpile/smoke_test.go` | 8 | 207 |
 | `cmd/tokenpile/cmd_reset.go` | 7 | 206 |
 | `cmd/tokenpile/cmd_export.go` | 5 | 206 |
 | `internal/export/export.go` | 14 | 189 |
+| `internal/skill/skill.go` | 22 | 170 |
 | `cmd/tokenpile/cmd_log.go` | 5 | 164 |
 | `cmd/tokenpile/cmd_log_test.go` | 6 | 154 |
 | `internal/export/export_integration_test.go` | 6 | 150 |
@@ -62,20 +62,20 @@
 | `(*SQLiteStore).GetReport` | method | `internal/store/sqlite.go` | 618 | 52 |
 | `TestIntegration_Export_Unfiltered_IncludesAllSessionsAndBudgets` | function | `cmd/tokenpile/integration_test.go` | 538 | 51 |
 | `marshalCanonical` | function | `internal/export/export.go` | 238 | 51 |
-| `TestInstall_Codex_AppendsToExistingFile` | function | `internal/skill/skill_test.go` | 111 | 51 |
-| `installShared` | function | `internal/skill/skill.go` | 145 | 51 |
+| `TestSQLiteStore_ListUsageOverTime_WeekGranularity` | function | `internal/store/sqlite_test.go` | 196 | 51 |
+| `TestIntegration_Log_IdleSessionClosed_ByResolveSession` | function | `cmd/tokenpile/integration_test.go` | 703 | 50 |
 
 ## Packages
 
 | Package | Dir | Files | Symbols |
 |---------|-----|-------|---------|
-| `main` | `cmd/tokenpile` | 15 | 95 |
+| `main` | `cmd/tokenpile` | 15 | 94 |
 | `config` | `internal/config` | 3 | 8 |
 | `export` | `internal/export` | 5 | 16 |
 | `pricing` | `internal/pricing` | 2 | 9 |
 | `provider` | `internal/provider` | 7 | 35 |
 | `schema` | `internal/schema` | 1 | 1 |
-| `skill` | `internal/skill` | 2 | 21 |
+| `skill` | `internal/skill` | 2 | 22 |
 | `store` | `internal/store` | 3 | 34 |
 | `tui` | `internal/tui` | 2 | 93 |
 | `usage` | `internal/usage` | 1 | 14 |

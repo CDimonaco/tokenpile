@@ -14,18 +14,27 @@ The skill template SHALL instruct the agent to call `tokenpile log` with `--note
 - **THEN** the `tokenpile log` call includes a `--note` with a brief description
 - **THEN** the call includes one or more `--tag` values from the vocabulary
 
-### Requirement: Skill uninstall
+### Requirement: Skill install location
 
-The system SHALL provide `skill.Uninstall(agentName)` reversing `Install`. For agents with a dedicated skill file the file SHALL be removed. For agents sharing a file (e.g. `AGENTS.md`) only the marked tokenpile block (`<!-- tokenpile:start -->` through `<!-- tokenpile:end -->`) SHALL be removed, preserving all other content; if the file contains nothing else afterwards, the file SHALL be removed. Uninstalling a skill that is not installed SHALL succeed and report that nothing was removed.
+Every supported agent (`claude-code`, `codex`, `opencode`) SHALL install the tokenpile skill as a dedicated `SKILL.md` file, with a `name`/`description` YAML frontmatter, at the location that agent natively discovers skills (the Agent Skills spec layout: `<agent-skills-dir>/tokenpile/SKILL.md`). `Install` SHALL overwrite this file on repeat installs.
 
-#### Scenario: Dedicated skill file removed
-- **WHEN** the claude-code skill is installed and `Uninstall("claude-code")` is called
-- **THEN** the skill file no longer exists
+#### Scenario: Dedicated SKILL.md written for every agent
+- **WHEN** `Install(agentName)` is called for any supported agent
+- **THEN** a `SKILL.md` file with `name` and `description` frontmatter is written at that agent's native skill directory
 
-#### Scenario: Shared file keeps foreign content
-- **WHEN** an `AGENTS.md` contains user content plus the tokenpile marked block
-- **WHEN** `Uninstall("codex")` is called
-- **THEN** the tokenpile block is gone and the user content is intact
+### Requirement: Legacy skill install cleanup
+
+`Install` and `Uninstall` SHALL clean up, on a best-effort basis, any install left by a previous tokenpile version that used a different location or format for that agent: a stale flat file SHALL be removed outright; a marked tokenpile block (`<!-- tokenpile:start -->` through `<!-- tokenpile:end -->`) inside a shared file (e.g. `AGENTS.md`) SHALL be stripped, preserving all other content in that file, and the file SHALL be removed entirely if nothing else remains. A failure to clean up a legacy location SHALL NOT block the current install/uninstall from succeeding.
+
+#### Scenario: Legacy flat file removed on install
+- **WHEN** a pre-migration flat skill file exists for an agent and `Install(agentName)` is called
+- **THEN** the legacy flat file no longer exists
+- **THEN** the new dedicated `SKILL.md` is written
+
+#### Scenario: Legacy AGENTS.md block stripped, foreign content kept
+- **WHEN** an agent's `AGENTS.md` contains user content plus a legacy tokenpile marked block
+- **WHEN** `Install(agentName)` or `Uninstall(agentName)` is called
+- **THEN** the tokenpile block is gone from `AGENTS.md` and the user content is intact
 
 #### Scenario: Uninstall when not installed
 - **WHEN** `Uninstall` is called for an agent with no installed skill

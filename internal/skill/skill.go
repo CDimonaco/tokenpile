@@ -31,13 +31,13 @@ type Agent struct {
 	Name         string
 	TemplateData []byte
 	InstallPath  func() string
-	// Shared indicates the install target is a file shared with other content (e.g. AGENTS.md).
-	// When true, Install appends/updates a marked block instead of overwriting the whole file.
-	Shared bool
-	// LegacyInstallPath, when set, is a previous install location that Install
-	// removes on a best-effort basis so stale copies don't linger alongside
-	// the current one.
-	LegacyInstallPath func() string
+	// LegacyDedicatedPath, when set, is a previous dedicated-file install
+	// location that Install/Uninstall removes outright on a best-effort basis.
+	LegacyDedicatedPath func() string
+	// LegacySharedPath, when set, is a previous shared-file install location
+	// (e.g. an AGENTS.md with a marked tokenpile block) that Install/Uninstall
+	// strips on a best-effort basis, leaving the rest of the file untouched.
+	LegacySharedPath func() string
 }
 
 var agents = []Agent{
@@ -45,17 +45,9 @@ var agents = []Agent{
 		Name:         "claude-code",
 		TemplateData: claudeCodeTemplate,
 		InstallPath: func() string {
-			home, err := os.UserHomeDir()
-			if err != nil {
-				return ""
-			}
-
-			// Claude Code only discovers skills laid out as <name>/SKILL.md
-			// with a YAML frontmatter (name, description); a flat file here
-			// is never listed as an invocable skill.
-			return filepath.Join(home, ".claude", "skills", "tokenpile", "SKILL.md")
+			return skillPath(".claude")
 		},
-		LegacyInstallPath: func() string {
+		LegacyDedicatedPath: func() string {
 			home, err := os.UserHomeDir()
 			if err != nil {
 				return ""
@@ -67,8 +59,10 @@ var agents = []Agent{
 	{
 		Name:         "codex",
 		TemplateData: codexTemplate,
-		Shared:       true,
 		InstallPath: func() string {
+			return skillPath(".codex")
+		},
+		LegacySharedPath: func() string {
 			home, err := os.UserHomeDir()
 			if err != nil {
 				return ""
@@ -80,8 +74,15 @@ var agents = []Agent{
 	{
 		Name:         "opencode",
 		TemplateData: opencodeTemplate,
-		Shared:       true,
 		InstallPath: func() string {
+			home, err := os.UserHomeDir()
+			if err != nil {
+				return ""
+			}
+
+			return filepath.Join(home, ".config", "opencode", "skills", "tokenpile", "SKILL.md")
+		},
+		LegacySharedPath: func() string {
 			home, err := os.UserHomeDir()
 			if err != nil {
 				return ""
@@ -92,6 +93,17 @@ var agents = []Agent{
 	},
 }
 
+// skillPath builds the Agent Skills Spec layout (~/<dir>/skills/tokenpile/SKILL.md)
+// used by both Claude Code and OpenCode's compatible-path discovery.
+func skillPath(dotDir string) string {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return ""
+	}
+
+	return filepath.Join(home, dotDir, "skills", "tokenpile", "SKILL.md")
+}
+
 func List() []Agent {
 	out := make([]Agent, len(agents))
 	copy(out, agents)
@@ -99,10 +111,9 @@ func List() []Agent {
 	return out
 }
 
-// Install writes the tokenpile skill for the named agent.
-// For dedicated files (claude-code) it overwrites the file.
-// For shared files (codex, opencode) it appends or updates a marked block.
-// Returns the install path, whether the tokenpile block already existed, and any error.
+// Install writes the tokenpile skill for the named agent as a dedicated
+// SKILL.md file, cleaning up any previous install location on a best-effort
+// basis. Returns the install path, whether the file already existed, and any error.
 func Install(agentName string) (string, bool, error) {
 	agent, found := findAgent(agentName)
 	if !found {
@@ -118,17 +129,25 @@ func Install(agentName string) (string, bool, error) {
 		return "", false, fmt.Errorf("create skill directory: %w", err)
 	}
 
-	if agent.LegacyInstallPath != nil {
-		if legacy := agent.LegacyInstallPath(); legacy != "" && legacy != target {
+	cleanupLegacy(agent, target)
+
+	return installDedicated(target, agent.TemplateData)
+}
+
+// cleanupLegacy removes stale installs from formats predating the SKILL.md
+// migration, best-effort: failures here must never block a fresh install.
+func cleanupLegacy(agent Agent, target string) {
+	if agent.LegacyDedicatedPath != nil {
+		if legacy := agent.LegacyDedicatedPath(); legacy != "" && legacy != target {
 			_ = os.Remove(legacy)
 		}
 	}
 
-	if agent.Shared {
-		return installShared(target, agent.TemplateData)
+	if agent.LegacySharedPath != nil {
+		if legacy := agent.LegacySharedPath(); legacy != "" {
+			_, _, _ = uninstallShared(legacy)
+		}
 	}
-
-	return installDedicated(target, agent.TemplateData)
 }
 
 func installDedicated(target string, data []byte) (string, bool, error) {
@@ -142,54 +161,10 @@ func installDedicated(target string, data []byte) (string, bool, error) {
 	return target, existed, nil
 }
 
-func installShared(target string, data []byte) (string, bool, error) {
-	block := markerStart + "\n" + strings.TrimSpace(string(data)) + "\n" + markerEnd
-
-	existing, readErr := os.ReadFile(target)
-	if readErr != nil && !os.IsNotExist(readErr) {
-		return "", false, fmt.Errorf("read %s: %w", target, readErr)
-	}
-
-	if os.IsNotExist(readErr) {
-		if err := os.WriteFile(target, []byte(block+"\n"), 0o644); err != nil { //nolint:gosec
-			return "", false, fmt.Errorf("write skill file: %w", err)
-		}
-
-		return target, false, nil
-	}
-
-	content := string(existing)
-	startIdx := strings.Index(content, markerStart)
-	endIdx := strings.Index(content, markerEnd)
-
-	if startIdx != -1 && endIdx != -1 && endIdx > startIdx {
-		updated := content[:startIdx] + block + content[endIdx+len(markerEnd):]
-
-		if err := os.WriteFile(target, []byte(updated), 0o644); err != nil { //nolint:gosec
-			return "", false, fmt.Errorf("update skill file: %w", err)
-		}
-
-		return target, true, nil
-	}
-
-	sep := "\n\n"
-	if strings.HasSuffix(content, "\n\n") {
-		sep = ""
-	} else if strings.HasSuffix(content, "\n") {
-		sep = "\n"
-	}
-
-	if err := os.WriteFile(target, []byte(content+sep+block+"\n"), 0o644); err != nil { //nolint:gosec
-		return "", false, fmt.Errorf("append skill file: %w", err)
-	}
-
-	return target, false, nil
-}
-
-// Uninstall reverses Install for the named agent. Dedicated files are
-// removed; shared files lose only the marked tokenpile block, and are removed
-// entirely when nothing else remains. Uninstalling an agent with no installed
-// skill succeeds with removed=false.
+// Uninstall reverses Install for the named agent: the dedicated SKILL.md file
+// is removed, and any leftover legacy install (pre-migration flat file or
+// AGENTS.md block) is cleaned up on a best-effort basis. Uninstalling an
+// agent with no installed skill succeeds and reports that nothing was removed.
 // Returns the install path, whether anything was removed, and any error.
 func Uninstall(agentName string) (string, bool, error) {
 	agent, found := findAgent(agentName)
@@ -202,15 +177,7 @@ func Uninstall(agentName string) (string, bool, error) {
 		return "", false, fmt.Errorf("cannot determine install path for agent %s", agentName)
 	}
 
-	if agent.LegacyInstallPath != nil {
-		if legacy := agent.LegacyInstallPath(); legacy != "" && legacy != target {
-			_ = os.Remove(legacy)
-		}
-	}
-
-	if agent.Shared {
-		return uninstallShared(target)
-	}
+	cleanupLegacy(agent, target)
 
 	return uninstallDedicated(target)
 }
@@ -227,6 +194,9 @@ func uninstallDedicated(target string) (string, bool, error) {
 	return target, true, nil
 }
 
+// uninstallShared strips the marked tokenpile block from a shared file (used
+// only to clean up pre-migration AGENTS.md installs), removing the file
+// entirely when nothing else remains.
 func uninstallShared(target string) (string, bool, error) {
 	existing, err := os.ReadFile(target)
 	if err != nil {
@@ -275,15 +245,6 @@ func IsInstalled(agentName string) bool {
 		return false
 	}
 
-	if agent.Shared {
-		data, err := os.ReadFile(target)
-		if err != nil {
-			return false
-		}
-
-		return strings.Contains(string(data), markerStart)
-	}
-
 	_, err := os.Stat(target)
 
 	return err == nil
@@ -303,26 +264,16 @@ func IsUpToDate(agentName string) bool {
 		return false
 	}
 
-	installedVersion := extractVersion(target, agent.Shared)
+	installedVersion := extractVersionFromFile(target)
 	embeddedVersion := extractVersionFromBytes(agent.TemplateData)
 
 	return installedVersion != "" && installedVersion == embeddedVersion
 }
 
-func extractVersion(path string, shared bool) string {
+func extractVersionFromFile(path string) string {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return ""
-	}
-
-	if shared {
-		startIdx := strings.Index(string(data), markerStart)
-		endIdx := strings.Index(string(data), markerEnd)
-		if startIdx == -1 || endIdx == -1 || endIdx <= startIdx {
-			return ""
-		}
-
-		return extractVersionFromBytes(data[startIdx:endIdx])
 	}
 
 	return extractVersionFromBytes(data)

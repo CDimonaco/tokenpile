@@ -74,13 +74,13 @@ This opens a browser window for OAuth. The token is stored in your OS keychain (
 
 ```sh
 tokenpile skill install --agent claude-code    # writes ~/.claude/skills/tokenpile/SKILL.md
-tokenpile skill install --agent codex          # appends a block to ~/.codex/AGENTS.md
-tokenpile skill install --agent opencode       # appends a block to ~/.config/opencode/AGENTS.md
+tokenpile skill install --agent codex          # writes ~/.codex/skills/tokenpile/SKILL.md
+tokenpile skill install --agent opencode       # writes ~/.config/opencode/skills/tokenpile/SKILL.md
 ```
 
 After installation, the agent will automatically call `tokenpile log` at the end of each response where significant work was done.
 
-For **codex** and **opencode**, the skill is appended to their shared `AGENTS.md` file using HTML comment markers (`<!-- tokenpile:start -->` / `<!-- tokenpile:end -->`). Your existing instructions are never touched. Running the command again updates only the tokenpile block in place.
+Each agent gets a dedicated `SKILL.md` (name + description frontmatter) at the location it discovers skills natively, following the Agent Skills spec shared by Claude Code, Codex, and OpenCode. If an older install left a tokenpile block in that agent's `AGENTS.md` (pre-SKILL.md versions of tokenpile), installing removes just that block — the rest of the file is untouched.
 
 See `tokenpile skill list` for supported agents and their installation status.
 
@@ -240,13 +240,13 @@ The backup is a standard signed export (schema v3) written to `tokenpile-backup-
 ```sh
 tokenpile skill list                          # show agents, install status, and skill version
 tokenpile skill install --agent claude-code   # dedicated file: ~/.claude/skills/tokenpile/SKILL.md
-tokenpile skill install --agent codex         # append/update block in ~/.codex/AGENTS.md
-tokenpile skill install --agent opencode      # append/update block in ~/.config/opencode/AGENTS.md
+tokenpile skill install --agent codex         # dedicated file: ~/.codex/skills/tokenpile/SKILL.md
+tokenpile skill install --agent opencode      # dedicated file: ~/.config/opencode/skills/tokenpile/SKILL.md
 ```
 
 `skill list` shows a Version column: "up to date" if the installed skill matches the current version, "outdated (vN)" if a newer version is available. Re-run `skill install` to upgrade.
 
-For shared AGENTS.md targets (codex, opencode) the command prints a summary of what it did — whether it created the file, appended a new block, or updated an existing one — so you always know exactly what changed.
+Installing best-effort removes any leftover install from older tokenpile versions: a legacy flat `tokenpile.md` (claude-code) or a tokenpile block in that agent's `AGENTS.md` (codex, opencode) — the rest of `AGENTS.md` is left untouched.
 
 ## Configuration
 
@@ -330,8 +330,8 @@ schema/               JSON Schema for the export document
 
 ### Adding a new agent skill
 
-1. Add a template file at `internal/skill/templates/<agent-name>.md`.
-2. Add the agent entry to the `agents` slice in `internal/skill/skill.go` with its `InstallPath` function. Set `Shared: true` if the target file is shared with other content (e.g. AGENTS.md) — the install will append/update a marker-delimited block instead of overwriting the file.
+1. Add a template file at `internal/skill/templates/<agent-name>.md` with a `name`/`description` YAML frontmatter followed by a `<!-- tokenpile-skill-version: N -->` comment, per the Agent Skills spec.
+2. Add the agent entry to the `agents` slice in `internal/skill/skill.go` with its `InstallPath` function (the directory the agent natively discovers `SKILL.md` files in). If a previous tokenpile version used a different location for this agent, set `LegacyDedicatedPath` (flat file to remove) or `LegacySharedPath` (a shared file like `AGENTS.md` to strip the tokenpile block from) so upgrades clean up after themselves.
 3. Add tests in `internal/skill/skill_test.go`.
 
 ### Running a subset of tests

@@ -1,7 +1,7 @@
 # HTTP Routes
 
 **Root:** `/Users/cdimonaco/code/github.com/cdimonaco/tokenpile`  
-**Generated:** 2026-07-06 19:29:44 UTC  
+**Generated:** 2026-07-06 20:37:37 UTC  
 
 ---
 

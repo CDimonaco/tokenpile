@@ -1,4 +1,9 @@
-<!-- tokenpile-skill-version: 3 -->
+---
+name: tokenpile
+description: Track LLM token usage and cost per GitHub issue. Use after any response where you did meaningful work to log token usage, and whenever the user asks about token usage, cost, sessions, or spending budget for an issue.
+---
+
+<!-- tokenpile-skill-version: 4 -->
 
 # tokenpile
 
