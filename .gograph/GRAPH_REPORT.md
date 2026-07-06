@@ -1,7 +1,7 @@
 # GoGraph Report Index
 
 **Root:** `/Users/cdimonaco/code/github.com/cdimonaco/tokenpile`  
-**Generated:** 2026-07-06 20:37:37 UTC  
+**Generated:** 2026-07-06 20:45:13 UTC  
 
 ---
 
