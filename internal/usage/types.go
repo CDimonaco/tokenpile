@@ -2,14 +2,65 @@ package usage
 
 import "time"
 
+// Usage is the token accounting for a single entry, split by the tier the
+// provider bills each count under. Providers price these very differently:
+// cached reads cost a fraction of fresh input, cache writes cost more than it.
+//
+// Reasoning is a SUBSET of Output, never a sixth bucket added on top of it.
+// Providers that report reasoning tokens report them inside the completion
+// count, so adding the two double-bills every reasoning token.
+type Usage struct {
+	InputFresh int
+	CacheWrite int
+	CacheRead  int
+	Output     int
+	Reasoning  int
+}
+
+// TotalTokens is every token that passed through, counted once. Reasoning is
+// excluded because it is already inside Output.
+func (u Usage) TotalTokens() int {
+	return u.InputFresh + u.CacheWrite + u.CacheRead + u.Output
+}
+
+// TotalInput is the input-side total across all three input tiers, for displays
+// that want a single "in" figure alongside Output.
+func (u Usage) TotalInput() int {
+	return u.InputFresh + u.CacheWrite + u.CacheRead
+}
+
+// Add accumulates another usage into this one, tier by tier.
+func (u Usage) Add(other Usage) Usage {
+	return Usage{
+		InputFresh: u.InputFresh + other.InputFresh,
+		CacheWrite: u.CacheWrite + other.CacheWrite,
+		CacheRead:  u.CacheRead + other.CacheRead,
+		Output:     u.Output + other.Output,
+		Reasoning:  u.Reasoning + other.Reasoning,
+	}
+}
+
+// Source records how an entry's token counts were obtained. It is derived from
+// the command that writes the entry, never from a flag: the distinction is
+// structural, since an agent cannot observe its own cache tiers.
+type Source string
+
+const (
+	// SourceMeasured means the counts came from an agent's own transcript, as
+	// reported by the provider.
+	SourceMeasured Source = "measured"
+	// SourceEstimated means the counts were declared by a model.
+	SourceEstimated Source = "estimated"
+)
+
 type Entry struct {
 	ID          string
 	Repo        string
 	IssueNum    int
 	Agent       string
 	Model       string
-	TokensIn    int
-	TokensOut   int
+	Usage       Usage
+	Source      Source
 	SessionID   string
 	At          time.Time
 	IssueTitle  string
@@ -40,22 +91,27 @@ type Filter struct {
 }
 
 type ReportRow struct {
-	Agent     string
-	Model     string
-	Calls     int
-	TokensIn  int
-	TokensOut int
-	Cost      float64
+	Agent string
+	Model string
+	Calls int
+	Usage Usage
+	Cost  float64
+	// CostIncomplete is true when a tier present in Usage had no rate for this
+	// model, so Cost omits it. An incomplete figure that says so beats a
+	// confident wrong one.
+	CostIncomplete bool
 }
 
 type Report struct {
-	IssueNum       int
-	Repo           string
-	Rows           []ReportRow
-	TotalTokensIn  int
-	TotalTokensOut int
-	TotalCost      float64
-	TotalTime      time.Duration
+	IssueNum   int
+	Repo       string
+	Rows       []ReportRow
+	TotalUsage Usage
+	TotalCost  float64
+	// CacheSavings is what the cached tokens would have cost at the fresh input
+	// rate, minus what they actually cost.
+	CacheSavings float64
+	TotalTime    time.Duration
 }
 
 type IssueCache struct {
@@ -68,15 +124,14 @@ type IssueCache struct {
 }
 
 type TrackedIssue struct {
-	IssueNum       int
-	Repo           string
-	Title          string
-	Labels         []string
-	TotalTokensIn  int
-	TotalTokensOut int
-	TotalCost      float64
-	TotalTime      time.Duration
-	Budget         *float64
+	IssueNum   int
+	Repo       string
+	Title      string
+	Labels     []string
+	TotalUsage Usage
+	TotalCost  float64
+	TotalTime  time.Duration
+	Budget     *float64
 }
 
 type TrackedIssueRef struct {
@@ -99,10 +154,9 @@ const (
 )
 
 type Point struct {
-	Date      time.Time
-	TokensIn  int
-	TokensOut int
-	Cost      float64
+	Date  time.Time
+	Usage Usage
+	Cost  float64
 }
 
 type OverTimeFilter struct {

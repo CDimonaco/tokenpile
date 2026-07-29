@@ -71,7 +71,9 @@ func newResetFixture(t *testing.T) resetFixture {
 
 	ctx := context.Background()
 	require.NoError(t, s.LogUsage(ctx, usage.Entry{
-		Repo: "o/r", IssueNum: 1, Agent: "a", Model: "m", TokensIn: 10, TokensOut: 5,
+		Repo: "o/r", IssueNum: 1, Agent: "a", Model: "m",
+		Usage:  usage.Usage{InputFresh: 10, Output: 5},
+		Source: usage.SourceEstimated,
 	}))
 
 	_, err = s.StartSession(ctx, "o/r", 1)
@@ -136,9 +138,8 @@ func TestIntegration_Reset_YesResetsAndBackupVerifies(t *testing.T) {
 	var doc export.Document
 	require.NoError(t, json.Unmarshal(data, &doc))
 
-	res, err := export.Verify(&doc)
+	_, err = export.Verify(&doc)
 	require.NoError(t, err)
-	assert.False(t, res.Legacy)
 	require.Len(t, doc.Entries, 1)
 	require.Len(t, doc.Sessions, 1)
 	require.Len(t, doc.Budgets, 1)

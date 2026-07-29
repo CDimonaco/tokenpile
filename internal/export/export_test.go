@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
-	"os"
 	"testing"
 	"time"
 
@@ -28,24 +27,24 @@ func newTestKey(t *testing.T) (ed25519.PrivateKey, ed25519.PublicKey) {
 func testEntries() []usage.Entry {
 	return []usage.Entry{
 		{
-			ID:        "1",
-			Repo:      "o/r",
-			IssueNum:  42,
-			Agent:     "claude-code",
-			Model:     "claude-sonnet-4-6",
-			TokensIn:  1000,
-			TokensOut: 500,
-			At:        time.Date(2026, 7, 1, 10, 0, 0, 0, time.UTC),
+			ID:       "1",
+			Repo:     "o/r",
+			IssueNum: 42,
+			Agent:    "claude-code",
+			Model:    "claude-sonnet-4-6",
+			Usage:    usage.Usage{InputFresh: 1000, Output: 500},
+			Source:   usage.SourceEstimated,
+			At:       time.Date(2026, 7, 1, 10, 0, 0, 0, time.UTC),
 		},
 		{
-			ID:        "2",
-			Repo:      "o/r",
-			IssueNum:  42,
-			Agent:     "opencode",
-			Model:     "gpt-4o",
-			TokensIn:  2000,
-			TokensOut: 800,
-			At:        time.Date(2026, 7, 1, 11, 0, 0, 0, time.UTC),
+			ID:       "2",
+			Repo:     "o/r",
+			IssueNum: 42,
+			Agent:    "opencode",
+			Model:    "gpt-4o",
+			Usage:    usage.Usage{InputFresh: 2000, Output: 800},
+			Source:   usage.SourceEstimated,
+			At:       time.Date(2026, 7, 1, 11, 0, 0, 0, time.UTC),
 		},
 	}
 }
@@ -56,7 +55,7 @@ func TestBuild_ProducesValidDocument(t *testing.T) {
 	doc, err := export.Build(testEntries(), nil, nil, priv, "0.1.0")
 	require.NoError(t, err)
 
-	assert.Equal(t, "3.0", doc.SchemaVersion)
+	assert.Equal(t, "4.0", doc.SchemaVersion)
 	assert.NotEmpty(t, doc.Signature)
 	assert.NotEmpty(t, doc.PublicKey)
 	assert.Len(t, doc.Entries, 2)
@@ -71,8 +70,7 @@ func TestVerify_ValidDocument(t *testing.T) {
 
 	res, err := export.Verify(doc)
 	require.NoError(t, err)
-	assert.False(t, res.Legacy)
-	assert.Equal(t, "3.0", res.SchemaVersion)
+	assert.Equal(t, "4.0", res.SchemaVersion)
 }
 
 func TestVerify_TamperedEntries(t *testing.T) {
@@ -81,7 +79,7 @@ func TestVerify_TamperedEntries(t *testing.T) {
 	doc, err := export.Build(testEntries(), nil, nil, priv, "0.1.0")
 	require.NoError(t, err)
 
-	doc.Entries[0].TokensIn = 9999
+	doc.Entries[0].CacheRead = 9999
 
 	_, err = export.Verify(doc)
 	require.Error(t, err)
@@ -136,7 +134,7 @@ func TestBuild_SignatureChangesWhenEntriesChange(t *testing.T) {
 	require.NoError(t, err)
 
 	modified := testEntries()
-	modified[0].TokensIn = 99999
+	modified[0].Usage.CacheRead = 99999
 
 	doc2, err := export.Build(modified, nil, nil, priv, "0.1.0")
 	require.NoError(t, err)
@@ -175,7 +173,7 @@ func TestBuild_SchemaVersionIsV3(t *testing.T) {
 
 	doc, err := export.Build(testEntries(), nil, nil, priv, "0.2.0")
 	require.NoError(t, err)
-	assert.Equal(t, "3.0", doc.SchemaVersion)
+	assert.Equal(t, "4.0", doc.SchemaVersion)
 }
 
 func TestBuild_SessionsIncludedInDocument(t *testing.T) {
@@ -297,30 +295,4 @@ func TestVerify_UnsupportedSchemaVersion(t *testing.T) {
 	_, err = export.Verify(doc)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "unsupported schema version")
-}
-
-func TestVerify_LegacyV2Fixture(t *testing.T) {
-	data, err := os.ReadFile("testdata/export_v2.json")
-	require.NoError(t, err)
-
-	var doc export.Document
-	require.NoError(t, json.Unmarshal(data, &doc))
-
-	res, err := export.Verify(&doc)
-	require.NoError(t, err)
-	assert.True(t, res.Legacy)
-	assert.Equal(t, "2.0", res.SchemaVersion)
-}
-
-func TestVerify_LegacyV2Fixture_TamperedEntriesFail(t *testing.T) {
-	data, err := os.ReadFile("testdata/export_v2.json")
-	require.NoError(t, err)
-
-	var doc export.Document
-	require.NoError(t, json.Unmarshal(data, &doc))
-
-	doc.Entries[0].TokensIn = 424242
-
-	_, err = export.Verify(&doc)
-	assert.Error(t, err)
 }

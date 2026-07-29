@@ -90,7 +90,7 @@ func TestSmoke_ExportVerify(t *testing.T) {
 
 	out, err = run("export", "verify", "--file", exportPath)
 	require.NoError(t, err, "verify failed: %s", out)
-	assert.Contains(t, out, "OK: signature valid (schema 3.0, full document)")
+	assert.Contains(t, out, "OK: signature valid (schema 4.0, full document)")
 	assert.Contains(t, out, "Origin not verified")
 
 	out, err = run("export", "verify", "--file", exportPath,

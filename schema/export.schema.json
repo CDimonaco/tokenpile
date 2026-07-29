@@ -40,7 +40,7 @@
   "$defs": {
     "UsageEntry": {
       "type": "object",
-      "required": ["id", "repo", "issue_num", "agent", "model", "tokens_in", "tokens_out", "at"],
+      "required": ["id", "repo", "issue_num", "agent", "model", "input_fresh", "cache_write", "cache_read", "output", "reasoning", "source", "at"],
       "additionalProperties": false,
       "properties": {
         "id":         { "type": "string" },
@@ -48,8 +48,12 @@
         "issue_num":  { "type": "integer" },
         "agent":      { "type": "string" },
         "model":      { "type": "string" },
-        "tokens_in":  { "type": "integer", "minimum": 0 },
-        "tokens_out": { "type": "integer", "minimum": 0 },
+        "input_fresh": { "type": "integer", "minimum": 0 },
+        "cache_write": { "type": "integer", "minimum": 0 },
+        "cache_read":  { "type": "integer", "minimum": 0 },
+        "output":      { "type": "integer", "minimum": 0 },
+        "reasoning":   { "type": "integer", "minimum": 0, "description": "subset of output, not billed on top of it" },
+        "source":      { "type": "string", "enum": ["measured", "estimated"] },
         "session_id": { "type": "string" },
         "at":         { "type": "string", "format": "date-time" }
       }

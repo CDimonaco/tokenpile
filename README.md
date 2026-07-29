@@ -29,8 +29,9 @@ Track LLM token usage and cost per GitHub issue. Any agent (Claude Code, OpenCod
 - TUI: issue list with clickable `#N` OSC 8 hyperlinks, per-issue detail with Summary and Sessions tabs, budget progress bar (green/yellow/red), token usage chart over time
 - Open issues in the browser with `o`, refresh cached metadata with `r`
 - Report and export include issue title and labels
-- Ed25519-signed JSON export (schema v3) with sessions and budgets blocks; the signature covers the whole document
-- Pricing config with built-in defaults and per-model overrides
+- Ed25519-signed JSON export (schema v4) with sessions and budgets blocks; the signature covers the whole document
+- Token usage recorded per billing tier (fresh input, cache write, cache read, output, reasoning) so cost and prompt-cache savings are computable
+- Pricing config with built-in defaults and per-model overrides, including cache read/write rates
 - SQLite storage — local, no external services required
 
 ## Installation
@@ -96,8 +97,8 @@ tokenpile log \
   --issue 42 \
   --agent claude-code \
   --model claude-sonnet-4-6 \
-  --tokens-in 12000 \
-  --tokens-out 3000 \
+  --input 12000 \
+  --output 3000 \
   --note "refactored auth middleware" \
   --tag refactor --tag feature
 ```
@@ -106,7 +107,7 @@ tokenpile log \
 
 ```sh
 tokenpile log --issue 42 --agent claude-code --model claude-sonnet-4-6 \
-  --tokens-in 12000 --tokens-out 3000 --repo owner/repo
+  --input 12000 --output 3000 --repo owner/repo
 ```
 
 ### 4. Browse the TUI
@@ -149,8 +150,8 @@ Record token usage for an issue.
 
 ```sh
 tokenpile log --issue <num> --agent <name> --model <model> \
-  --tokens-in <n> --tokens-out <n> [--repo owner/repo] \
-  [--note "description"] [--tag <tag> ...]
+  [--input <n>] [--cache-write <n>] [--cache-read <n>] [--output <n>] [--reasoning <n>] \
+  [--repo owner/repo] [--note "description"] [--tag <tag> ...]
 ```
 
 | Flag | Description |
@@ -245,7 +246,7 @@ Prices are per million tokens. Built-in defaults cover the most common Claude, G
 
 ### `tokenpile export`
 
-Export usage data as an Ed25519-signed JSON document (schema v3).
+Export usage data as an Ed25519-signed JSON document (schema v4). Only v4 documents can be verified; earlier schemas are not supported.
 
 ```sh
 tokenpile export                              # all data, to stdout
@@ -276,7 +277,7 @@ tokenpile reset --yes --output backup.json    # choose the backup path
 tokenpile reset --yes --no-backup             # skip the backup
 ```
 
-The backup is a standard signed export (schema v3) written to `tokenpile-backup-<timestamp>.json` by default, so it can be verified later with `tokenpile export verify`. It is written before anything is deleted; if it fails, nothing is removed.
+The backup is a standard signed export (schema v4) written to `tokenpile-backup-<timestamp>.json` by default, so it can be verified later with `tokenpile export verify`. It is written before anything is deleted; if it fails, nothing is removed.
 
 ### `tokenpile skill`
 

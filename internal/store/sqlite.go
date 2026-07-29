@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	_ "modernc.org/sqlite" // registers the sqlite3 driver
 
+	"github.com/cdimonaco/tokenpile/internal/pricing"
 	"github.com/cdimonaco/tokenpile/internal/usage"
 )
 
@@ -29,8 +30,12 @@ CREATE TABLE IF NOT EXISTS usage_entries (
     issue_num   INTEGER NOT NULL,
     agent       TEXT NOT NULL,
     model       TEXT NOT NULL,
-    tokens_in   INTEGER NOT NULL,
-    tokens_out  INTEGER NOT NULL,
+    input_fresh INTEGER NOT NULL,
+    cache_write INTEGER NOT NULL,
+    cache_read  INTEGER NOT NULL,
+    output      INTEGER NOT NULL,
+    reasoning   INTEGER NOT NULL,
+    source      TEXT NOT NULL,
     session_id  TEXT,
     at          TEXT NOT NULL
 );
@@ -81,7 +86,8 @@ type SQLiteStore struct {
 }
 
 type Pricer interface {
-	ComputeCost(model string, tokensIn, tokensOut int) (float64, bool)
+	ComputeCost(model string, u usage.Usage) pricing.CostResult
+	CacheSavings(model string, u usage.Usage) (float64, bool)
 }
 
 func NewSQLiteStore(dbPath string, pricer Pricer) (*SQLiteStore, error) {
@@ -134,10 +140,13 @@ func (s *SQLiteStore) LogUsage(ctx context.Context, entry usage.Entry) error {
 	}
 
 	_, err := s.db.ExecContext(ctx,
-		`INSERT INTO usage_entries (id, repo, issue_num, agent, model, tokens_in, tokens_out, session_id, at)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		`INSERT INTO usage_entries
+		 (id, repo, issue_num, agent, model, input_fresh, cache_write, cache_read, output, reasoning, source, session_id, at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		entry.ID, entry.Repo, entry.IssueNum, entry.Agent, entry.Model,
-		entry.TokensIn, entry.TokensOut, entry.SessionID, entry.At.UTC().Format(time.RFC3339),
+		entry.Usage.InputFresh, entry.Usage.CacheWrite, entry.Usage.CacheRead,
+		entry.Usage.Output, entry.Usage.Reasoning, string(entry.Source),
+		entry.SessionID, entry.At.UTC().Format(time.RFC3339),
 	)
 	if err != nil {
 		return fmt.Errorf("insert usage entry: %w", err)
@@ -205,7 +214,8 @@ func (s *SQLiteStore) GetIssueCache(ctx context.Context, repo string, issueNum i
 
 func (s *SQLiteStore) ListEntries(ctx context.Context, filter usage.Filter) ([]usage.Entry, error) {
 	query := `SELECT ue.id, ue.repo, ue.issue_num, ue.agent, ue.model,
-		ue.tokens_in, ue.tokens_out, ue.session_id, ue.at,
+		ue.input_fresh, ue.cache_write, ue.cache_read, ue.output, ue.reasoning, ue.source,
+		ue.session_id, ue.at,
 		COALESCE(ic.title, ''), COALESCE(ic.labels, '[]')
 		FROM usage_entries ue
 		LEFT JOIN issue_cache ic ON ic.repo = ue.repo AND ic.issue_num = ue.issue_num
@@ -257,10 +267,16 @@ func (s *SQLiteStore) ListEntries(ctx context.Context, filter usage.Filter) ([]u
 		var atStr, labelsJSON string
 		var sessionID sql.NullString
 
+		var source string
+
 		if err = rows.Scan(&e.ID, &e.Repo, &e.IssueNum, &e.Agent, &e.Model,
-			&e.TokensIn, &e.TokensOut, &sessionID, &atStr, &e.IssueTitle, &labelsJSON); err != nil {
+			&e.Usage.InputFresh, &e.Usage.CacheWrite, &e.Usage.CacheRead,
+			&e.Usage.Output, &e.Usage.Reasoning, &source,
+			&sessionID, &atStr, &e.IssueTitle, &labelsJSON); err != nil {
 			return nil, fmt.Errorf("scan entry: %w", err)
 		}
+
+		e.Source = usage.Source(source)
 
 		e.At, err = time.Parse(time.RFC3339, atStr)
 		if err != nil {
@@ -523,7 +539,7 @@ func (s *SQLiteStore) UpdateSessionAnnotations(
 
 func (s *SQLiteStore) ListIssues(ctx context.Context, filter usage.Filter) ([]usage.TrackedIssue, error) {
 	query := `
-		SELECT ue.repo, ue.issue_num, ue.model, SUM(ue.tokens_in), SUM(ue.tokens_out),
+		SELECT ue.repo, ue.issue_num, ue.model, SUM(ue.input_fresh), SUM(ue.cache_write), SUM(ue.cache_read), SUM(ue.output), SUM(ue.reasoning),
 		       COALESCE(ic.title, ''), COALESCE(ic.labels, '[]'), ib.budget
 		FROM usage_entries ue
 		LEFT JOIN issue_cache ic ON ic.repo = ue.repo AND ic.issue_num = ue.issue_num
@@ -569,10 +585,13 @@ func (s *SQLiteStore) ListIssues(ctx context.Context, filter usage.Filter) ([]us
 
 	for rows.Next() {
 		var repo, model, title, labelsJSON string
-		var issueNum, tokensIn, tokensOut int
+		var issueNum int
+		var u usage.Usage
 		var budget sql.NullFloat64
 
-		if err = rows.Scan(&repo, &issueNum, &model, &tokensIn, &tokensOut, &title, &labelsJSON, &budget); err != nil {
+		if err = rows.Scan(&repo, &issueNum, &model,
+			&u.InputFresh, &u.CacheWrite, &u.CacheRead, &u.Output, &u.Reasoning,
+			&title, &labelsJSON, &budget); err != nil {
 			return nil, fmt.Errorf("scan issue: %w", err)
 		}
 
@@ -593,10 +612,9 @@ func (s *SQLiteStore) ListIssues(ctx context.Context, filter usage.Filter) ([]us
 			issueOrder = append(issueOrder, k)
 		}
 
-		cost, _ := s.pricing.ComputeCost(model, tokensIn, tokensOut)
-		issueMap[k].TotalTokensIn += tokensIn
-		issueMap[k].TotalTokensOut += tokensOut
-		issueMap[k].TotalCost += cost
+		res := s.pricing.ComputeCost(model, u)
+		issueMap[k].TotalUsage = issueMap[k].TotalUsage.Add(u)
+		issueMap[k].TotalCost += res.Cost
 	}
 
 	if err = rows.Err(); err != nil {
@@ -617,7 +635,7 @@ func (s *SQLiteStore) ListIssues(ctx context.Context, filter usage.Filter) ([]us
 
 func (s *SQLiteStore) GetReport(ctx context.Context, repo string, issueNum int) (*usage.Report, error) {
 	rows, err := s.db.QueryContext(ctx,
-		`SELECT agent, model, COUNT(*), SUM(tokens_in), SUM(tokens_out)
+		`SELECT agent, model, COUNT(*), SUM(input_fresh), SUM(cache_write), SUM(cache_read), SUM(output), SUM(reasoning)
 		 FROM usage_entries
 		 WHERE repo = ? AND issue_num = ?
 		 GROUP BY agent, model
@@ -636,17 +654,22 @@ func (s *SQLiteStore) GetReport(ctx context.Context, repo string, issueNum int) 
 
 	for rows.Next() {
 		var row usage.ReportRow
-		if err = rows.Scan(&row.Agent, &row.Model, &row.Calls, &row.TokensIn, &row.TokensOut); err != nil {
+		if err = rows.Scan(&row.Agent, &row.Model, &row.Calls,
+			&row.Usage.InputFresh, &row.Usage.CacheWrite, &row.Usage.CacheRead,
+			&row.Usage.Output, &row.Usage.Reasoning); err != nil {
 			return nil, fmt.Errorf("scan report row: %w", err)
 		}
 
-		cost, _ := s.pricing.ComputeCost(row.Model, row.TokensIn, row.TokensOut)
-		row.Cost = cost
+		res := s.pricing.ComputeCost(row.Model, row.Usage)
+		row.Cost = res.Cost
+		row.CostIncomplete = res.Incomplete()
+
+		saved, _ := s.pricing.CacheSavings(row.Model, row.Usage)
 
 		report.Rows = append(report.Rows, row)
-		report.TotalTokensIn += row.TokensIn
-		report.TotalTokensOut += row.TokensOut
-		report.TotalCost += cost
+		report.TotalUsage = report.TotalUsage.Add(row.Usage)
+		report.TotalCost += res.Cost
+		report.CacheSavings += saved
 	}
 
 	if err = rows.Err(); err != nil {
@@ -668,7 +691,7 @@ func (s *SQLiteStore) ListUsageOverTime(ctx context.Context, filter usage.OverTi
 	}
 
 	query := fmt.Sprintf(`
-		SELECT %s as period, model, SUM(tokens_in), SUM(tokens_out)
+		SELECT %s as period, model, SUM(input_fresh), SUM(cache_write), SUM(cache_read), SUM(output), SUM(reasoning)
 		FROM usage_entries
 		WHERE 1=1`, periodExpr)
 	args := []any{}
@@ -714,10 +737,9 @@ func (s *SQLiteStore) ListUsageOverTime(ctx context.Context, filter usage.OverTi
 	// Aggregate rows by period, computing cost per model then summing.
 	type periodKey = string
 	type periodData struct {
-		date      time.Time
-		tokensIn  int
-		tokensOut int
-		cost      float64
+		date  time.Time
+		usage usage.Usage
+		cost  float64
 	}
 
 	periodMap := make(map[periodKey]*periodData)
@@ -725,9 +747,10 @@ func (s *SQLiteStore) ListUsageOverTime(ctx context.Context, filter usage.OverTi
 
 	for rows.Next() {
 		var period, model string
-		var tokensIn, tokensOut int
+		var u usage.Usage
 
-		if err = rows.Scan(&period, &model, &tokensIn, &tokensOut); err != nil {
+		if err = rows.Scan(&period, &model,
+			&u.InputFresh, &u.CacheWrite, &u.CacheRead, &u.Output, &u.Reasoning); err != nil {
 			return nil, fmt.Errorf("scan usage point: %w", err)
 		}
 
@@ -741,10 +764,9 @@ func (s *SQLiteStore) ListUsageOverTime(ctx context.Context, filter usage.OverTi
 			periodOrder = append(periodOrder, period)
 		}
 
-		cost, _ := s.pricing.ComputeCost(model, tokensIn, tokensOut)
-		periodMap[period].tokensIn += tokensIn
-		periodMap[period].tokensOut += tokensOut
-		periodMap[period].cost += cost
+		res := s.pricing.ComputeCost(model, u)
+		periodMap[period].usage = periodMap[period].usage.Add(u)
+		periodMap[period].cost += res.Cost
 	}
 
 	if err = rows.Err(); err != nil {
@@ -755,10 +777,9 @@ func (s *SQLiteStore) ListUsageOverTime(ctx context.Context, filter usage.OverTi
 	for _, period := range periodOrder {
 		d := periodMap[period]
 		points = append(points, usage.Point{
-			Date:      d.date,
-			TokensIn:  d.tokensIn,
-			TokensOut: d.tokensOut,
-			Cost:      d.cost,
+			Date:  d.date,
+			Usage: d.usage,
+			Cost:  d.cost,
 		})
 	}
 

@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"io"
 	"strings"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 
 	"github.com/cdimonaco/tokenpile/internal/provider"
 	"github.com/cdimonaco/tokenpile/internal/store"
+	"github.com/cdimonaco/tokenpile/internal/usage"
 )
 
 func reportCommand(s store.Store) *cli.Command {
@@ -31,6 +33,10 @@ func reportCommand(s store.Store) *cli.Command {
 			&cli.BoolFlag{
 				Name:  "sessions",
 				Usage: "show per-session breakdown instead of aggregated summary",
+			},
+			&cli.BoolFlag{
+				Name:  "detail",
+				Usage: "show the per-tier token and cost breakdown",
 			},
 		},
 		Action: func(c *cli.Context) error {
@@ -73,27 +79,8 @@ func reportCommand(s store.Store) *cli.Command {
 				}
 			}
 
-			fmt.Fprintln(c.App.Writer)
-			fmt.Fprintf(c.App.Writer, "%-16s %-24s %-8s %-12s %-12s %s\n",
-				"Agent", "Model", "Calls", "Tokens In", "Tokens Out", "Cost")
-			fmt.Fprintf(
-				c.App.Writer,
-				"%s\n",
-				"--------------------------------------------------------------------------------",
-			)
+			printReportTable(c.App.Writer, report, c.Bool("detail"))
 
-			for _, row := range report.Rows {
-				fmt.Fprintf(c.App.Writer, "%-16s %-24s %-8d %-12d %-12d $%.6f\n",
-					row.Agent, row.Model, row.Calls, row.TokensIn, row.TokensOut, row.Cost)
-			}
-
-			fmt.Fprintf(
-				c.App.Writer,
-				"%s\n",
-				"--------------------------------------------------------------------------------",
-			)
-			fmt.Fprintf(c.App.Writer, "%-41s %-12d %-12d $%.6f\n",
-				"Total", report.TotalTokensIn, report.TotalTokensOut, report.TotalCost)
 			fmt.Fprintf(c.App.Writer, "\nWall-clock time: %s\n", report.TotalTime.Round(1000000000))
 
 			budget, budgetErr := s.GetBudget(ctx, repo, issueNum)
@@ -160,4 +147,89 @@ func printSessionsReport(c *cli.Context, s store.Store, repo string, issueNum in
 	}
 
 	return nil
+}
+
+func anyIncomplete(rows []usage.ReportRow) bool {
+	for _, row := range rows {
+		if row.CostIncomplete {
+			return true
+		}
+	}
+
+	return false
+}
+
+// printTierDetail shows where the tokens and the money actually went. The two
+// are not the same: cached reads dominate the token count while contributing a
+// fraction of the cost, and output is the reverse.
+func printTierDetail(w io.Writer, report *usage.Report) {
+	u := report.TotalUsage
+
+	tiers := []struct {
+		name   string
+		tokens int
+	}{
+		{"input (fresh)", u.InputFresh},
+		{"cache write", u.CacheWrite},
+		{"cache read", u.CacheRead},
+		{"output", u.Output},
+	}
+
+	total := u.TotalTokens()
+
+	fmt.Fprintf(w, "\n%-16s %14s %9s\n", "Tier", "Tokens", "% tokens")
+	fmt.Fprintln(w, "-----------------------------------------")
+
+	for _, t := range tiers {
+		pct := 0.0
+		if total > 0 {
+			pct = float64(t.tokens) / float64(total) * 100
+		}
+
+		fmt.Fprintf(w, "%-16s %14d %8.1f%%\n", t.name, t.tokens, pct)
+	}
+
+	if u.Reasoning > 0 {
+		fmt.Fprintf(w, "%-16s %14d %9s\n", "  of which reasoning", u.Reasoning, "(in output)")
+	}
+}
+
+// printReportTable renders the aggregated breakdown. Cache savings appear by
+// default because that is the figure worth seeing every time; the per-tier table
+// is diagnostics and stays behind --detail.
+func printReportTable(w io.Writer, report *usage.Report, detail bool) {
+	const rule = "--------------------------------------------------------------------------------"
+
+	fmt.Fprintln(w)
+	fmt.Fprintf(w, "%-16s %-24s %-8s %-12s %-12s %s\n",
+		"Agent", "Model", "Calls", "Tokens In", "Tokens Out", "Cost")
+	fmt.Fprintf(w, "%s\n", rule)
+
+	for _, row := range report.Rows {
+		marker := ""
+		if row.CostIncomplete {
+			marker = " *"
+		}
+
+		fmt.Fprintf(w, "%-16s %-24s %-8d %-12d %-12d $%.6f%s\n",
+			row.Agent, row.Model, row.Calls,
+			row.Usage.TotalInput(), row.Usage.Output, row.Cost, marker)
+	}
+
+	fmt.Fprintf(w, "%s\n", rule)
+	fmt.Fprintf(w, "%-41s %-12d %-12d $%.6f\n",
+		"Total", report.TotalUsage.TotalInput(), report.TotalUsage.Output, report.TotalCost)
+
+	if anyIncomplete(report.Rows) {
+		fmt.Fprintln(w,
+			"\n* cost incomplete: cache tokens present for a model with no cache rate configured")
+	}
+
+	if report.CacheSavings > 0 {
+		fmt.Fprintf(w, "\nSaved by prompt caching: $%.6f\n", report.CacheSavings)
+	}
+
+	if detail {
+		printTierDetail(w, report)
+	}
 }

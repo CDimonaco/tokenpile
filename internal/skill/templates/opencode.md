@@ -3,7 +3,7 @@ name: tokenpile
 description: Track LLM token usage and cost per GitHub issue. Use after any response where you did meaningful work to log token usage, and whenever the user asks about token usage, cost, sessions, or spending budget for an issue.
 ---
 
-<!-- tokenpile-skill-version: 4 -->
+<!-- tokenpile-skill-version: 5 -->
 
 # tokenpile
 
@@ -18,8 +18,8 @@ tokenpile log \
   --issue <issue-number> \
   --agent opencode \
   --model <model-id> \
-  --tokens-in <input-tokens> \
-  --tokens-out <output-tokens> \
+  --input <input-tokens> \
+  --output <output-tokens> \
   --note "<one-line summary of what was done>" \
   --tag <tag> \
   [--repo owner/repo]
@@ -28,9 +28,10 @@ tokenpile log \
 **Parameters:**
 - `--issue`: GitHub issue number for the current task. Ask the user if unknown.
 - `--agent`: always `opencode`
-- `--model`: the model currently in use (e.g. `claude-sonnet-4-6`, `gpt-4o`, `o3`). Use the exact model identifier configured in opencode.
-- `--tokens-in` / `--tokens-out`: estimate (~4 chars per token). For `--tokens-in`, estimate total context for this turn (conversation history + files read + tool outputs). For `--tokens-out`, estimate tokens in your response. Approximate counts are acceptable. Log automatically without asking the user.
-- `--note`: one-line description of what was done in this response (max 100 chars). Always include.
+- `--model`: current model, e.g. `claude-sonnet-4-6`, `claude-opus-4-8`, `claude-haiku-4-5`
+- `--input` / `--output`: your best rough figure for this turn. These are recorded as **estimated**, and they are known to be unreliable: you cannot see your own context window, tool definitions or prompt cache, and the cache alone routinely accounts for the large majority of tokens actually billed. Do not attempt a character-count estimate of your whole context — pass what you can reasonably state and leave the rest at zero.
+- `--cache-write` / `--cache-read` / `--reasoning`: leave unset. These tiers are not observable from inside a turn.
+- `--note`: one-line description of what was done in this response (max 100 chars). Example: `"refactored auth middleware"`, `"fixed unicode bug in lexer"`. Always include.
 - `--tag`: one or more tags from this vocabulary (repeat the flag for multiple): `refactor`, `debug`, `feature`, `test`, `docs`, `spike`, `review`. Choose all that apply.
 - `--repo`: optional if running inside a git repo with a GitHub remote
 

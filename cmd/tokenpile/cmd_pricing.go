@@ -59,6 +59,14 @@ func pricingCommands(loader *pricing.Loader, overridePath string) *cli.Command {
 						Usage:    "output price per million tokens",
 						Required: true,
 					},
+					&cli.Float64Flag{
+						Name:  "cache-read",
+						Usage: "cached input price per million tokens",
+					},
+					&cli.Float64Flag{
+						Name:  "cache-write",
+						Usage: "cache write price per million tokens",
+					},
 				},
 				Action: func(c *cli.Context) error {
 					model := c.Args().First()
@@ -66,15 +74,26 @@ func pricingCommands(loader *pricing.Loader, overridePath string) *cli.Command {
 						return errors.New("model name is required")
 					}
 
-					inPrice := c.Float64("in")
-					outPrice := c.Float64("out")
+					price := pricing.ModelPrice{
+						InputPerMillion:      c.Float64("in"),
+						OutputPerMillion:     c.Float64("out"),
+						CacheReadPerMillion:  c.Float64("cache-read"),
+						CacheWritePerMillion: c.Float64("cache-write"),
+					}
 
-					if err := loader.SetOverride(overridePath, model, inPrice, outPrice); err != nil {
+					if err := loader.SetOverride(overridePath, model, price); err != nil {
 						return fmt.Errorf("set pricing: %w", err)
 					}
 
-					fmt.Fprintf(c.App.Writer, "Updated pricing for %s: in=%.4f out=%.4f (per million tokens)\n",
-						model, inPrice, outPrice)
+					fmt.Fprintf(
+						c.App.Writer,
+						"Updated pricing for %s: in=%.4f out=%.4f cache-read=%.4f cache-write=%.4f (per million tokens)\n",
+						model,
+						price.InputPerMillion,
+						price.OutputPerMillion,
+						price.CacheReadPerMillion,
+						price.CacheWritePerMillion,
+					)
 
 					return nil
 				},

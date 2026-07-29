@@ -1,79 +1,135 @@
+# Rates are US dollars per million tokens, taken from each provider's published
+# price list.
+#
+# cache_read_per_million and cache_write_per_million are declared only where the
+# provider publishes a figure for that model. A model that omits them and then
+# sees cache tokens warns and leaves those tokens out of the cost, which is
+# preferable to charging cache reads at the full input rate (an overstatement of
+# roughly 10x) or assuming one provider's ratio applies to another.
+#
+# Anthropic: cache reads bill at 0.1x input, 5-minute cache writes at 1.25x.
+# Google:    cache reads bill at 0.1x input; writes carry no premium over input,
+#            but hourly cache storage is billed separately and is not modelled here.
+# OpenAI:    cached input prices are per-model; cache write charges are published
+#            only for some models and are left undeclared for the rest.
 models:
   # Anthropic
   claude-haiku-4-5:
     input_per_million: 1.00
     output_per_million: 5.00
+    cache_read_per_million: 0.10
+    cache_write_per_million: 1.25
   claude-sonnet-4-6:
     input_per_million: 3.00
     output_per_million: 15.00
+    cache_read_per_million: 0.30
+    cache_write_per_million: 3.75
   claude-sonnet-5:
     # Introductory pricing through 2026-08-31; standard rate is 3.00/15.00 after.
     input_per_million: 2.00
     output_per_million: 10.00
+    cache_read_per_million: 0.20
+    cache_write_per_million: 2.50
   claude-opus-4-7:
     input_per_million: 5.00
     output_per_million: 25.00
+    cache_read_per_million: 0.50
+    cache_write_per_million: 6.25
   claude-opus-4-8:
     input_per_million: 5.00
     output_per_million: 25.00
+    cache_read_per_million: 0.50
+    cache_write_per_million: 6.25
+  claude-opus-5:
+    # Released at Opus 4.8 rates. Fast mode is billed at 10.00/50.00 and is not
+    # distinguishable from the model id alone, so it is not modelled separately.
+    input_per_million: 5.00
+    output_per_million: 25.00
+    cache_read_per_million: 0.50
+    cache_write_per_million: 6.25
   claude-fable-5:
     input_per_million: 10.00
     output_per_million: 50.00
+    cache_read_per_million: 1.00
+    cache_write_per_million: 12.50
 
   # OpenAI
   gpt-4o:
     input_per_million: 2.50
     output_per_million: 10.00
+    cache_read_per_million: 1.25
   gpt-4o-mini:
     input_per_million: 0.15
     output_per_million: 0.60
+    cache_read_per_million: 0.075
   gpt-4-turbo:
+    # No cached input price published for this model.
     input_per_million: 10.00
     output_per_million: 30.00
   o1:
     input_per_million: 15.00
     output_per_million: 60.00
+    cache_read_per_million: 7.50
   o3-mini:
     input_per_million: 1.10
     output_per_million: 4.40
+    cache_read_per_million: 0.55
   gpt-5.5:
     input_per_million: 5.00
     output_per_million: 30.00
+    cache_read_per_million: 0.50
   gpt-5.4:
     input_per_million: 2.50
     output_per_million: 15.00
+    cache_read_per_million: 0.25
   gpt-5.4-mini:
+    # No cached input price published for the mini/nano/pro variants.
     input_per_million: 0.75
     output_per_million: 4.50
   gpt-5.4-nano:
     input_per_million: 0.20
     output_per_million: 1.25
   gpt-5.4-pro:
+    # Pro variants are documented as offering no cached-input discount.
     input_per_million: 30.00
     output_per_million: 180.00
 
   # Google
   gemini-1.5-pro:
+    # Retired from the current price list; cache rates not published there.
     input_per_million: 1.25
     output_per_million: 5.00
   gemini-1.5-flash:
     input_per_million: 0.075
     output_per_million: 0.30
   gemini-2.5-pro:
+    # Prices shown are the <= 200k token tier; caching is tiered without a flat
+    # published figure, so cache rates are left undeclared.
     input_per_million: 1.25
     output_per_million: 10.00
   gemini-2.5-flash:
     input_per_million: 0.30
     output_per_million: 2.50
+    cache_read_per_million: 0.03
+    cache_write_per_million: 0.30
   gemini-2.5-flash-lite:
     input_per_million: 0.10
     output_per_million: 0.40
+    cache_read_per_million: 0.01
+    cache_write_per_million: 0.10
   gemini-3.1-pro-preview:
+    # Prices shown are the <= 200k token tier.
     input_per_million: 2.00
     output_per_million: 12.00
+    cache_read_per_million: 0.20
+    cache_write_per_million: 2.00
   gemini-3.5-flash:
     input_per_million: 1.50
     output_per_million: 9.00
+    cache_read_per_million: 0.15
+    cache_write_per_million: 1.50
   gemini-3.1-flash-lite:
     input_per_million: 0.25
     output_per_million: 1.50
+    cache_read_per_million: 0.025
+    cache_write_per_million: 0.25

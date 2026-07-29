@@ -64,8 +64,14 @@ Four tiers make positional parameters unreadable and trivially transposable at a
 **7. Report defaults to total cost and cache savings; tiers behind `--detail`.**
 Cache savings — what the same tokens would have cost at the fresh input rate, minus what they cost — is the line worth seeing every time. The four-tier table is diagnostics. Putting both on screen by default makes the common case noisy for the sake of the rare one.
 
-**8. Export goes to 4.0 and drops nothing on the read side.**
-Entry objects gain per-tier fields and `source`; `tokens_in`/`tokens_out` disappear rather than being retained as derived sums, since keeping them would invite consumers to depend on a number with no owner. Verification of 2.0 and 3.0 documents is kept: that code exists, is tested, and reads old files that may still exist on disk — including `reset` backups written before this change.
+**8. Export goes to 4.0 and drops verification of every earlier version.**
+Entry objects gain per-tier fields and `source`; `tokens_in`/`tokens_out` disappear rather than being retained as derived sums, since keeping them would invite consumers to depend on a number with no owner.
+
+Keeping 2.0 and 3.0 verification looked free and is not. `documentDigest` canonicalizes the *parsed* `Document`, not the bytes on disk, so the digest depends on the fields the Go types define today. A 3.0 entry parsed by the new types loses `tokens_in`/`tokens_out` and gains five tier fields as zeros, which changes the canonical form and invalidates the signature. Verified empirically before deciding.
+
+Two ways out were available: verify from raw bytes, which would make verification independent of the Go types for good, or keep a legacy entry type per schema version. Both were rejected in favour of dropping pre-4.0 verification outright, on the owner's decision that signature compatibility with old documents is not wanted. The raw-bytes approach remains the right fix if that ever changes.
+
+Worth recording: the 2.0 path survived earlier schema changes by accident, not design. Signing a Go value rather than a byte sequence means every schema change silently breaks verification of everything written before it.
 
 **9. The store is recreated, not migrated.**
 The `migrations` slice of additive `ALTER TABLE` statements stays for future additive changes, but this change edits `CREATE TABLE` directly. With one row in existence, a migration path would be untested code written to serve nobody.

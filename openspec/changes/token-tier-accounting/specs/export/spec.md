@@ -44,16 +44,24 @@ Sessions and budgets SHALL follow the same repo/issue scope as the entries filte
 
 ## ADDED Requirements
 
-### Requirement: Verification of pre-4.0 exports
+### Requirement: Only the current schema version verifies
 
-`tokenpile export verify` SHALL continue to verify documents carrying `schema_version` `2.0` and `3.0` under the rules those versions were written with, reporting the version it applied. Older documents exist on disk — including `reset` backups — and the verification code for them is already implemented and tested.
+`tokenpile export verify` SHALL verify documents carrying `schema_version` `4.0` and SHALL reject every other version with a clear error naming the version found. Pre-4.0 documents are not verifiable.
 
-Writing pre-4.0 documents SHALL NOT be supported: `tokenpile export` always emits 4.0.
+The signature is computed over the canonical JSON of the parsed document, so the digest depends on the fields the current types define. A document written under an earlier schema loses the fields that schema had and gains the current ones as zero values, which changes the canonical form and therefore the digest. Verifying old versions would require either keeping a parsing type per schema version or verifying from raw bytes; neither is worth carrying for documents nobody holds.
 
-#### Scenario: A 3.0 document still verifies
+#### Scenario: A pre-4.0 document is rejected
 - **WHEN** `tokenpile export verify --file <3.0 document>` is called
-- **THEN** verification succeeds and the output states the document is schema 3.0
+- **THEN** the command exits non-zero with an error naming the unsupported schema version
 
-#### Scenario: Export never writes an old version
+#### Scenario: Export writes only the current version
 - **WHEN** `tokenpile export` is called
 - **THEN** the document carries `schema_version` `4.0` with no option to emit an earlier version
+
+## REMOVED Requirements
+
+### Requirement: Verification of legacy 2.0 exports
+
+**Reason**: Signature compatibility with pre-4.0 documents is deliberately dropped. The 2.0 rule signed entries only, and it survived earlier schema changes by accident rather than by design; retaining it would mean carrying a second digest path and a legacy entry type for documents that no longer exist.
+
+**Migration**: None. Any 2.0 or 3.0 document still on disk becomes unverifiable; its contents remain readable as plain JSON.

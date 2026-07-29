@@ -120,15 +120,8 @@ func runVerify(c *cli.Context) error {
 		return fmt.Errorf("verification failed: %w", err)
 	}
 
-	if res.Legacy {
-		fmt.Fprintf(c.App.Writer, "OK: signature valid (schema %s, legacy), %d entries\n",
-			res.SchemaVersion, len(doc.Entries))
-		fmt.Fprintln(c.App.Writer,
-			"WARNING: schema 2.0 signatures cover entries only; sessions and budgets are not protected")
-	} else {
-		fmt.Fprintf(c.App.Writer, "OK: signature valid (schema %s, full document), %d entries\n",
-			res.SchemaVersion, len(doc.Entries))
-	}
+	fmt.Fprintf(c.App.Writer, "OK: signature valid (schema %s, full document), %d entries\n",
+		res.SchemaVersion, len(doc.Entries))
 
 	if originChecked {
 		fmt.Fprintln(c.App.Writer, "Origin verified: public key matches the expected key")

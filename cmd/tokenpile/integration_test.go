@@ -69,8 +69,8 @@ func TestIntegration_Log_CreatesSessionAndEntry(t *testing.T) {
 		"--issue", "1",
 		"--agent", "claude-code",
 		"--model", "claude-sonnet-4-6",
-		"--tokens-in", "1000",
-		"--tokens-out", "500",
+		"--input", "1000",
+		"--output", "500",
 		"--repo", "owner/repo",
 	)
 	require.NoError(t, err)
@@ -83,8 +83,8 @@ func TestIntegration_Log_CreatesSessionAndEntry(t *testing.T) {
 	report, err := s.GetReport(ctx, "owner/repo", 1)
 	require.NoError(t, err)
 	require.Len(t, report.Rows, 1)
-	assert.Equal(t, 1000, report.Rows[0].TokensIn)
-	assert.Equal(t, 500, report.Rows[0].TokensOut)
+	assert.Equal(t, 1000, report.Rows[0].Usage.TotalInput())
+	assert.Equal(t, 500, report.Rows[0].Usage.Output)
 }
 
 func TestIntegration_Log_RejectsNegativeTokens(t *testing.T) {
@@ -96,14 +96,14 @@ func TestIntegration_Log_RejectsNegativeTokens(t *testing.T) {
 		want string
 	}{
 		{
-			name: "negative tokens-in",
-			args: []string{"--tokens-in", "-5", "--tokens-out", "500"},
-			want: "--tokens-in must be zero or greater",
+			name: "negative input",
+			args: []string{"--input", "-5", "--output", "500"},
+			want: "--input must be zero or greater",
 		},
 		{
-			name: "negative tokens-out",
-			args: []string{"--tokens-in", "1000", "--tokens-out", "-1"},
-			want: "--tokens-out must be zero or greater",
+			name: "negative output",
+			args: []string{"--input", "1000", "--output", "-1"},
+			want: "--output must be zero or greater",
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -142,9 +142,9 @@ func TestIntegration_Log_ReuseSession(t *testing.T) {
 			"claude-code",
 			"--model",
 			"claude-sonnet-4-6",
-			"--tokens-in",
+			"--input",
 			"100",
-			"--tokens-out",
+			"--output",
 			"50",
 			"--repo",
 			"owner/repo",
@@ -162,9 +162,9 @@ func TestIntegration_Log_ReuseSession(t *testing.T) {
 		"claude-code",
 		"--model",
 		"claude-sonnet-4-6",
-		"--tokens-in",
+		"--input",
 		"200",
-		"--tokens-out",
+		"--output",
 		"100",
 		"--repo",
 		"owner/repo",
@@ -177,8 +177,8 @@ func TestIntegration_Log_ReuseSession(t *testing.T) {
 
 	report, err := s.GetReport(ctx, "owner/repo", 2)
 	require.NoError(t, err)
-	assert.Equal(t, 300, report.TotalTokensIn)
-	assert.Equal(t, 150, report.TotalTokensOut)
+	assert.Equal(t, 300, report.TotalUsage.TotalInput())
+	assert.Equal(t, 150, report.TotalUsage.Output)
 }
 
 func TestIntegration_Log_ClosesIdleSession(t *testing.T) {
@@ -211,9 +211,9 @@ func TestIntegration_Log_ClosesIdleSession(t *testing.T) {
 			"cursor",
 			"--model",
 			"gpt-4o",
-			"--tokens-in",
+			"--input",
 			"50",
-			"--tokens-out",
+			"--output",
 			"25",
 			"--repo",
 			"owner/repo",
@@ -249,9 +249,9 @@ func TestIntegration_Report_ShowsBreakdown(t *testing.T) {
 		"claude-code",
 		"--model",
 		"claude-sonnet-4-6",
-		"--tokens-in",
+		"--input",
 		"2000",
-		"--tokens-out",
+		"--output",
 		"1000",
 		"--repo",
 		"owner/repo",
@@ -266,9 +266,9 @@ func TestIntegration_Report_ShowsBreakdown(t *testing.T) {
 		"opencode",
 		"--model",
 		"gpt-4o",
-		"--tokens-in",
+		"--input",
 		"500",
-		"--tokens-out",
+		"--output",
 		"250",
 		"--repo",
 		"owner/repo",
@@ -334,9 +334,9 @@ func TestIntegration_Log_MultipleIssues(t *testing.T) {
 		"a",
 		"--model",
 		"gpt-4o",
-		"--tokens-in",
+		"--input",
 		"10",
-		"--tokens-out",
+		"--output",
 		"5",
 		"--repo",
 		"o/r",
@@ -351,9 +351,9 @@ func TestIntegration_Log_MultipleIssues(t *testing.T) {
 		"a",
 		"--model",
 		"gpt-4o",
-		"--tokens-in",
+		"--input",
 		"20",
-		"--tokens-out",
+		"--output",
 		"10",
 		"--repo",
 		"o/r",
@@ -373,8 +373,8 @@ func TestIntegration_Log_WithNoteAndTag(t *testing.T) {
 		"--issue", "20",
 		"--agent", "claude-code",
 		"--model", "claude-sonnet-4-6",
-		"--tokens-in", "1000",
-		"--tokens-out", "500",
+		"--input", "1000",
+		"--output", "500",
 		"--repo", "owner/repo",
 		"--note", "refactored auth",
 		"--tag", "refactor",
@@ -399,8 +399,8 @@ func TestIntegration_Log_NoteTruncatedOnRuneBoundary(t *testing.T) {
 		"--issue", "1",
 		"--agent", "claude-code",
 		"--model", "claude-sonnet-4-6",
-		"--tokens-in", "10",
-		"--tokens-out", "10",
+		"--input", "10",
+		"--output", "10",
 		"--repo", "owner/repo",
 		"--note", longNote,
 	))
@@ -419,13 +419,13 @@ func TestIntegration_Log_TagsAccumulate(t *testing.T) {
 
 	require.NoError(t, runLogCmd(t, s,
 		"log", "--issue", "21", "--agent", "claude-code", "--model", "claude-sonnet-4-6",
-		"--tokens-in", "100", "--tokens-out", "50", "--repo", "owner/repo",
+		"--input", "100", "--output", "50", "--repo", "owner/repo",
 		"--tag", "debug",
 	))
 
 	require.NoError(t, runLogCmd(t, s,
 		"log", "--issue", "21", "--agent", "claude-code", "--model", "claude-sonnet-4-6",
-		"--tokens-in", "200", "--tokens-out", "100", "--repo", "owner/repo",
+		"--input", "200", "--output", "100", "--repo", "owner/repo",
 		"--tag", "feature",
 	))
 
@@ -440,7 +440,7 @@ func TestIntegration_Report_Sessions(t *testing.T) {
 
 	require.NoError(t, runLogCmd(t, s,
 		"log", "--issue", "30", "--agent", "claude-code", "--model", "claude-sonnet-4-6",
-		"--tokens-in", "1000", "--tokens-out", "500", "--repo", "owner/repo",
+		"--input", "1000", "--output", "500", "--repo", "owner/repo",
 		"--note", "initial work", "--tag", "feature",
 	))
 
@@ -457,7 +457,7 @@ func TestIntegration_Report_WithBudget(t *testing.T) {
 
 	require.NoError(t, runLogCmd(t, s,
 		"log", "--issue", "40", "--agent", "claude-code", "--model", "claude-sonnet-4-6",
-		"--tokens-in", "1000", "--tokens-out", "500", "--repo", "owner/repo",
+		"--input", "1000", "--output", "500", "--repo", "owner/repo",
 	))
 
 	require.NoError(t, s.SetBudget(ctx, "owner/repo", 40, 50.00))
@@ -497,7 +497,7 @@ func TestIntegration_Export_SchemaV3_IncludesSessions(t *testing.T) {
 
 	require.NoError(t, runLogCmd(t, s,
 		"log", "--issue", "50", "--agent", "claude-code", "--model", "claude-sonnet-4-6",
-		"--tokens-in", "1000", "--tokens-out", "500", "--repo", "owner/repo",
+		"--input", "1000", "--output", "500", "--repo", "owner/repo",
 		"--note", "export test note", "--tag", "feature",
 	))
 
@@ -507,7 +507,7 @@ func TestIntegration_Export_SchemaV3_IncludesSessions(t *testing.T) {
 	var doc export.Document
 	require.NoError(t, json.Unmarshal([]byte(out), &doc))
 
-	assert.Equal(t, "3.0", doc.SchemaVersion)
+	assert.Equal(t, "4.0", doc.SchemaVersion)
 	require.Len(t, doc.Sessions, 1)
 	assert.Equal(t, 50, doc.Sessions[0].IssueNum)
 	assert.Equal(t, "export test note", doc.Sessions[0].Note)
@@ -520,7 +520,7 @@ func TestIntegration_Export_SchemaV3_IncludesBudget(t *testing.T) {
 
 	require.NoError(t, runLogCmd(t, s,
 		"log", "--issue", "51", "--agent", "claude-code", "--model", "claude-sonnet-4-6",
-		"--tokens-in", "500", "--tokens-out", "250", "--repo", "owner/repo",
+		"--input", "500", "--output", "250", "--repo", "owner/repo",
 	))
 	require.NoError(t, s.SetBudget(ctx, "owner/repo", 51, 25.00))
 
@@ -541,11 +541,11 @@ func TestIntegration_Export_Unfiltered_IncludesAllSessionsAndBudgets(t *testing.
 
 	require.NoError(t, runLogCmd(t, s,
 		"log", "--issue", "52", "--agent", "claude-code", "--model", "claude-sonnet-4-6",
-		"--tokens-in", "100", "--tokens-out", "50", "--repo", "owner/a",
+		"--input", "100", "--output", "50", "--repo", "owner/a",
 	))
 	require.NoError(t, runLogCmd(t, s,
 		"log", "--issue", "53", "--agent", "claude-code", "--model", "claude-sonnet-4-6",
-		"--tokens-in", "200", "--tokens-out", "80", "--repo", "owner/b",
+		"--input", "200", "--output", "80", "--repo", "owner/b",
 	))
 	require.NoError(t, s.SetBudget(ctx, "owner/b", 53, 25.00))
 
@@ -567,11 +567,11 @@ func TestIntegration_Export_RepoFilter_ScopesSessionsAndBudgets(t *testing.T) {
 
 	require.NoError(t, runLogCmd(t, s,
 		"log", "--issue", "1", "--agent", "claude-code", "--model", "claude-sonnet-4-6",
-		"--tokens-in", "100", "--tokens-out", "50", "--repo", "owner/a",
+		"--input", "100", "--output", "50", "--repo", "owner/a",
 	))
 	require.NoError(t, runLogCmd(t, s,
 		"log", "--issue", "2", "--agent", "claude-code", "--model", "claude-sonnet-4-6",
-		"--tokens-in", "200", "--tokens-out", "80", "--repo", "owner/b",
+		"--input", "200", "--output", "80", "--repo", "owner/b",
 	))
 	require.NoError(t, s.SetBudget(ctx, "owner/a", 1, 10.00))
 	require.NoError(t, s.SetBudget(ctx, "owner/b", 2, 20.00))
@@ -593,7 +593,7 @@ func exportToFile(t *testing.T, s *store.SQLiteStore, priv ed25519.PrivateKey) s
 
 	require.NoError(t, runLogCmd(t, s,
 		"log", "--issue", "60", "--agent", "claude-code", "--model", "claude-sonnet-4-6",
-		"--tokens-in", "100", "--tokens-out", "50", "--repo", "owner/repo",
+		"--input", "100", "--output", "50", "--repo", "owner/repo",
 		"--note", "verify test",
 	))
 
@@ -614,7 +614,7 @@ func TestIntegration_ExportVerify_Roundtrip(t *testing.T) {
 
 	out, err := runExportCmd(t, s, "export", "verify", "--file", path)
 	require.NoError(t, err)
-	assert.Contains(t, out, "OK: signature valid (schema 3.0, full document)")
+	assert.Contains(t, out, "OK: signature valid (schema 4.0, full document)")
 	assert.Contains(t, out, "Origin not verified")
 }
 
@@ -642,16 +642,6 @@ func TestIntegration_ExportVerify_TamperedSessionFails(t *testing.T) {
 	out, err := runExportCmd(t, s, "export", "verify", "--file", path)
 	require.Error(t, err)
 	assert.Contains(t, out, "INVALID")
-}
-
-func TestIntegration_ExportVerify_LegacyV2Warns(t *testing.T) {
-	s := newTestStore(t)
-
-	out, err := runExportCmd(t, s, "export", "verify",
-		"--file", filepath.Join("..", "..", "internal", "export", "testdata", "export_v2.json"))
-	require.NoError(t, err)
-	assert.Contains(t, out, "OK: signature valid (schema 2.0, legacy)")
-	assert.Contains(t, out, "WARNING")
 }
 
 func TestIntegration_ExportVerify_PubkeyMatch(t *testing.T) {
@@ -714,7 +704,7 @@ func TestIntegration_Log_IdleSessionClosed_ByResolveSession(t *testing.T) {
 	// next log call must close the idle session and open a new one
 	require.NoError(t, runLogCmd(t, s,
 		"log", "--issue", "60", "--agent", "claude-code", "--model", "claude-sonnet-4-6",
-		"--tokens-in", "100", "--tokens-out", "50", "--repo", "owner/repo",
+		"--input", "100", "--output", "50", "--repo", "owner/repo",
 	))
 
 	sessions, err := s.ListSessions(ctx, "owner/repo", 60)

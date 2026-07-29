@@ -24,9 +24,8 @@ func TestExport_RoundTrip_EmptyEntries(t *testing.T) {
 	assert.Equal(t, export.SchemaVersion, doc.SchemaVersion)
 	assert.Empty(t, doc.Entries)
 
-	res, err := export.Verify(doc)
+	_, err = export.Verify(doc)
 	require.NoError(t, err)
-	assert.False(t, res.Legacy)
 }
 
 func TestExport_RoundTrip_WithEntries(t *testing.T) {
@@ -40,20 +39,20 @@ func TestExport_RoundTrip_WithEntries(t *testing.T) {
 			IssueNum:  42,
 			Agent:     "claude-code",
 			Model:     "claude-sonnet-4-6",
-			TokensIn:  1000,
-			TokensOut: 500,
+			Usage:     usage.Usage{InputFresh: 1000, Output: 500},
+			Source:    usage.SourceEstimated,
 			SessionID: "s1",
 			At:        time.Now().UTC().Truncate(time.Second),
 		},
 		{
-			ID:        "e2",
-			Repo:      "owner/repo",
-			IssueNum:  43,
-			Agent:     "opencode",
-			Model:     "gpt-4o",
-			TokensIn:  200,
-			TokensOut: 100,
-			At:        time.Now().UTC().Truncate(time.Second),
+			ID:       "e2",
+			Repo:     "owner/repo",
+			IssueNum: 43,
+			Agent:    "opencode",
+			Model:    "gpt-4o",
+			Usage:    usage.Usage{InputFresh: 200, Output: 100},
+			Source:   usage.SourceEstimated,
+			At:       time.Now().UTC().Truncate(time.Second),
 		},
 	}
 
@@ -70,13 +69,22 @@ func TestExport_Verify_TamperedEntries(t *testing.T) {
 	require.NoError(t, err)
 
 	entries := []usage.Entry{
-		{ID: "e1", Repo: "o/r", IssueNum: 1, Agent: "a", Model: "m", TokensIn: 100, TokensOut: 50, At: time.Now()},
+		{
+			ID:       "e1",
+			Repo:     "o/r",
+			IssueNum: 1,
+			Agent:    "a",
+			Model:    "m",
+			Usage:    usage.Usage{InputFresh: 100, Output: 50},
+			Source:   usage.SourceEstimated,
+			At:       time.Now(),
+		},
 	}
 
 	doc, err := export.Build(entries, nil, nil, priv, "test")
 	require.NoError(t, err)
 
-	doc.Entries[0].TokensIn = 99999
+	doc.Entries[0].CacheRead = 99999
 
 	_, err = export.Verify(doc)
 	assert.Error(t, err)
@@ -103,7 +111,16 @@ func TestExport_Verify_WrongPublicKey(t *testing.T) {
 	require.NoError(t, err)
 
 	entries := []usage.Entry{
-		{ID: "e1", Repo: "o/r", IssueNum: 1, Agent: "a", Model: "m", TokensIn: 100, TokensOut: 50, At: time.Now()},
+		{
+			ID:       "e1",
+			Repo:     "o/r",
+			IssueNum: 1,
+			Agent:    "a",
+			Model:    "m",
+			Usage:    usage.Usage{InputFresh: 100, Output: 50},
+			Source:   usage.SourceEstimated,
+			At:       time.Now(),
+		},
 	}
 
 	doc, err := export.Build(entries, nil, nil, priv1, "test")

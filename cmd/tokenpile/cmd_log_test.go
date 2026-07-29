@@ -74,8 +74,8 @@ func TestLog_NoActiveSession_StartsNew(t *testing.T) {
 		"--issue", "42",
 		"--agent", "claude-code",
 		"--model", "claude-sonnet-4-6",
-		"--tokens-in", "1000",
-		"--tokens-out", "500",
+		"--input", "1000",
+		"--output", "500",
 		"--repo", "owner/repo",
 	)
 
@@ -113,8 +113,8 @@ func TestLog_ReuseActiveSession(t *testing.T) {
 		"--issue", "7",
 		"--agent", "opencode",
 		"--model", "gpt-4o",
-		"--tokens-in", "200",
-		"--tokens-out", "100",
+		"--input", "200",
+		"--output", "100",
 		"--repo", "owner/repo",
 	)
 
@@ -159,8 +159,8 @@ func TestLog_ClosesIdleSession_StartsNew(t *testing.T) {
 		"--issue", "99",
 		"--agent", "cursor",
 		"--model", "claude-opus-4-7",
-		"--tokens-in", "300",
-		"--tokens-out", "150",
+		"--input", "300",
+		"--output", "150",
 		"--repo", "owner/repo",
 	)
 

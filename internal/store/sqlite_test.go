@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/cdimonaco/tokenpile/internal/pricing"
 	"github.com/cdimonaco/tokenpile/internal/store"
 	"github.com/cdimonaco/tokenpile/internal/usage"
 )
@@ -18,8 +19,15 @@ type fixedPricer struct {
 	pricePerMOut float64
 }
 
-func (f fixedPricer) ComputeCost(_ string, tokensIn, tokensOut int) (float64, bool) {
-	return float64(tokensIn)/1_000_000*f.pricePerMIn + float64(tokensOut)/1_000_000*f.pricePerMOut, true
+func (f fixedPricer) ComputeCost(_ string, u usage.Usage) pricing.CostResult {
+	cost := float64(u.TotalInput())/1_000_000*f.pricePerMIn +
+		float64(u.Output)/1_000_000*f.pricePerMOut
+
+	return pricing.CostResult{Cost: cost, Known: true}
+}
+
+func (f fixedPricer) CacheSavings(_ string, _ usage.Usage) (float64, bool) {
+	return 0, true
 }
 
 func newTestStore(t *testing.T) *store.SQLiteStore {
@@ -38,12 +46,12 @@ func TestSQLiteStore_LogUsage(t *testing.T) {
 	ctx := context.Background()
 
 	entry := usage.Entry{
-		Repo:      "owner/repo",
-		IssueNum:  42,
-		Agent:     "claude-code",
-		Model:     "claude-sonnet-4-6",
-		TokensIn:  1000,
-		TokensOut: 500,
+		Repo:     "owner/repo",
+		IssueNum: 42,
+		Agent:    "claude-code",
+		Model:    "claude-sonnet-4-6",
+		Usage:    usage.Usage{InputFresh: 1000, Output: 500},
+		Source:   usage.SourceEstimated,
 	}
 
 	err := s.LogUsage(ctx, entry)
@@ -53,8 +61,8 @@ func TestSQLiteStore_LogUsage(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, issues, 1)
 	assert.Equal(t, 42, issues[0].IssueNum)
-	assert.Equal(t, 1000, issues[0].TotalTokensIn)
-	assert.Equal(t, 500, issues[0].TotalTokensOut)
+	assert.Equal(t, 1000, issues[0].TotalUsage.TotalInput())
+	assert.Equal(t, 500, issues[0].TotalUsage.Output)
 }
 
 func TestSQLiteStore_LogUsage_SetsTimestamp(t *testing.T) {
@@ -105,9 +113,30 @@ func TestSQLiteStore_GetReport_ByAgentModel(t *testing.T) {
 	ctx := context.Background()
 
 	entries := []usage.Entry{
-		{Repo: "o/r", IssueNum: 1, Agent: "claude-code", Model: "claude-sonnet-4-6", TokensIn: 1000, TokensOut: 200},
-		{Repo: "o/r", IssueNum: 1, Agent: "opencode", Model: "gpt-4o", TokensIn: 500, TokensOut: 100},
-		{Repo: "o/r", IssueNum: 1, Agent: "claude-code", Model: "claude-sonnet-4-6", TokensIn: 2000, TokensOut: 400},
+		{
+			Repo:     "o/r",
+			IssueNum: 1,
+			Agent:    "claude-code",
+			Model:    "claude-sonnet-4-6",
+			Usage:    usage.Usage{InputFresh: 1000, Output: 200},
+			Source:   usage.SourceEstimated,
+		},
+		{
+			Repo:     "o/r",
+			IssueNum: 1,
+			Agent:    "opencode",
+			Model:    "gpt-4o",
+			Usage:    usage.Usage{InputFresh: 500, Output: 100},
+			Source:   usage.SourceEstimated,
+		},
+		{
+			Repo:     "o/r",
+			IssueNum: 1,
+			Agent:    "claude-code",
+			Model:    "claude-sonnet-4-6",
+			Usage:    usage.Usage{InputFresh: 2000, Output: 400},
+			Source:   usage.SourceEstimated,
+		},
 	}
 
 	for _, e := range entries {
@@ -117,8 +146,8 @@ func TestSQLiteStore_GetReport_ByAgentModel(t *testing.T) {
 	report, err := s.GetReport(ctx, "o/r", 1)
 	require.NoError(t, err)
 	require.Len(t, report.Rows, 2)
-	assert.Equal(t, 3500, report.TotalTokensIn)
-	assert.Equal(t, 700, report.TotalTokensOut)
+	assert.Equal(t, 3500, report.TotalUsage.TotalInput())
+	assert.Equal(t, 700, report.TotalUsage.Output)
 }
 
 func TestSQLiteStore_GetReport_EmptyIssue(t *testing.T) {
@@ -128,7 +157,7 @@ func TestSQLiteStore_GetReport_EmptyIssue(t *testing.T) {
 	report, err := s.GetReport(ctx, "o/r", 99)
 	require.NoError(t, err)
 	assert.Empty(t, report.Rows)
-	assert.Equal(t, 0, report.TotalTokensIn)
+	assert.Equal(t, 0, report.TotalUsage.TotalInput())
 }
 
 func TestSQLiteStore_ListIssues_MultipleIssues(t *testing.T) {
@@ -138,7 +167,8 @@ func TestSQLiteStore_ListIssues_MultipleIssues(t *testing.T) {
 	for _, num := range []int{1, 2, 3} {
 		require.NoError(t, s.LogUsage(ctx, usage.Entry{
 			Repo: "o/r", IssueNum: num, Agent: "a", Model: "m",
-			TokensIn: 100 * num, TokensOut: 50 * num,
+			Usage:  usage.Usage{InputFresh: 100 * num, Output: 50 * num},
+			Source: usage.SourceEstimated,
 		}))
 	}
 
@@ -153,11 +183,31 @@ func TestSQLiteStore_ListIssues_FilterByAgent(t *testing.T) {
 
 	require.NoError(
 		t,
-		s.LogUsage(ctx, usage.Entry{Repo: "o/r", IssueNum: 1, Agent: "claude-code", Model: "m", TokensIn: 100}),
+		s.LogUsage(
+			ctx,
+			usage.Entry{
+				Repo:     "o/r",
+				IssueNum: 1,
+				Agent:    "claude-code",
+				Model:    "m",
+				Usage:    usage.Usage{InputFresh: 100},
+				Source:   usage.SourceEstimated,
+			},
+		),
 	)
 	require.NoError(
 		t,
-		s.LogUsage(ctx, usage.Entry{Repo: "o/r", IssueNum: 2, Agent: "opencode", Model: "m", TokensIn: 200}),
+		s.LogUsage(
+			ctx,
+			usage.Entry{
+				Repo:     "o/r",
+				IssueNum: 2,
+				Agent:    "opencode",
+				Model:    "m",
+				Usage:    usage.Usage{InputFresh: 200},
+				Source:   usage.SourceEstimated,
+			},
+		),
 	)
 
 	issues, err := s.ListIssues(ctx, usage.Filter{Repo: "o/r", Agent: "claude-code"})
@@ -176,7 +226,7 @@ func TestSQLiteStore_ListUsageOverTime_DayGranularity(t *testing.T) {
 		at := today.AddDate(0, 0, i)
 		require.NoError(t, s.LogUsage(ctx, usage.Entry{
 			Repo: "o/r", IssueNum: 1, Agent: "a", Model: "m",
-			TokensIn: 100, TokensOut: 50, At: at,
+			Usage: usage.Usage{InputFresh: 100, Output: 50}, Source: usage.SourceEstimated, At: at,
 		}))
 	}
 
@@ -188,8 +238,8 @@ func TestSQLiteStore_ListUsageOverTime_DayGranularity(t *testing.T) {
 	assert.Len(t, points, 3)
 
 	for _, p := range points {
-		assert.Equal(t, 100, p.TokensIn)
-		assert.Equal(t, 50, p.TokensOut)
+		assert.Equal(t, 100, p.Usage.TotalInput())
+		assert.Equal(t, 50, p.Usage.Output)
 	}
 }
 
@@ -205,12 +255,12 @@ func TestSQLiteStore_ListUsageOverTime_WeekGranularity(t *testing.T) {
 	for _, at := range []time.Time{monday, wednesday} {
 		require.NoError(t, s.LogUsage(ctx, usage.Entry{
 			Repo: "o/r", IssueNum: 1, Agent: "a", Model: "m",
-			TokensIn: 100, TokensOut: 50, At: at,
+			Usage: usage.Usage{InputFresh: 100, Output: 50}, Source: usage.SourceEstimated, At: at,
 		}))
 	}
 	require.NoError(t, s.LogUsage(ctx, usage.Entry{
 		Repo: "o/r", IssueNum: 1, Agent: "a", Model: "m",
-		TokensIn: 200, TokensOut: 80, At: nextMonday,
+		Usage: usage.Usage{InputFresh: 200, Output: 80}, Source: usage.SourceEstimated, At: nextMonday,
 	}))
 
 	points, err := s.ListUsageOverTime(ctx, usage.OverTimeFilter{
@@ -226,8 +276,8 @@ func TestSQLiteStore_ListUsageOverTime_WeekGranularity(t *testing.T) {
 		assert.Equal(t, 1, int(p.Date.Weekday()), "week point must be a Monday")
 	}
 
-	assert.Equal(t, 200, points[0].TokensIn) // monday + wednesday
-	assert.Equal(t, 200, points[1].TokensIn) // next monday
+	assert.Equal(t, 200, points[0].Usage.TotalInput()) // monday + wednesday
+	assert.Equal(t, 200, points[1].Usage.TotalInput()) // next monday
 }
 
 func TestSQLiteStore_ListUsageOverTime_CostPopulated(t *testing.T) {
@@ -236,7 +286,8 @@ func TestSQLiteStore_ListUsageOverTime_CostPopulated(t *testing.T) {
 
 	require.NoError(t, s.LogUsage(ctx, usage.Entry{
 		Repo: "o/r", IssueNum: 1, Agent: "a", Model: "m",
-		TokensIn: 1_000_000, TokensOut: 1_000_000, At: time.Now(),
+		Usage:  usage.Usage{InputFresh: 1_000_000, Output: 1_000_000},
+		Source: usage.SourceEstimated, At: time.Now(),
 	}))
 
 	points, err := s.ListUsageOverTime(ctx, usage.OverTimeFilter{
@@ -254,7 +305,8 @@ func TestSQLiteStore_ListIssues_CostPopulated(t *testing.T) {
 
 	require.NoError(t, s.LogUsage(ctx, usage.Entry{
 		Repo: "o/r", IssueNum: 1, Agent: "a", Model: "m",
-		TokensIn: 1_000_000, TokensOut: 1_000_000, At: time.Now(),
+		Usage:  usage.Usage{InputFresh: 1_000_000, Output: 1_000_000},
+		Source: usage.SourceEstimated, At: time.Now(),
 	}))
 
 	issues, err := s.ListIssues(ctx, usage.Filter{Repo: "o/r"})
@@ -429,7 +481,7 @@ func TestSQLiteStore_ListIssues_BudgetPopulated(t *testing.T) {
 
 	require.NoError(t, s.LogUsage(ctx, usage.Entry{
 		Repo: "o/r", IssueNum: 1, Agent: "a", Model: "m",
-		TokensIn: 1000, TokensOut: 500, At: time.Now(),
+		Usage: usage.Usage{InputFresh: 1000, Output: 500}, Source: usage.SourceEstimated, At: time.Now(),
 	}))
 
 	require.NoError(t, s.SetBudget(ctx, "o/r", 1, 25.0))
@@ -447,7 +499,7 @@ func TestSQLiteStore_ListIssues_NoBudget_IsNil(t *testing.T) {
 
 	require.NoError(t, s.LogUsage(ctx, usage.Entry{
 		Repo: "o/r", IssueNum: 1, Agent: "a", Model: "m",
-		TokensIn: 1000, TokensOut: 500, At: time.Now(),
+		Usage: usage.Usage{InputFresh: 1000, Output: 500}, Source: usage.SourceEstimated, At: time.Now(),
 	}))
 
 	issues, err := s.ListIssues(ctx, usage.Filter{Repo: "o/r"})

@@ -27,7 +27,7 @@ A second gap surfaced alongside: nothing records **how** a count was obtained. A
 - A model that has entries with cache tokens but no cache rates SHALL warn rather than silently pick a default, reusing the existing unknown-model warning pattern.
 - New `source` field on every entry: `measured` (read from an agent transcript) or `estimated` (declared by a model). It is derived from the command that writes the entry, never from a flag, so it cannot be set wrongly by accident.
 - **BREAKING** `tokenpile log` replaces `--tokens-in`/`--tokens-out` with per-tier flags. Entries written by `log` are always `estimated`.
-- **BREAKING** Export moves to `schema_version: "4.0"` with per-tier entry fields and `source`. Verification of 2.0 and 3.0 documents is retained: it is already implemented and costs nothing to keep.
+- **BREAKING** Export moves to `schema_version: "4.0"` with per-tier entry fields and `source`. Verification of pre-4.0 documents is dropped entirely: the digest is computed from the parsed document, so it depends on the current field set, and supporting old versions would mean a parsing type per schema version. Any 2.0 or 3.0 file on disk becomes unverifiable.
 - `tokenpile report` shows total cost and cache savings by default; the per-tier breakdown moves behind `--detail`.
 - `tokenpile pricing set` gains `--cache-read` and `--cache-write` flags.
 - The agent skill template stops instructing agents to estimate token counts.

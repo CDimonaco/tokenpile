@@ -71,8 +71,8 @@ func seedIssueEntry(t *testing.T, s *store.SQLiteStore, issueNum int) {
 		IssueNum:  issueNum,
 		Agent:     "claude-code",
 		Model:     "claude-sonnet-4-6",
-		TokensIn:  1000,
-		TokensOut: 500,
+		Usage:     usage.Usage{InputFresh: 1000, Output: 500},
+		Source:    usage.SourceEstimated,
 		SessionID: sess.ID,
 		At:        time.Now(),
 	}))
@@ -399,7 +399,10 @@ func TestTUI_DetailView_SessionsTab_ShowsNoteAndTags(t *testing.T) {
 	require.NoError(t, s.LogUsage(ctx, usage.Entry{
 		Repo: "owner/repo", IssueNum: 4,
 		Agent: "claude-code", Model: "claude-sonnet-4-6",
-		TokensIn: 500, TokensOut: 250, SessionID: sess.ID, At: time.Now(),
+		Usage: usage.Usage{
+			InputFresh: 500,
+			Output:     250,
+		}, Source: usage.SourceEstimated, SessionID: sess.ID, At: time.Now(),
 	}))
 
 	note := "session tab note"
@@ -461,7 +464,7 @@ func TestViewList_EmptyState(t *testing.T) {
 func TestViewList_ShowsIssues(t *testing.T) {
 	m := baseModel()
 	m.issues = []usage.TrackedIssue{
-		{IssueNum: 42, Repo: "owner/repo", TotalTokensIn: 1000, TotalTokensOut: 500, TotalCost: 0.01},
+		{IssueNum: 42, Repo: "owner/repo", TotalUsage: usage.Usage{InputFresh: 1000, Output: 500}, TotalCost: 0.01},
 	}
 
 	v := m.View()

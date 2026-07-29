@@ -19,18 +19,12 @@ var Schema = schema.ExportSchema
 const (
 	// SchemaVersion is the version written by Build. The signature covers the
 	// canonical JSON of the whole document with the signature field emptied.
-	SchemaVersion = "3.0"
-	// legacySchemaVersion documents carry a signature over entries only.
-	legacySchemaVersion = "2.0"
+	SchemaVersion = "4.0"
 )
 
 // VerifyResult reports how a document was verified.
 type VerifyResult struct {
 	SchemaVersion string
-	// Legacy is true when the document was verified with the pre-3.0 rule,
-	// whose signature covers entries only: sessions, budgets and metadata
-	// are not protected against tampering.
-	Legacy bool
 }
 
 type entryJSON struct {
@@ -41,8 +35,12 @@ type entryJSON struct {
 	IssueLabels []string `json:"issue_labels,omitempty"`
 	Agent       string   `json:"agent"`
 	Model       string   `json:"model"`
-	TokensIn    int      `json:"tokens_in"`
-	TokensOut   int      `json:"tokens_out"`
+	InputFresh  int      `json:"input_fresh"`
+	CacheWrite  int      `json:"cache_write"`
+	CacheRead   int      `json:"cache_read"`
+	Output      int      `json:"output"`
+	Reasoning   int      `json:"reasoning"`
+	Source      string   `json:"source"`
 	SessionID   string   `json:"session_id,omitempty"`
 	At          string   `json:"at"`
 }
@@ -98,8 +96,12 @@ func Build(
 			IssueLabels: e.IssueLabels,
 			Agent:       e.Agent,
 			Model:       e.Model,
-			TokensIn:    e.TokensIn,
-			TokensOut:   e.TokensOut,
+			InputFresh:  e.Usage.InputFresh,
+			CacheWrite:  e.Usage.CacheWrite,
+			CacheRead:   e.Usage.CacheRead,
+			Output:      e.Usage.Output,
+			Reasoning:   e.Usage.Reasoning,
+			Source:      string(e.Source),
 			SessionID:   e.SessionID,
 			At:          e.At.UTC().Format(time.RFC3339),
 		}
@@ -196,25 +198,20 @@ func Verify(doc *Document) (VerifyResult, error) {
 		if err != nil {
 			return res, err
 		}
-	case legacySchemaVersion:
-		res.Legacy = true
-
-		canonical, canErr := canonicalJSON(doc.Entries)
-		if canErr != nil {
-			return res, fmt.Errorf("canonical JSON: %w", canErr)
-		}
-
-		sum := sha256.Sum256(canonical)
-		digest = sum[:]
 	default:
-		return res, fmt.Errorf("unsupported schema version %q", doc.SchemaVersion)
+		// The digest is taken over the canonical JSON of the parsed document,
+		// so it depends on the fields the current types define. A document
+		// written under an earlier schema loses that schema's fields and gains
+		// the current ones as zero values, which changes the canonical form:
+		// its signature cannot verify, and pretending otherwise would need a
+		// parsing type per schema version.
+		return res, fmt.Errorf(
+			"unsupported schema version %q: only %s can be verified",
+			doc.SchemaVersion, SchemaVersion,
+		)
 	}
 
 	if !ed25519.Verify(pub, digest, sigBytes) {
-		if res.Legacy {
-			return res, errors.New("signature invalid: entries have been tampered with")
-		}
-
 		return res, errors.New("signature invalid: document has been tampered with")
 	}
 

@@ -41,14 +41,24 @@ func logCommand(s store.Store, ip provider.IssueProvider) *cli.Command {
 				Required: true,
 			},
 			&cli.IntFlag{
-				Name:     "tokens-in",
-				Usage:    "number of input tokens",
-				Required: true,
+				Name:  "input",
+				Usage: "fresh input tokens, billed at the full input rate",
 			},
 			&cli.IntFlag{
-				Name:     "tokens-out",
-				Usage:    "number of output tokens",
-				Required: true,
+				Name:  "cache-write",
+				Usage: "tokens written to the prompt cache",
+			},
+			&cli.IntFlag{
+				Name:  "cache-read",
+				Usage: "tokens served from the prompt cache",
+			},
+			&cli.IntFlag{
+				Name:  "output",
+				Usage: "output tokens",
+			},
+			&cli.IntFlag{
+				Name:  "reasoning",
+				Usage: "reasoning tokens, a subset of output (not billed on top of it)",
 			},
 			&cli.StringFlag{
 				Name:    "repo",
@@ -85,16 +95,33 @@ func runLog(c *cli.Context, s store.Store, ip provider.IssueProvider) error {
 	issueNum := c.Int("issue")
 	agent := c.String("agent")
 	model := c.String("model")
-	tokensIn := c.Int("tokens-in")
-	tokensOut := c.Int("tokens-out")
 	ctx := c.Context
 
-	if tokensIn < 0 {
-		return errors.New("--tokens-in must be zero or greater")
+	u := usage.Usage{
+		InputFresh: c.Int("input"),
+		CacheWrite: c.Int("cache-write"),
+		CacheRead:  c.Int("cache-read"),
+		Output:     c.Int("output"),
+		Reasoning:  c.Int("reasoning"),
 	}
 
-	if tokensOut < 0 {
-		return errors.New("--tokens-out must be zero or greater")
+	for name, v := range map[string]int{
+		"--input": u.InputFresh, "--cache-write": u.CacheWrite,
+		"--cache-read": u.CacheRead, "--output": u.Output, "--reasoning": u.Reasoning,
+	} {
+		if v < 0 {
+			return fmt.Errorf("%s must be zero or greater", name)
+		}
+	}
+
+	if u.TotalTokens() == 0 {
+		return errors.New(
+			"at least one token count is required: --input, --cache-write, --cache-read or --output",
+		)
+	}
+
+	if u.Reasoning > u.Output {
+		return errors.New("--reasoning cannot exceed --output: reasoning tokens are a subset of output")
 	}
 
 	issue, getErr := ip.GetIssue(ctx, repo, issueNum)
@@ -125,13 +152,15 @@ func runLog(c *cli.Context, s store.Store, ip provider.IssueProvider) error {
 	}
 
 	entry := usage.Entry{
-		ID:        uuid.NewString(),
-		Repo:      repo,
-		IssueNum:  issueNum,
-		Agent:     agent,
-		Model:     model,
-		TokensIn:  tokensIn,
-		TokensOut: tokensOut,
+		ID:       uuid.NewString(),
+		Repo:     repo,
+		IssueNum: issueNum,
+		Agent:    agent,
+		Model:    model,
+		Usage:    u,
+		// log is the manual path: a model cannot observe its own cache tiers,
+		// so anything arriving here is a declaration, not a measurement.
+		Source:    usage.SourceEstimated,
 		SessionID: sessionID,
 		At:        time.Now().UTC(),
 	}
@@ -143,7 +172,7 @@ func runLog(c *cli.Context, s store.Store, ip provider.IssueProvider) error {
 	applyAnnotations(ctx, s, sessionID, c.String("note"), c.StringSlice("tag"))
 
 	fmt.Fprintf(c.App.Writer, "Logged: %s #%d  in=%d out=%d  session=%s\n",
-		repo, issueNum, tokensIn, tokensOut, sessionID)
+		repo, issueNum, u.TotalInput(), u.Output, sessionID)
 
 	return nil
 }

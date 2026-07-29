@@ -471,7 +471,7 @@ func (m Model) viewIssueList() string {
 			issue.IssueNum,
 			truncate(issue.Repo, 16),
 			truncate(title, 22),
-			fmt.Sprintf("%dk", (issue.TotalTokensIn+issue.TotalTokensOut)/1000),
+			fmt.Sprintf("%dk", issue.TotalUsage.TotalTokens()/1000),
 			fmt.Sprintf("$%.2f", issue.TotalCost),
 			formatDuration(issue.TotalTime),
 		)
@@ -563,16 +563,16 @@ func (m Model) renderSummaryTab(b *strings.Builder) {
 			truncate(row.Agent, 16),
 			truncate(row.Model, 24),
 			row.Calls,
-			fmt.Sprintf("%dk", row.TokensIn/1000),
-			fmt.Sprintf("%dk", row.TokensOut/1000),
+			fmt.Sprintf("%dk", row.Usage.TotalInput()/1000),
+			fmt.Sprintf("%dk", row.Usage.Output/1000),
 			row.Cost,
 		)
 	}
 
 	fmt.Fprintf(b, "\n%s  in: %dk  out: %dk  cost: $%.4f  time: %s\n",
 		headerStyle.Render("Total"),
-		m.report.TotalTokensIn/1000,
-		m.report.TotalTokensOut/1000,
+		m.report.TotalUsage.TotalInput()/1000,
+		m.report.TotalUsage.Output/1000,
 		m.report.TotalCost,
 		formatDuration(m.report.TotalTime),
 	)
@@ -651,7 +651,7 @@ func (m Model) viewChart() string {
 		maxTokens := 0
 
 		for _, p := range m.chartPoints {
-			if total := p.TokensIn + p.TokensOut; total > maxTokens {
+			if total := p.Usage.TotalTokens(); total > maxTokens {
 				maxTokens = total
 			}
 		}
@@ -659,7 +659,7 @@ func (m Model) viewChart() string {
 		barWidth := 40
 
 		for _, p := range m.chartPoints {
-			total := p.TokensIn + p.TokensOut
+			total := p.Usage.TotalTokens()
 			filled := 0
 
 			if maxTokens > 0 {
@@ -675,8 +675,8 @@ func (m Model) viewChart() string {
 	var totalCost float64
 
 	for _, p := range m.chartPoints {
-		totalIn += p.TokensIn
-		totalOut += p.TokensOut
+		totalIn += p.Usage.TotalInput()
+		totalOut += p.Usage.Output
 		totalCost += p.Cost
 	}
 
