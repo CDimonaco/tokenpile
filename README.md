@@ -194,8 +194,46 @@ Once a budget is set, `tokenpile report` shows the consumed amount alongside the
 ```sh
 tokenpile auth login  --provider github   # open browser, store token
 tokenpile auth logout --provider github   # remove stored token
-tokenpile auth status                     # show login state
+tokenpile auth status                     # show login state and token source
 ```
+
+#### Organization repositories
+
+tokenpile authenticates through a GitHub OAuth App, and OAuth App access to an
+organization's repositories has to be approved by an org admin. In many
+organizations that approval is never granted, and issue lookups fail with a 403
+even though you can reach the repository perfectly well from your terminal.
+
+For those cases tokenpile can borrow the credential the `gh` CLI already holds:
+
+```sh
+tokenpile auth login --provider github --use-gh-cli   # borrow the gh credential
+tokenpile auth login --provider github --no-gh-cli    # force the OAuth flow
+```
+
+This is not a way around the restriction. `gh` is subject to the same OAuth App
+rules, but it is whitelisted in practically every organization, and
+`gh auth login --with-token` accepts a fine-grained PAT, which those rules do
+not govern at all. Either way the approval battle has already been fought, and
+tokenpile inherits the result.
+
+Requires [`gh`](https://cli.github.com) installed and authenticated
+(`gh auth login`) with a credential that can read issues. `tokenpile auth login`
+detects an authenticated `gh` and offers to use it, so the flags are only needed
+for non-interactive setup.
+
+Notes on how it behaves:
+
+- The choice is made **once** and persisted per machine, not decided per
+  command. There is no silent fallback between the two sources: if the active
+  one breaks, tokenpile says so instead of quietly using the other.
+- tokenpile never copies the `gh` token into its own keychain entry. It runs
+  `gh auth token` on every call, so refresh and expiry stay with `gh`.
+- `tokenpile auth logout` clears tokenpile's own stored credential (an OAuth
+  token, or the marker recording that `gh` is in use). It never logs you out
+  of `gh`.
+- `tokenpile auth status` always names the active source, so it is never
+  ambiguous which credential produced your data.
 
 ### `tokenpile pricing`
 
