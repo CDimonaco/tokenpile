@@ -6,14 +6,21 @@ Define the signed JSON export document: its schema, how the Ed25519 signature is
 
 ### Requirement: Signed JSON export format
 
-Export documents SHALL carry `schema_version: "3.0"`. The Ed25519 signature SHALL be computed over the SHA-256 digest of the canonical JSON (recursively key-sorted objects, no insignificant whitespace) of the entire document with the `signature` field set to the empty string. All fields — `schema_version`, `exported_at`, `exported_by`, `public_key`, `entries`, `sessions`, `budgets` — are inside the signed surface.
+Export documents SHALL carry `schema_version: "4.0"`. The Ed25519 signature SHALL be computed over the SHA-256 digest of the canonical JSON (recursively key-sorted objects, no insignificant whitespace) of the entire document with the `signature` field set to the empty string. All fields — `schema_version`, `exported_at`, `exported_by`, `public_key`, `entries`, `sessions`, `budgets` — are inside the signed surface.
+
+Each entry SHALL carry its token counts split by billing tier (`input_fresh`, `cache_write`, `cache_read`, `output`, `reasoning`) and a `source` of `measured` or `estimated`. Entries SHALL NOT carry aggregate `tokens_in` or `tokens_out` fields: a consumer that wants a total computes it from the tiers, so no field exists whose meaning depends on which tiers were populated.
 
 Sessions and budgets SHALL follow the same repo/issue scope as the entries filter: an unfiltered export includes all sessions and all budgets; an export filtered by `--repo` includes that repository's sessions and budgets; an export filtered by `--repo` and `--issue` includes only that issue's. Time, agent and model filters do not restrict sessions or budgets. When no budget exists in the selected scope, budget data SHALL be omitted.
 
 #### Scenario: Export produces valid signed document
 - **WHEN** `tokenpile export` is called
-- **THEN** the output is valid JSON with `schema_version` equal to `3.0`
+- **THEN** the output is valid JSON with `schema_version` equal to `4.0`
 - **THEN** the signature verifies against the full document minus the `signature` field
+
+#### Scenario: Entries carry tiers and provenance
+- **WHEN** an export contains an entry logged with fresh input and output tokens
+- **THEN** that entry object carries all five tier fields and a `source`
+- **THEN** it carries no `tokens_in` or `tokens_out` field
 
 #### Scenario: Unfiltered export includes all sessions and budgets
 - **WHEN** usage exists for issues #1 and #2 with sessions, and a budget is set for issue #2
@@ -36,21 +43,10 @@ Sessions and budgets SHALL follow the same repo/issue scope as the entries filte
 - **THEN** the document does not contain budget data
 
 #### Scenario: Any field tampering invalidates the signature
-- **WHEN** a 3.0 export file is modified in any signed field (an entry, a session note, a budget amount, or `exported_at`)
+- **WHEN** a 4.0 export file is modified in any signed field (an entry tier, a session note, a budget amount, or `exported_at`)
 - **THEN** `tokenpile export verify --file <path>` reports the signature as invalid and exits non-zero
 
-### Requirement: Verification of legacy 2.0 exports
 
-`tokenpile export verify` SHALL detect documents with `schema_version: "2.0"` and verify them with the legacy rule (signature over the canonical JSON of `entries` only). When a 2.0 document verifies successfully, the command SHALL print a warning stating that sessions and budgets are not covered by the signature. Documents with any other `schema_version` SHALL fail verification with an unsupported-version error.
-
-#### Scenario: Legacy file verifies with warning
-- **WHEN** `tokenpile export verify --file old.json` is called on a valid 2.0 export
-- **THEN** verification succeeds
-- **THEN** the output warns that only entries are covered by the signature
-
-#### Scenario: Unknown version rejected
-- **WHEN** `tokenpile export verify --file doc.json` is called on a document with `schema_version: "9.9"`
-- **THEN** verification fails with an unsupported schema version error
 
 ### Requirement: Origin verification with expected public key
 
@@ -67,3 +63,17 @@ Sessions and budgets SHALL follow the same repo/issue scope as the entries filte
 #### Scenario: Without pubkey the guarantee is labeled
 - **WHEN** `tokenpile export verify --file doc.json` is called without `--pubkey` on a valid document
 - **THEN** the output states the signature was checked against the embedded key (consistency only)
+
+### Requirement: Only the current schema version verifies
+
+`tokenpile export verify` SHALL verify documents carrying `schema_version` `4.0` and SHALL reject every other version with a clear error naming the version found. Pre-4.0 documents are not verifiable.
+
+The signature is computed over the canonical JSON of the parsed document, so the digest depends on the fields the current types define. A document written under an earlier schema loses the fields that schema had and gains the current ones as zero values, which changes the canonical form and therefore the digest. Verifying old versions would require either keeping a parsing type per schema version or verifying from raw bytes; neither is worth carrying for documents nobody holds.
+
+#### Scenario: A pre-4.0 document is rejected
+- **WHEN** `tokenpile export verify --file <3.0 document>` is called
+- **THEN** the command exits non-zero with an error naming the unsupported schema version
+
+#### Scenario: Export writes only the current version
+- **WHEN** `tokenpile export` is called
+- **THEN** the document carries `schema_version` `4.0` with no option to emit an earlier version
