@@ -1,7 +1,7 @@
 # Symbols & Packages
 
 **Root:** `/Users/cdimonaco/code/github.com/cdimonaco/tokenpile`  
-**Generated:** 2026-07-06 20:45:13 UTC  
+**Generated:** 2026-07-29 12:38:27 UTC  
 
 ---
 
@@ -16,25 +16,25 @@
 | `internal/tui/tui_test.go` | 40 | 511 |
 | `internal/skill/skill_test.go` | 26 | 483 |
 | `internal/export/export_test.go` | 22 | 425 |
+| `cmd/tokenpile/cmd_auth_test.go` | 23 | 306 |
 | `cmd/tokenpile/cmd_reset_test.go` | 8 | 272 |
-| `internal/provider/github_auth.go` | 15 | 228 |
+| `internal/provider/github_auth.go` | 17 | 238 |
 | `cmd/tokenpile/smoke_test.go` | 8 | 207 |
 | `cmd/tokenpile/cmd_reset.go` | 7 | 206 |
 | `cmd/tokenpile/cmd_export.go` | 5 | 206 |
 | `internal/export/export.go` | 14 | 189 |
 | `internal/skill/skill.go` | 22 | 170 |
+| `internal/provider/github_issues_test.go` | 8 | 183 |
+| `internal/provider/ghcli_auth_test.go` | 14 | 170 |
 | `cmd/tokenpile/cmd_log.go` | 5 | 164 |
 | `cmd/tokenpile/cmd_log_test.go` | 6 | 154 |
 | `internal/export/export_integration_test.go` | 6 | 150 |
-| `cmd/tokenpile/cmd_report.go` | 2 | 143 |
-| `cmd/tokenpile/main.go` | 5 | 137 |
-| `internal/provider/github_issues_test.go` | 5 | 135 |
 
 ## Important Symbols (top 30 by outgoing calls)
 
 | Symbol | Kind | File | Line | Calls out |
 |--------|------|------|------|-----------|
-| `main` | function | `cmd/tokenpile/main.go` | 24 | 118 |
+| `main` | function | `cmd/tokenpile/main.go` | 24 | 128 |
 | `(*SQLiteStore).ListIssues` | method | `internal/store/sqlite.go` | 524 | 108 |
 | `(*SQLiteStore).ListUsageOverTime` | method | `internal/store/sqlite.go` | 661 | 98 |
 | `newResetFixture` | function | `cmd/tokenpile/cmd_reset_test.go` | 37 | 96 |
@@ -69,11 +69,11 @@
 
 | Package | Dir | Files | Symbols |
 |---------|-----|-------|---------|
-| `main` | `cmd/tokenpile` | 15 | 94 |
+| `main` | `cmd/tokenpile` | 15 | 119 |
 | `config` | `internal/config` | 3 | 8 |
 | `export` | `internal/export` | 5 | 16 |
 | `pricing` | `internal/pricing` | 2 | 9 |
-| `provider` | `internal/provider` | 7 | 35 |
+| `provider` | `internal/provider` | 13 | 64 |
 | `schema` | `internal/schema` | 1 | 1 |
 | `skill` | `internal/skill` | 2 | 22 |
 | `store` | `internal/store` | 3 | 34 |

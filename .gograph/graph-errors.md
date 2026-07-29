@@ -1,16 +1,22 @@
 # Errors & Panics
 
 **Root:** `/Users/cdimonaco/code/github.com/cdimonaco/tokenpile`  
-**Generated:** 2026-07-06 20:45:13 UTC  
+**Generated:** 2026-07-29 12:38:27 UTC  
 
 ---
 
 | Message | Function | File | Line |
 |---------|----------|------|------|
-| `login: %w` | `authCommands` | `cmd/tokenpile/cmd_auth.go` | 29 |
-| `logout: %w` | `authCommands` | `cmd/tokenpile/cmd_auth.go` | 50 |
-| `oauth failed` | `TestAuthLogin_Failure` | `cmd/tokenpile/cmd_auth_test.go` | 44 |
-| `not found` | `TestAuthStatus_NotLoggedIn` | `cmd/tokenpile/cmd_auth_test.go` | 76 |
+| `logout: %w` | `authCommands` | `cmd/tokenpile/cmd_auth.go` | 79 |
+| `--use-gh-cli and --no-gh-cli are mutually exclusive` | `runLogin` | `cmd/tokenpile/cmd_auth.go` | 106 |
+| `login: %w` | `runLogin` | `cmd/tokenpile/cmd_auth.go` | 114 |
+| `read gh credential: %w` | `loginWithGhCli` | `cmd/tokenpile/cmd_auth.go` | 164 |
+| `validate gh credential: %w` | `loginWithGhCli` | `cmd/tokenpile/cmd_auth.go` | 171 |
+| `gh credential for %s lacks the repo scope needed to read issues: run gh auth refresh -s repo` | `loginWithGhCli` | `cmd/tokenpile/cmd_auth.go` | 175 |
+| `gh CLI token source unavailable: %w` | `ghStatus` | `cmd/tokenpile/cmd_auth.go` | 219 |
+| `oauth failed` | `TestAuthLogin_OAuthFailure` | `cmd/tokenpile/cmd_auth_test.go` | 101 |
+| `401 bad credentials` | `TestAuthLogin_ValidationFailureDoesNotPersist` | `cmd/tokenpile/cmd_auth_test.go` | 217 |
+| `not found` | `TestAuthStatus_NotLoggedIn` | `cmd/tokenpile/cmd_auth_test.go` | 239 |
 | `cannot infer repo: pass --repo owner/repo or run from inside a GitHub repository` | `budgetCommands` | `cmd/tokenpile/cmd_budget.go` | 44 |
 | `infer repo: %w` | `budgetCommands` | `cmd/tokenpile/cmd_budget.go` | 49 |
 | `--amount must be greater than zero` | `budgetCommands` | `cmd/tokenpile/cmd_budget.go` | 54 |
@@ -71,7 +77,7 @@
 | `` | `newResetFixture` | `cmd/tokenpile/cmd_reset_test.go` | 64 |
 | `install skill: %w` | `skillCommands` | `cmd/tokenpile/cmd_skill.go` | 32 |
 | `` | `newTestStore` | `cmd/tokenpile/integration_test.go` | 42 |
-| `tui: %w` | `main` | `cmd/tokenpile/main.go` | 113 |
+| `tui: %w` | `main` | `cmd/tokenpile/main.go` | 125 |
 | `generate ed25519 key: %w` | `generateIdentity` | `internal/config/identity.go` | 24 |
 | `write identity key: %w` | `generateIdentity` | `internal/config/identity.go` | 38 |
 | `write identity pub: %w` | `generateIdentity` | `internal/config/identity.go` | 42 |
@@ -99,6 +105,8 @@
 | `` | `TestComputeCost_UnknownModel` | `internal/pricing/pricing_test.go` | 72 |
 | `` | `TestComputeCost_InOutSeparate` | `internal/pricing/pricing_test.go` | 81 |
 | `` | `TestSetOverride_WritesAndUpdates` | `internal/pricing/pricing_test.go` | 93 |
+| `run gh %s: %w` | `(*GhCliAuthProvider).run` | `internal/provider/ghcli_auth.go` | 119 |
+| `%w (gh said: %s)` | `withDetail` | `internal/provider/ghcli_auth.go` | 130 |
 | `start callback server: %w` | `(*GitHubAuthProvider).Login` | `internal/provider/github_auth.go` | 60 |
 | `unexpected listener address type %T` | `(*GitHubAuthProvider).Login` | `internal/provider/github_auth.go` | 66 |
 | `oauth callback missing code` | `(*GitHubAuthProvider).Login` | `internal/provider/github_auth.go` | 97 |
@@ -106,26 +114,30 @@
 | `login timed out, please try again` | `(*GitHubAuthProvider).Login` | `internal/provider/github_auth.go` | 134 |
 | `exchange oauth code: %w` | `(*GitHubAuthProvider).Login` | `internal/provider/github_auth.go` | 144 |
 | `store token: %w` | `(*GitHubAuthProvider).Login` | `internal/provider/github_auth.go` | 148 |
-| `delete token from keychain: %w` | `(*GitHubAuthProvider).Logout` | `internal/provider/github_auth.go` | 174 |
-| `remove credentials file: %w` | `(*GitHubAuthProvider).Logout` | `internal/provider/github_auth.go` | 181 |
-| `create cipher: %w` | `(*GitHubAuthProvider).storeEncryptedToken` | `internal/provider/github_auth.go` | 203 |
-| `create GCM: %w` | `(*GitHubAuthProvider).storeEncryptedToken` | `internal/provider/github_auth.go` | 208 |
-| `generate nonce: %w` | `(*GitHubAuthProvider).storeEncryptedToken` | `internal/provider/github_auth.go` | 213 |
-| `write credentials: %w` | `(*GitHubAuthProvider).storeEncryptedToken` | `internal/provider/github_auth.go` | 219 |
-| `read credentials: %w` | `(*GitHubAuthProvider).loadEncryptedToken` | `internal/provider/github_auth.go` | 228 |
-| `create cipher: %w` | `(*GitHubAuthProvider).loadEncryptedToken` | `internal/provider/github_auth.go` | 235 |
-| `create GCM: %w` | `(*GitHubAuthProvider).loadEncryptedToken` | `internal/provider/github_auth.go` | 240 |
-| `credentials file corrupted` | `(*GitHubAuthProvider).loadEncryptedToken` | `internal/provider/github_auth.go` | 245 |
-| `decrypt credentials: %w` | `(*GitHubAuthProvider).loadEncryptedToken` | `internal/provider/github_auth.go` | 252 |
-| `unsupported platform: %s` | `openBrowser` | `internal/provider/github_auth.go` | 302 |
-| `id` | `TestEncryptedTokenRoundtrip` | `internal/provider/github_auth_internal_test.go` | 14 |
-| `id` | `TestLoadEncryptedToken_CorruptedFile` | `internal/provider/github_auth_internal_test.go` | 25 |
+| `delete token from keychain: %w` | `(*GitHubAuthProvider).Logout` | `internal/provider/github_auth.go` | 176 |
+| `remove credentials file: %w` | `(*GitHubAuthProvider).Logout` | `internal/provider/github_auth.go` | 183 |
+| `create cipher: %w` | `storeEncryptedToken` | `internal/provider/github_auth.go` | 224 |
+| `create GCM: %w` | `storeEncryptedToken` | `internal/provider/github_auth.go` | 229 |
+| `generate nonce: %w` | `storeEncryptedToken` | `internal/provider/github_auth.go` | 234 |
+| `write credentials: %w` | `storeEncryptedToken` | `internal/provider/github_auth.go` | 240 |
+| `read credentials: %w` | `loadEncryptedToken` | `internal/provider/github_auth.go` | 249 |
+| `create cipher: %w` | `loadEncryptedToken` | `internal/provider/github_auth.go` | 256 |
+| `create GCM: %w` | `loadEncryptedToken` | `internal/provider/github_auth.go` | 261 |
+| `credentials file corrupted` | `loadEncryptedToken` | `internal/provider/github_auth.go` | 266 |
+| `decrypt credentials: %w` | `loadEncryptedToken` | `internal/provider/github_auth.go` | 273 |
+| `unsupported platform: %s` | `openBrowser` | `internal/provider/github_auth.go` | 323 |
 | `set base URL: %w` | `(*GitHubIssueProvider).client` | `internal/provider/github_issues.go` | 45 |
-| `invalid repo format %q: expected owner/repo` | `(*GitHubIssueProvider).ListIssues` | `internal/provider/github_issues.go` | 60 |
-| `list issues: %w` | `(*GitHubIssueProvider).ListIssues` | `internal/provider/github_issues.go` | 80 |
-| `invalid repo format %q: expected owner/repo` | `(*GitHubIssueProvider).GetIssue` | `internal/provider/github_issues.go` | 121 |
-| `get issue: %w` | `(*GitHubIssueProvider).GetIssue` | `internal/provider/github_issues.go` | 133 |
+| `%s: %w` | `(*GitHubIssueProvider).wrapAccessError` | `internal/provider/github_issues.go` | 60 |
+| `%s: %w (the gh CLI credential does not grant access to this repository)` | `(*GitHubIssueProvider).wrapAccessError` | `internal/provider/github_issues.go` | 64 |
+| `invalid repo format %q: expected owner/repo` | `(*GitHubIssueProvider).ListIssues` | `internal/provider/github_issues.go` | 83 |
+| `invalid repo format %q: expected owner/repo` | `(*GitHubIssueProvider).GetIssue` | `internal/provider/github_issues.go` | 144 |
 | `cannot infer repo from remote %q: not a GitHub remote; pass --repo owner/repo` | `ParseRemote` | `internal/provider/repoinfer.go` | 46 |
+| `persist token source: %w` | `PersistGhCliTokenSource` | `internal/provider/tokensource.go` | 49 |
+| `id` | `TestGitHubAuthProvider_SentinelIsNotAToken` | `internal/provider/tokensource_test.go` | 52 |
+| `id` | `TestGitHubAuthProvider_RealTokenIsReturned` | `internal/provider/tokensource_test.go` | 65 |
+| `id` | `TestLogout_ClearsSentinel` | `internal/provider/tokensource_test.go` | 81 |
+| `set base URL: %w` | `ValidateTokenWithURL` | `internal/provider/validate.go` | 52 |
+| `validate token: %w` | `ValidateTokenWithURL` | `internal/provider/validate.go` | 58 |
 | `%w: %s` | `Install` | `internal/skill/skill.go` | 120 |
 | `cannot determine install path for agent %s` | `Install` | `internal/skill/skill.go` | 125 |
 | `create skill directory: %w` | `Install` | `internal/skill/skill.go` | 129 |
