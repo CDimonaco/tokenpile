@@ -178,13 +178,10 @@ type OverTimeFilter struct {
 // entries one at a time would make reconciliation unusable.
 type UnattributedGroup struct {
 	Repo      string
-	Branch    string
 	SessionID string
 	Entries   int
 	Usage     Usage
 	Cost      float64
 	First     time.Time
 	Last      time.Time
-	// Suggested is the issue the branch name implies, if any.
-	Suggested *int
 }

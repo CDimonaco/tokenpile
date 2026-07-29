@@ -1,4 +1,8 @@
-## ADDED Requirements
+## Purpose
+
+Define which GitHub issue a captured turn belongs to: that usage can be recorded with no issue at all, the order in which an issue is resolved, binding one explicitly, and reconciling what was left unattributed.
+
+## Requirements
 
 ### Requirement: Usage may be recorded without an issue
 
@@ -53,17 +57,23 @@ The system SHALL provide `tokenpile bind --issue N`, recording that the current 
 
 ### Requirement: Reconciliation of unattributed usage
 
-The system SHALL provide a way to list unattributed usage grouped by repository, branch and time window, with a suggested issue where the branch implies one, and to assign a whole group to an issue in one action. Assignment SHALL be reversible.
+The system SHALL provide a way to list unattributed usage grouped by session, showing its repository, entry count, tokens and cost, and to assign a whole group to an issue in one action. Assignment SHALL be reversible, and SHALL move the session along with its entries so wall-clock time follows the tokens.
 
-Grouping is required rather than convenient: a session is many turns, and per-entry assignment would make reconciliation unusable.
+Grouping is required rather than convenient: a session is many turns, and per-entry assignment would make reconciliation unusable. The session is also the unit a person reasons about when saying "that stretch of work was issue 42".
 
-#### Scenario: Groups are offered with suggestions
-- **WHEN** unattributed entries exist from branch `feat/42-foo`
-- **THEN** they are presented as one group with issue 42 suggested
+Suggesting an issue from the branch name is deliberately out of scope here: entries do not record the branch they were captured on, so a suggestion cannot be derived at listing time without first storing it.
+
+#### Scenario: Groups are listed by session
+- **WHEN** unattributed entries exist across two sessions
+- **THEN** they are presented as two groups, each with its repository, entry count, tokens and cost
 
 #### Scenario: Bulk assignment
 - **WHEN** a group of unattributed entries is assigned to issue 42
 - **THEN** every entry in the group is attributed to issue 42
+
+#### Scenario: Assignment moves the session too
+- **WHEN** a session's usage is assigned to issue 42
+- **THEN** the session itself is attributed to issue 42, so its wall-clock time is counted with its tokens
 
 #### Scenario: Assignment can be undone
 - **WHEN** a group assigned to issue 42 is unassigned

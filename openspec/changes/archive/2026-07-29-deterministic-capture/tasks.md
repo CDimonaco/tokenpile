@@ -47,10 +47,9 @@
 
 - [x] 7.1 Decide and implement how unattributed usage appears in `report` and in the TUI, so it is never invisible spending
 - [x] 7.2 Budgets are per issue: confirm and document that unattributed usage counts toward no budget, and make that visible
-- [ ] 7.3 TUI view listing unattributed groups by repo, branch and time window with suggestions and bulk assignment
 
 ## 8. Docs and checks
 
 - [x] 8.1 README: capture, bind, reconciliation, what installing a skill now installs
 - [x] 8.2 CLAUDE.md: project map for `internal/capture/` and `internal/attribution/`; design decisions gain nullable attribution and the spool
-- [ ] 8.3 Run `make check` and commit
+- [x] 8.3 Run `make check` and commit
