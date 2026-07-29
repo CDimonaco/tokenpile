@@ -74,13 +74,12 @@ This opens a browser window for OAuth. The token is stored in your OS keychain (
 
 ```sh
 tokenpile skill install --agent claude-code    # writes ~/.claude/skills/tokenpile/SKILL.md
-tokenpile skill install --agent codex          # writes ~/.codex/skills/tokenpile/SKILL.md
 tokenpile skill install --agent opencode       # writes ~/.config/opencode/skills/tokenpile/SKILL.md
 ```
 
 After installation, the agent will automatically call `tokenpile log` at the end of each response where significant work was done.
 
-Each agent gets a dedicated `SKILL.md` (name + description frontmatter) at the location it discovers skills natively, following the Agent Skills spec shared by Claude Code, Codex, and OpenCode. If an older install left a tokenpile block in that agent's `AGENTS.md` (pre-SKILL.md versions of tokenpile), installing removes just that block — the rest of the file is untouched.
+Each agent gets a dedicated `SKILL.md` (name + description frontmatter) at the location it discovers skills natively, following the Agent Skills spec shared by Claude Code and OpenCode. If an older install left a tokenpile block in that agent's `AGENTS.md` (pre-SKILL.md versions of tokenpile), installing removes just that block — the rest of the file is untouched.
 
 See `tokenpile skill list` for supported agents and their installation status.
 
@@ -88,7 +87,7 @@ See `tokenpile skill list` for supported agents and their installation status.
 
 Skills are discovered when a session starts, not injected into one already running — start a new session (or restart your agent) after installing so it picks up the skill.
 
-Invocation is relevance-based, not a hardwired hook: the agent decides to load the skill by matching its `description` against what you're doing. It usually fires on its own after real work or a usage question, but if it doesn't, ask for it explicitly (e.g. "use the tokenpile skill" / "log this with tokenpile"). Codex also supports explicit invocation via `/skills` or `$tokenpile`.
+Invocation is relevance-based, not a hardwired hook: the agent decides to load the skill by matching its `description` against what you're doing. It usually fires on its own after real work or a usage question, but if it doesn't, ask for it explicitly (e.g. "use the tokenpile skill" / "log this with tokenpile").
 
 ### 3. Or log manually
 
@@ -284,13 +283,12 @@ The backup is a standard signed export (schema v3) written to `tokenpile-backup-
 ```sh
 tokenpile skill list                          # show agents, install status, and skill version
 tokenpile skill install --agent claude-code   # dedicated file: ~/.claude/skills/tokenpile/SKILL.md
-tokenpile skill install --agent codex         # dedicated file: ~/.codex/skills/tokenpile/SKILL.md
 tokenpile skill install --agent opencode      # dedicated file: ~/.config/opencode/skills/tokenpile/SKILL.md
 ```
 
 `skill list` shows a Version column: "up to date" if the installed skill matches the current version, "outdated (vN)" if a newer version is available. Re-run `skill install` to upgrade.
 
-Installing best-effort removes any leftover install from older tokenpile versions: a legacy flat `tokenpile.md` (claude-code) or a tokenpile block in that agent's `AGENTS.md` (codex, opencode) — the rest of `AGENTS.md` is left untouched.
+Installing best-effort removes any leftover install from older tokenpile versions: a legacy flat `tokenpile.md` (claude-code) or a tokenpile block in that agent's `AGENTS.md` (opencode) — the rest of `AGENTS.md` is left untouched.
 
 ## Configuration
 

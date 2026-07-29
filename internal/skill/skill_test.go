@@ -11,7 +11,7 @@ import (
 	"github.com/cdimonaco/tokenpile/internal/skill"
 )
 
-func TestList_ContainsAllAgents(t *testing.T) {
+func TestList_ContainsExactlySupportedAgents(t *testing.T) {
 	agents := skill.List()
 	names := make([]string, len(agents))
 
@@ -19,14 +19,35 @@ func TestList_ContainsAllAgents(t *testing.T) {
 		names[i] = a.Name
 	}
 
-	assert.Contains(t, names, "claude-code")
-	assert.Contains(t, names, "codex")
-	assert.Contains(t, names, "opencode")
+	assert.ElementsMatch(t, []string{"claude-code", "opencode"}, names)
 }
 
 func TestInstall_UnsupportedAgent(t *testing.T) {
 	_, _, err := skill.Install("unknown-agent")
 	assert.ErrorIs(t, err, skill.ErrUnsupportedAgent)
+}
+
+// codex was dropped as a supported agent: it cannot support measured token
+// capture, and estimated-only support ships knowingly wrong numbers. Pinned by
+// assertion so a refactor cannot quietly reintroduce it.
+func TestInstall_Codex_IsUnsupported(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("HOME", dir)
+
+	_, _, err := skill.Install("codex")
+	require.ErrorIs(t, err, skill.ErrUnsupportedAgent)
+
+	_, statErr := os.Stat(filepath.Join(dir, ".codex", "skills", "tokenpile", "SKILL.md"))
+	assert.True(t, os.IsNotExist(statErr), "no file may be written for an unsupported agent")
+}
+
+func TestUninstall_Codex_IsUnsupported(t *testing.T) {
+	_, _, err := skill.Uninstall("codex")
+	require.ErrorIs(t, err, skill.ErrUnsupportedAgent)
+}
+
+func TestIsInstalled_Codex_IsFalse(t *testing.T) {
+	assert.False(t, skill.IsInstalled("codex"))
 }
 
 // --- claude-code ---
@@ -86,72 +107,6 @@ func TestIsInstalled_ClaudeCode_True(t *testing.T) {
 	_, _, err := skill.Install("claude-code")
 	require.NoError(t, err)
 	assert.True(t, skill.IsInstalled("claude-code"))
-}
-
-// --- codex ---
-
-func TestInstall_Codex_WritesFile(t *testing.T) {
-	dir := t.TempDir()
-	t.Setenv("HOME", dir)
-
-	path, existed, err := skill.Install("codex")
-	require.NoError(t, err)
-	assert.False(t, existed)
-	assert.Equal(t, filepath.Join(dir, ".codex", "skills", "tokenpile", "SKILL.md"), path)
-
-	data, err := os.ReadFile(path)
-	require.NoError(t, err)
-	content := string(data)
-	assert.Contains(t, content, "name: tokenpile")
-	assert.Contains(t, content, "tokenpile log")
-	assert.Contains(t, content, "--agent codex")
-}
-
-func TestInstall_Codex_RemovesLegacyAgentsBlockButKeepsForeignContent(t *testing.T) {
-	dir := t.TempDir()
-	t.Setenv("HOME", dir)
-
-	agentsPath := filepath.Join(dir, ".codex", "AGENTS.md")
-	require.NoError(t, os.MkdirAll(filepath.Dir(agentsPath), 0o750))
-	existing := "# My existing instructions\n\n<!-- tokenpile:start -->\nold block\n<!-- tokenpile:end -->\n"
-	require.NoError(t, os.WriteFile(agentsPath, []byte(existing), 0o644))
-
-	_, _, err := skill.Install("codex")
-	require.NoError(t, err)
-
-	data, err := os.ReadFile(agentsPath)
-	require.NoError(t, err)
-	content := string(data)
-	assert.Contains(t, content, "My existing instructions")
-	assert.NotContains(t, content, "tokenpile:start")
-}
-
-func TestInstall_Codex_OverwritesExisting(t *testing.T) {
-	dir := t.TempDir()
-	t.Setenv("HOME", dir)
-
-	_, _, err := skill.Install("codex")
-	require.NoError(t, err)
-
-	_, existed, err := skill.Install("codex")
-	require.NoError(t, err)
-	assert.True(t, existed)
-}
-
-func TestIsInstalled_Codex_False(t *testing.T) {
-	dir := t.TempDir()
-	t.Setenv("HOME", dir)
-
-	assert.False(t, skill.IsInstalled("codex"))
-}
-
-func TestIsInstalled_Codex_True(t *testing.T) {
-	dir := t.TempDir()
-	t.Setenv("HOME", dir)
-
-	_, _, err := skill.Install("codex")
-	require.NoError(t, err)
-	assert.True(t, skill.IsInstalled("codex"))
 }
 
 // --- opencode ---
@@ -252,16 +207,6 @@ func TestIsUpToDate_NoVersionComment_False(t *testing.T) {
 	assert.False(t, skill.IsUpToDate("claude-code"))
 }
 
-func TestIsUpToDate_Codex_AfterInstall_True(t *testing.T) {
-	dir := t.TempDir()
-	t.Setenv("HOME", dir)
-
-	_, _, err := skill.Install("codex")
-	require.NoError(t, err)
-
-	assert.True(t, skill.IsUpToDate("codex"))
-}
-
 // --- Uninstall ---
 
 func TestUninstall_ClaudeCode_RemovesFile(t *testing.T) {
@@ -280,43 +225,6 @@ func TestUninstall_ClaudeCode_RemovesFile(t *testing.T) {
 	assert.True(t, os.IsNotExist(statErr))
 }
 
-func TestUninstall_Codex_RemovesFile(t *testing.T) {
-	dir := t.TempDir()
-	t.Setenv("HOME", dir)
-
-	path, _, err := skill.Install("codex")
-	require.NoError(t, err)
-
-	_, removed, err := skill.Uninstall("codex")
-	require.NoError(t, err)
-	assert.True(t, removed)
-
-	_, statErr := os.Stat(path)
-	assert.True(t, os.IsNotExist(statErr))
-}
-
-func TestUninstall_Codex_CleansLegacyAgentsBlockToo(t *testing.T) {
-	dir := t.TempDir()
-	t.Setenv("HOME", dir)
-
-	agentsPath := filepath.Join(dir, ".codex", "AGENTS.md")
-	require.NoError(t, os.MkdirAll(filepath.Dir(agentsPath), 0o750))
-	existing := "# keep me\n\n<!-- tokenpile:start -->\nold block\n<!-- tokenpile:end -->\n"
-	require.NoError(t, os.WriteFile(agentsPath, []byte(existing), 0o644))
-
-	_, _, err := skill.Install("codex")
-	require.NoError(t, err)
-
-	_, _, err = skill.Uninstall("codex")
-	require.NoError(t, err)
-
-	data, err := os.ReadFile(agentsPath)
-	require.NoError(t, err)
-	content := string(data)
-	assert.Contains(t, content, "keep me")
-	assert.NotContains(t, content, "tokenpile:start")
-}
-
 func TestUninstall_NotInstalled_NoOp(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("HOME", dir)
@@ -325,7 +233,7 @@ func TestUninstall_NotInstalled_NoOp(t *testing.T) {
 	require.NoError(t, err)
 	assert.False(t, removed)
 
-	_, removed, err = skill.Uninstall("codex")
+	_, removed, err = skill.Uninstall("opencode")
 	require.NoError(t, err)
 	assert.False(t, removed)
 }

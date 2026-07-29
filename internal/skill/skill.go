@@ -12,9 +12,6 @@ import (
 //go:embed templates/claude-code.md
 var claudeCodeTemplate []byte
 
-//go:embed templates/codex.md
-var codexTemplate []byte
-
 //go:embed templates/opencode.md
 var opencodeTemplate []byte
 
@@ -54,21 +51,6 @@ var agents = []Agent{
 			}
 
 			return filepath.Join(home, ".claude", "skills", "tokenpile.md")
-		},
-	},
-	{
-		Name:         "codex",
-		TemplateData: codexTemplate,
-		InstallPath: func() string {
-			return skillPath(".codex")
-		},
-		LegacySharedPath: func() string {
-			home, err := os.UserHomeDir()
-			if err != nil {
-				return ""
-			}
-
-			return filepath.Join(home, ".codex", "AGENTS.md")
 		},
 	},
 	{

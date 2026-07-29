@@ -20,7 +20,7 @@ func skillCommands() *cli.Command {
 					&cli.StringFlag{
 						Name:     "agent",
 						Aliases:  []string{"a"},
-						Usage:    "agent name (claude-code, codex, opencode)",
+						Usage:    "agent name (claude-code, opencode)",
 						Required: true,
 					},
 				},
