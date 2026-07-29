@@ -1,4 +1,4 @@
-golang 1.25.11
+golang 1.25.12
 golangci-lint 2.12.2
 goreleaser 2.32.3
 mockery 2.53.3
