@@ -47,7 +47,7 @@ func TestSQLiteStore_LogUsage(t *testing.T) {
 
 	entry := usage.Entry{
 		Repo:     "owner/repo",
-		IssueNum: 42,
+		IssueNum: issuePtr(42),
 		Agent:    "claude-code",
 		Model:    "claude-sonnet-4-6",
 		Usage:    usage.Usage{InputFresh: 1000, Output: 500},
@@ -72,7 +72,7 @@ func TestSQLiteStore_LogUsage_SetsTimestamp(t *testing.T) {
 	before := time.Now().UTC().Add(-time.Second)
 
 	err := s.LogUsage(ctx, usage.Entry{
-		Repo: "owner/repo", IssueNum: 1, Agent: "a", Model: "m",
+		Repo: "owner/repo", IssueNum: issuePtr(1), Agent: "a", Model: "m",
 	})
 	require.NoError(t, err)
 
@@ -86,7 +86,7 @@ func TestSQLiteStore_Session_StartEnd(t *testing.T) {
 	s := newTestStore(t)
 	ctx := context.Background()
 
-	sess, err := s.StartSession(ctx, "owner/repo", 42)
+	sess, err := s.StartSession(ctx, "owner/repo", issuePtr(42))
 	require.NoError(t, err)
 	require.NotEmpty(t, sess.ID)
 	assert.Nil(t, sess.EndedAt)
@@ -115,7 +115,7 @@ func TestSQLiteStore_GetReport_ByAgentModel(t *testing.T) {
 	entries := []usage.Entry{
 		{
 			Repo:     "o/r",
-			IssueNum: 1,
+			IssueNum: issuePtr(1),
 			Agent:    "claude-code",
 			Model:    "claude-sonnet-4-6",
 			Usage:    usage.Usage{InputFresh: 1000, Output: 200},
@@ -123,7 +123,7 @@ func TestSQLiteStore_GetReport_ByAgentModel(t *testing.T) {
 		},
 		{
 			Repo:     "o/r",
-			IssueNum: 1,
+			IssueNum: issuePtr(1),
 			Agent:    "opencode",
 			Model:    "gpt-4o",
 			Usage:    usage.Usage{InputFresh: 500, Output: 100},
@@ -131,7 +131,7 @@ func TestSQLiteStore_GetReport_ByAgentModel(t *testing.T) {
 		},
 		{
 			Repo:     "o/r",
-			IssueNum: 1,
+			IssueNum: issuePtr(1),
 			Agent:    "claude-code",
 			Model:    "claude-sonnet-4-6",
 			Usage:    usage.Usage{InputFresh: 2000, Output: 400},
@@ -166,7 +166,7 @@ func TestSQLiteStore_ListIssues_MultipleIssues(t *testing.T) {
 
 	for _, num := range []int{1, 2, 3} {
 		require.NoError(t, s.LogUsage(ctx, usage.Entry{
-			Repo: "o/r", IssueNum: num, Agent: "a", Model: "m",
+			Repo: "o/r", IssueNum: issuePtr(num), Agent: "a", Model: "m",
 			Usage:  usage.Usage{InputFresh: 100 * num, Output: 50 * num},
 			Source: usage.SourceEstimated,
 		}))
@@ -187,7 +187,7 @@ func TestSQLiteStore_ListIssues_FilterByAgent(t *testing.T) {
 			ctx,
 			usage.Entry{
 				Repo:     "o/r",
-				IssueNum: 1,
+				IssueNum: issuePtr(1),
 				Agent:    "claude-code",
 				Model:    "m",
 				Usage:    usage.Usage{InputFresh: 100},
@@ -201,7 +201,7 @@ func TestSQLiteStore_ListIssues_FilterByAgent(t *testing.T) {
 			ctx,
 			usage.Entry{
 				Repo:     "o/r",
-				IssueNum: 2,
+				IssueNum: issuePtr(2),
 				Agent:    "opencode",
 				Model:    "m",
 				Usage:    usage.Usage{InputFresh: 200},
@@ -225,7 +225,7 @@ func TestSQLiteStore_ListUsageOverTime_DayGranularity(t *testing.T) {
 	for i := range 3 {
 		at := today.AddDate(0, 0, i)
 		require.NoError(t, s.LogUsage(ctx, usage.Entry{
-			Repo: "o/r", IssueNum: 1, Agent: "a", Model: "m",
+			Repo: "o/r", IssueNum: issuePtr(1), Agent: "a", Model: "m",
 			Usage: usage.Usage{InputFresh: 100, Output: 50}, Source: usage.SourceEstimated, At: at,
 		}))
 	}
@@ -254,12 +254,12 @@ func TestSQLiteStore_ListUsageOverTime_WeekGranularity(t *testing.T) {
 
 	for _, at := range []time.Time{monday, wednesday} {
 		require.NoError(t, s.LogUsage(ctx, usage.Entry{
-			Repo: "o/r", IssueNum: 1, Agent: "a", Model: "m",
+			Repo: "o/r", IssueNum: issuePtr(1), Agent: "a", Model: "m",
 			Usage: usage.Usage{InputFresh: 100, Output: 50}, Source: usage.SourceEstimated, At: at,
 		}))
 	}
 	require.NoError(t, s.LogUsage(ctx, usage.Entry{
-		Repo: "o/r", IssueNum: 1, Agent: "a", Model: "m",
+		Repo: "o/r", IssueNum: issuePtr(1), Agent: "a", Model: "m",
 		Usage: usage.Usage{InputFresh: 200, Output: 80}, Source: usage.SourceEstimated, At: nextMonday,
 	}))
 
@@ -285,7 +285,7 @@ func TestSQLiteStore_ListUsageOverTime_CostPopulated(t *testing.T) {
 	ctx := context.Background()
 
 	require.NoError(t, s.LogUsage(ctx, usage.Entry{
-		Repo: "o/r", IssueNum: 1, Agent: "a", Model: "m",
+		Repo: "o/r", IssueNum: issuePtr(1), Agent: "a", Model: "m",
 		Usage:  usage.Usage{InputFresh: 1_000_000, Output: 1_000_000},
 		Source: usage.SourceEstimated, At: time.Now(),
 	}))
@@ -304,7 +304,7 @@ func TestSQLiteStore_ListIssues_CostPopulated(t *testing.T) {
 	ctx := context.Background()
 
 	require.NoError(t, s.LogUsage(ctx, usage.Entry{
-		Repo: "o/r", IssueNum: 1, Agent: "a", Model: "m",
+		Repo: "o/r", IssueNum: issuePtr(1), Agent: "a", Model: "m",
 		Usage:  usage.Usage{InputFresh: 1_000_000, Output: 1_000_000},
 		Source: usage.SourceEstimated, At: time.Now(),
 	}))
@@ -323,10 +323,10 @@ func TestSQLiteStore_ListTrackedIssueRefs(t *testing.T) {
 	require.NoError(t, err)
 	assert.Empty(t, refs)
 
-	_ = s.LogUsage(ctx, usage.Entry{Repo: "owner/a", IssueNum: 1, Agent: "x", Model: "m", At: time.Now()})
-	_ = s.LogUsage(ctx, usage.Entry{Repo: "owner/a", IssueNum: 1, Agent: "x", Model: "m", At: time.Now()})
-	_ = s.LogUsage(ctx, usage.Entry{Repo: "owner/a", IssueNum: 2, Agent: "x", Model: "m", At: time.Now()})
-	_ = s.LogUsage(ctx, usage.Entry{Repo: "owner/b", IssueNum: 5, Agent: "x", Model: "m", At: time.Now()})
+	_ = s.LogUsage(ctx, usage.Entry{Repo: "owner/a", IssueNum: issuePtr(1), Agent: "x", Model: "m", At: time.Now()})
+	_ = s.LogUsage(ctx, usage.Entry{Repo: "owner/a", IssueNum: issuePtr(1), Agent: "x", Model: "m", At: time.Now()})
+	_ = s.LogUsage(ctx, usage.Entry{Repo: "owner/a", IssueNum: issuePtr(2), Agent: "x", Model: "m", At: time.Now()})
+	_ = s.LogUsage(ctx, usage.Entry{Repo: "owner/b", IssueNum: issuePtr(5), Agent: "x", Model: "m", At: time.Now()})
 
 	refs, err = s.ListTrackedIssueRefs(ctx)
 	require.NoError(t, err)
@@ -365,7 +365,7 @@ func TestSQLiteStore_UpdateSessionAnnotations_NoteAndTags(t *testing.T) {
 	s := newTestStore(t)
 	ctx := context.Background()
 
-	sess, err := s.StartSession(ctx, "o/r", 1)
+	sess, err := s.StartSession(ctx, "o/r", issuePtr(1))
 	require.NoError(t, err)
 
 	note := "refactored auth flow"
@@ -383,7 +383,7 @@ func TestSQLiteStore_UpdateSessionAnnotations_TagsUnion(t *testing.T) {
 	s := newTestStore(t)
 	ctx := context.Background()
 
-	sess, err := s.StartSession(ctx, "o/r", 1)
+	sess, err := s.StartSession(ctx, "o/r", issuePtr(1))
 	require.NoError(t, err)
 
 	note := "first"
@@ -405,7 +405,7 @@ func TestSQLiteStore_UpdateSessionAnnotations_NilNotePreservesExisting(t *testin
 	s := newTestStore(t)
 	ctx := context.Background()
 
-	sess, err := s.StartSession(ctx, "o/r", 1)
+	sess, err := s.StartSession(ctx, "o/r", issuePtr(1))
 	require.NoError(t, err)
 
 	note := "keep me"
@@ -426,7 +426,7 @@ func TestSQLiteStore_ListSessions_EmptyTagsNonNil(t *testing.T) {
 	s := newTestStore(t)
 	ctx := context.Background()
 
-	_, err := s.StartSession(ctx, "o/r", 1)
+	_, err := s.StartSession(ctx, "o/r", issuePtr(1))
 	require.NoError(t, err)
 
 	sessions, err := s.ListSessions(ctx, "o/r", 1)
@@ -480,7 +480,7 @@ func TestSQLiteStore_ListIssues_BudgetPopulated(t *testing.T) {
 	ctx := context.Background()
 
 	require.NoError(t, s.LogUsage(ctx, usage.Entry{
-		Repo: "o/r", IssueNum: 1, Agent: "a", Model: "m",
+		Repo: "o/r", IssueNum: issuePtr(1), Agent: "a", Model: "m",
 		Usage: usage.Usage{InputFresh: 1000, Output: 500}, Source: usage.SourceEstimated, At: time.Now(),
 	}))
 
@@ -498,7 +498,7 @@ func TestSQLiteStore_ListIssues_NoBudget_IsNil(t *testing.T) {
 	ctx := context.Background()
 
 	require.NoError(t, s.LogUsage(ctx, usage.Entry{
-		Repo: "o/r", IssueNum: 1, Agent: "a", Model: "m",
+		Repo: "o/r", IssueNum: issuePtr(1), Agent: "a", Model: "m",
 		Usage: usage.Usage{InputFresh: 1000, Output: 500}, Source: usage.SourceEstimated, At: time.Now(),
 	}))
 
@@ -512,10 +512,10 @@ func TestSQLiteStore_ListAllSessions_AcrossRepos(t *testing.T) {
 	s := newTestStore(t)
 	ctx := context.Background()
 
-	_, err := s.StartSession(ctx, "owner/a", 1)
+	_, err := s.StartSession(ctx, "owner/a", issuePtr(1))
 	require.NoError(t, err)
 
-	_, err = s.StartSession(ctx, "owner/b", 2)
+	_, err = s.StartSession(ctx, "owner/b", issuePtr(2))
 	require.NoError(t, err)
 
 	sessions, err := s.ListAllSessions(ctx)
@@ -545,4 +545,123 @@ func TestSQLiteStore_ListBudgets_Empty(t *testing.T) {
 	budgets, err := s.ListBudgets(context.Background())
 	require.NoError(t, err)
 	assert.Empty(t, budgets)
+}
+
+// issuePtr is a test helper: attribution is optional, so IssueNum is a pointer.
+func issuePtr(n int) *int { return &n }
+
+// Attribution is an annotation, not a precondition: a turn with no issue must
+// still be recorded in full.
+func TestSQLiteStore_LogUsage_WithoutIssue(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	require.NoError(t, s.LogUsage(ctx, usage.Entry{
+		Repo: "o/r", Agent: "claude-code", Model: "m", SessionID: "sess-1",
+		Usage:  usage.Usage{InputFresh: 100, CacheRead: 900, Output: 50},
+		Source: usage.SourceMeasured,
+	}))
+
+	entries, err := s.ListEntries(ctx, usage.Filter{Repo: "o/r"})
+	require.NoError(t, err)
+	require.Len(t, entries, 1)
+	assert.Nil(t, entries[0].IssueNum)
+	assert.Equal(t, 1000, entries[0].Usage.TotalInput())
+	assert.Equal(t, usage.SourceMeasured, entries[0].Source)
+}
+
+// Unattributed usage belongs to no issue and must not invent one in the issue
+// list, or every report would grow a phantom entry.
+func TestSQLiteStore_ListIssues_ExcludesUnattributed(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	require.NoError(t, s.LogUsage(ctx, usage.Entry{
+		Repo: "o/r", IssueNum: issuePtr(1), Agent: "a", Model: "m",
+		Usage: usage.Usage{InputFresh: 10}, Source: usage.SourceEstimated,
+	}))
+	require.NoError(t, s.LogUsage(ctx, usage.Entry{
+		Repo: "o/r", Agent: "a", Model: "m",
+		Usage: usage.Usage{InputFresh: 20}, Source: usage.SourceMeasured,
+	}))
+
+	issues, err := s.ListIssues(ctx, usage.Filter{Repo: "o/r"})
+	require.NoError(t, err)
+	require.Len(t, issues, 1)
+	assert.Equal(t, 1, issues[0].IssueNum)
+}
+
+func TestSQLiteStore_ListUnattributed_GroupsBySession(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	for range 3 {
+		require.NoError(t, s.LogUsage(ctx, usage.Entry{
+			Repo: "o/r", Agent: "a", Model: "m", SessionID: "sess-1",
+			Usage: usage.Usage{InputFresh: 100, Output: 10}, Source: usage.SourceMeasured,
+		}))
+	}
+
+	require.NoError(t, s.LogUsage(ctx, usage.Entry{
+		Repo: "o/r", Agent: "a", Model: "m", SessionID: "sess-2",
+		Usage: usage.Usage{InputFresh: 50}, Source: usage.SourceMeasured,
+	}))
+
+	// Attributed usage never appears here.
+	require.NoError(t, s.LogUsage(ctx, usage.Entry{
+		Repo: "o/r", IssueNum: issuePtr(7), Agent: "a", Model: "m", SessionID: "sess-3",
+		Usage: usage.Usage{InputFresh: 999}, Source: usage.SourceEstimated,
+	}))
+
+	groups, err := s.ListUnattributed(ctx, "o/r")
+	require.NoError(t, err)
+	require.Len(t, groups, 2)
+
+	bySession := map[string]usage.UnattributedGroup{}
+	for _, g := range groups {
+		bySession[g.SessionID] = g
+	}
+
+	assert.Equal(t, 3, bySession["sess-1"].Entries)
+	assert.Equal(t, 300, bySession["sess-1"].Usage.InputFresh)
+	assert.Equal(t, 1, bySession["sess-2"].Entries)
+}
+
+func TestSQLiteStore_AssignIssue_AndReverse(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	sess, err := s.StartSession(ctx, "o/r", nil)
+	require.NoError(t, err)
+	assert.Nil(t, sess.IssueNum)
+
+	for range 2 {
+		require.NoError(t, s.LogUsage(ctx, usage.Entry{
+			Repo: "o/r", Agent: "a", Model: "m", SessionID: sess.ID,
+			Usage: usage.Usage{InputFresh: 100}, Source: usage.SourceMeasured,
+		}))
+	}
+
+	affected, err := s.AssignIssue(ctx, sess.ID, 42)
+	require.NoError(t, err)
+	assert.Equal(t, 2, affected)
+
+	entries, err := s.ListEntries(ctx, usage.Filter{Repo: "o/r", IssueNum: 42})
+	require.NoError(t, err)
+	require.Len(t, entries, 2)
+
+	sessions, err := s.ListSessions(ctx, "o/r", 42)
+	require.NoError(t, err)
+	require.Len(t, sessions, 1, "the session follows its entries, so wall-clock time does too")
+
+	// Branch-derived attribution is a guess, so it has to be undoable.
+	affected, err = s.UnassignIssue(ctx, sess.ID)
+	require.NoError(t, err)
+	assert.Equal(t, 2, affected)
+
+	groups, err := s.ListUnattributed(ctx, "o/r")
+	require.NoError(t, err)
+	require.Len(t, groups, 1)
+	assert.Equal(t, 2, groups[0].Entries)
+	assert.Equal(t, 200, groups[0].Usage.InputFresh, "token counts survive the round trip")
 }

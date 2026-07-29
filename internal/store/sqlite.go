@@ -27,7 +27,7 @@ const schema = `
 CREATE TABLE IF NOT EXISTS usage_entries (
     id          TEXT PRIMARY KEY,
     repo        TEXT NOT NULL,
-    issue_num   INTEGER NOT NULL,
+    issue_num   INTEGER,
     agent       TEXT NOT NULL,
     model       TEXT NOT NULL,
     input_fresh INTEGER NOT NULL,
@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS usage_entries (
 CREATE TABLE IF NOT EXISTS sessions (
     id          TEXT PRIMARY KEY,
     repo        TEXT NOT NULL,
-    issue_num   INTEGER NOT NULL,
+    issue_num   INTEGER,
     started_at  TEXT NOT NULL,
     ended_at    TEXT
 );
@@ -266,10 +266,11 @@ func (s *SQLiteStore) ListEntries(ctx context.Context, filter usage.Filter) ([]u
 		var e usage.Entry
 		var atStr, labelsJSON string
 		var sessionID sql.NullString
+		var issueNum sql.NullInt64
 
 		var source string
 
-		if err = rows.Scan(&e.ID, &e.Repo, &e.IssueNum, &e.Agent, &e.Model,
+		if err = rows.Scan(&e.ID, &e.Repo, &issueNum, &e.Agent, &e.Model,
 			&e.Usage.InputFresh, &e.Usage.CacheWrite, &e.Usage.CacheRead,
 			&e.Usage.Output, &e.Usage.Reasoning, &source,
 			&sessionID, &atStr, &e.IssueTitle, &labelsJSON); err != nil {
@@ -277,6 +278,11 @@ func (s *SQLiteStore) ListEntries(ctx context.Context, filter usage.Filter) ([]u
 		}
 
 		e.Source = usage.Source(source)
+
+		if issueNum.Valid {
+			n := int(issueNum.Int64)
+			e.IssueNum = &n
+		}
 
 		e.At, err = time.Parse(time.RFC3339, atStr)
 		if err != nil {
@@ -301,7 +307,7 @@ func (s *SQLiteStore) ListEntries(ctx context.Context, filter usage.Filter) ([]u
 	return entries, nil
 }
 
-func (s *SQLiteStore) StartSession(ctx context.Context, repo string, issueNum int) (*usage.Session, error) {
+func (s *SQLiteStore) StartSession(ctx context.Context, repo string, issueNum *int) (*usage.Session, error) {
 	sess := usage.Session{
 		ID:        uuid.New().String(),
 		Repo:      repo,
@@ -544,7 +550,7 @@ func (s *SQLiteStore) ListIssues(ctx context.Context, filter usage.Filter) ([]us
 		FROM usage_entries ue
 		LEFT JOIN issue_cache ic ON ic.repo = ue.repo AND ic.issue_num = ue.issue_num
 		LEFT JOIN issue_budgets ib ON ib.repo = ue.repo AND ib.issue_num = ue.issue_num
-		WHERE 1=1`
+		WHERE ue.issue_num IS NOT NULL`
 	args := []any{}
 
 	if filter.Repo != "" {
@@ -788,7 +794,7 @@ func (s *SQLiteStore) ListUsageOverTime(ctx context.Context, filter usage.OverTi
 
 func (s *SQLiteStore) ListTrackedIssueRefs(ctx context.Context) ([]usage.TrackedIssueRef, error) {
 	rows, err := s.db.QueryContext(ctx,
-		`SELECT DISTINCT repo, issue_num FROM usage_entries ORDER BY repo, issue_num`,
+		`SELECT DISTINCT repo, issue_num FROM usage_entries WHERE issue_num IS NOT NULL ORDER BY repo, issue_num`,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("list tracked issue refs: %w", err)
@@ -986,4 +992,136 @@ func (s *SQLiteStore) GetBudget(ctx context.Context, repo string, issueNum int) 
 	}
 
 	return &budget, nil
+}
+
+// ListUnattributed groups usage that belongs to no issue, so it can be assigned
+// after the fact. Grouping is by session: a session is one stretch of work and
+// is the unit a user actually reasons about when saying "that was issue 42".
+func (s *SQLiteStore) ListUnattributed(ctx context.Context, repo string) ([]usage.UnattributedGroup, error) {
+	query := `
+		SELECT COALESCE(ue.session_id, ''), ue.repo, ue.model, COUNT(*),
+		       SUM(ue.input_fresh), SUM(ue.cache_write), SUM(ue.cache_read),
+		       SUM(ue.output), SUM(ue.reasoning),
+		       MIN(ue.at), MAX(ue.at)
+		FROM usage_entries ue
+		WHERE ue.issue_num IS NULL`
+	args := []any{}
+
+	if repo != "" {
+		query += " AND ue.repo = ?"
+
+		args = append(args, repo)
+	}
+
+	query += ` GROUP BY ue.session_id, ue.repo, ue.model ORDER BY MAX(ue.at) DESC`
+
+	rows, err := s.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("list unattributed: %w", err)
+	}
+	defer rows.Close()
+
+	type groupKey struct {
+		sessionID string
+		repo      string
+	}
+
+	groups := make(map[groupKey]*usage.UnattributedGroup)
+
+	var order []groupKey
+
+	for rows.Next() {
+		var (
+			sessionID, entryRepo, model string
+			count                       int
+			u                           usage.Usage
+			firstAt, lastAt             string
+		)
+
+		if err = rows.Scan(&sessionID, &entryRepo, &model, &count,
+			&u.InputFresh, &u.CacheWrite, &u.CacheRead, &u.Output, &u.Reasoning,
+			&firstAt, &lastAt); err != nil {
+			return nil, fmt.Errorf("scan unattributed: %w", err)
+		}
+
+		k := groupKey{sessionID, entryRepo}
+		if _, ok := groups[k]; !ok {
+			groups[k] = &usage.UnattributedGroup{Repo: entryRepo, SessionID: sessionID}
+			order = append(order, k)
+		}
+
+		g := groups[k]
+		g.Entries += count
+		g.Usage = g.Usage.Add(u)
+		g.Cost += s.pricing.ComputeCost(model, u).Cost
+
+		first, _ := time.Parse(time.RFC3339, firstAt)
+		last, _ := time.Parse(time.RFC3339, lastAt)
+
+		if g.First.IsZero() || first.Before(g.First) {
+			g.First = first
+		}
+
+		if last.After(g.Last) {
+			g.Last = last
+		}
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate unattributed: %w", err)
+	}
+
+	out := make([]usage.UnattributedGroup, 0, len(order))
+	for _, k := range order {
+		out = append(out, *groups[k])
+	}
+
+	return out, nil
+}
+
+// AssignIssue attributes a whole session's usage to an issue and returns how
+// many entries were affected. It also attributes the session itself, so the
+// wall-clock time follows the tokens.
+func (s *SQLiteStore) AssignIssue(ctx context.Context, sessionID string, issueNum int) (int, error) {
+	return s.setSessionIssue(ctx, sessionID, &issueNum)
+}
+
+// UnassignIssue reverses AssignIssue. Attribution is a guess when it comes from
+// a branch name, so it has to be undoable.
+func (s *SQLiteStore) UnassignIssue(ctx context.Context, sessionID string) (int, error) {
+	return s.setSessionIssue(ctx, sessionID, nil)
+}
+
+func (s *SQLiteStore) setSessionIssue(ctx context.Context, sessionID string, issueNum *int) (int, error) {
+	if sessionID == "" {
+		return 0, errors.New("session id is required")
+	}
+
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return 0, fmt.Errorf("begin transaction: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	res, err := tx.ExecContext(ctx,
+		`UPDATE usage_entries SET issue_num = ? WHERE session_id = ?`, issueNum, sessionID)
+	if err != nil {
+		return 0, fmt.Errorf("update entries: %w", err)
+	}
+
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return 0, fmt.Errorf("rows affected: %w", err)
+	}
+
+	if _, err = tx.ExecContext(ctx,
+		`UPDATE sessions SET issue_num = ? WHERE id = ?`, issueNum, sessionID); err != nil {
+		return 0, fmt.Errorf("update session: %w", err)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return 0, fmt.Errorf("commit: %w", err)
+	}
+
+	return int(affected), nil
 }

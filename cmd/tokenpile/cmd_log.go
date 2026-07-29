@@ -154,7 +154,7 @@ func runLog(c *cli.Context, s store.Store, ip provider.IssueProvider) error {
 	entry := usage.Entry{
 		ID:       uuid.NewString(),
 		Repo:     repo,
-		IssueNum: issueNum,
+		IssueNum: &issueNum,
 		Agent:    agent,
 		Model:    model,
 		Usage:    u,
@@ -228,7 +228,7 @@ func resolveSession(ctx context.Context, s store.Store, repo string, issueNum in
 		return activeID, nil
 	}
 
-	newSess, err := s.StartSession(ctx, repo, issueNum)
+	newSess, err := s.StartSession(ctx, repo, &issueNum)
 	if err != nil {
 		return "", fmt.Errorf("start session: %w", err)
 	}

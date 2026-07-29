@@ -7,8 +7,8 @@ import (
 	"github.com/cdimonaco/tokenpile/internal/usage"
 )
 
-//go:generate mockery --name=AuthProvider --output=../mocks --outpkg=mocks
-//go:generate mockery --name=IssueProvider --output=../mocks --outpkg=mocks
+//go:generate go run github.com/vektra/mockery/v2@v2.53.3 --name=AuthProvider --output=../mocks --outpkg=mocks --filename=auth_provider_mock.go
+//go:generate go run github.com/vektra/mockery/v2@v2.53.3 --name=IssueProvider --output=../mocks --outpkg=mocks --filename=issue_provider_mock.go
 
 var (
 	ErrNoRepo = errors.New(

@@ -200,7 +200,18 @@ func gatherSessionsAndBudgets(
 	var sessions []usage.Session
 
 	for _, sess := range allSessions {
-		if inScope(sess.Repo, sess.IssueNum) {
+		// An unattributed session belongs to no issue, so an issue-filtered
+		// export cannot claim it. It still belongs to a repository, so a
+		// repo-filtered or unfiltered export includes it.
+		if sess.IssueNum == nil {
+			if filter.IssueNum == 0 && (filter.Repo == "" || sess.Repo == filter.Repo) {
+				sessions = append(sessions, sess)
+			}
+
+			continue
+		}
+
+		if inScope(sess.Repo, *sess.IssueNum) {
 			sessions = append(sessions, sess)
 		}
 	}

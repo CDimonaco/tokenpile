@@ -1,11 +1,11 @@
 ## 1. Nullable issue
 
-- [ ] 1.1 `Entry.IssueNum` and `Session.IssueNum` become `*int` in `internal/usage/types.go`
-- [ ] 1.2 `usage_entries.issue_num` and `sessions.issue_num` become nullable; update inserts and scans
-- [ ] 1.3 Update every query filtering or grouping by `issue_num` to handle null explicitly rather than silently excluding rows
-- [ ] 1.4 Store methods for unattributed listings and for assigning/unassigning a group of entries
-- [ ] 1.5 `make generate` for store mocks
-- [ ] 1.6 Store tests: unattributed entries persist and read back, aggregations do not drop them, assignment and reversal round-trip
+- [x] 1.1 `Entry.IssueNum` and `Session.IssueNum` become `*int` in `internal/usage/types.go`
+- [x] 1.2 `usage_entries.issue_num` and `sessions.issue_num` become nullable; update inserts and scans
+- [x] 1.3 Update every query filtering or grouping by `issue_num` to handle null explicitly rather than silently excluding rows
+- [x] 1.4 Store methods for unattributed listings and for assigning/unassigning a group of entries
+- [x] 1.5 `make generate` for store mocks
+- [x] 1.6 Store tests: unattributed entries persist and read back, aggregations do not drop them, assignment and reversal round-trip
 
 ## 2. Capture readers
 

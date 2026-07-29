@@ -36,7 +36,7 @@ func TestExport_RoundTrip_WithEntries(t *testing.T) {
 		{
 			ID:        "e1",
 			Repo:      "owner/repo",
-			IssueNum:  42,
+			IssueNum:  issuePtr(42),
 			Agent:     "claude-code",
 			Model:     "claude-sonnet-4-6",
 			Usage:     usage.Usage{InputFresh: 1000, Output: 500},
@@ -47,7 +47,7 @@ func TestExport_RoundTrip_WithEntries(t *testing.T) {
 		{
 			ID:       "e2",
 			Repo:     "owner/repo",
-			IssueNum: 43,
+			IssueNum: issuePtr(43),
 			Agent:    "opencode",
 			Model:    "gpt-4o",
 			Usage:    usage.Usage{InputFresh: 200, Output: 100},
@@ -72,7 +72,7 @@ func TestExport_Verify_TamperedEntries(t *testing.T) {
 		{
 			ID:       "e1",
 			Repo:     "o/r",
-			IssueNum: 1,
+			IssueNum: issuePtr(1),
 			Agent:    "a",
 			Model:    "m",
 			Usage:    usage.Usage{InputFresh: 100, Output: 50},
@@ -114,7 +114,7 @@ func TestExport_Verify_WrongPublicKey(t *testing.T) {
 		{
 			ID:       "e1",
 			Repo:     "o/r",
-			IssueNum: 1,
+			IssueNum: issuePtr(1),
 			Agent:    "a",
 			Model:    "m",
 			Usage:    usage.Usage{InputFresh: 100, Output: 50},

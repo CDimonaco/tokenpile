@@ -7,7 +7,7 @@ import (
 	"github.com/cdimonaco/tokenpile/internal/usage"
 )
 
-//go:generate mockery --name=Store --output=../mocks --outpkg=mocks
+//go:generate go run github.com/vektra/mockery/v2@v2.53.3 --name=Store --output=../mocks --outpkg=mocks --filename=store_mock.go
 
 type Store interface {
 	LogUsage(ctx context.Context, entry usage.Entry) error
@@ -16,12 +16,15 @@ type Store interface {
 	GetReport(ctx context.Context, repo string, issueNum int) (*usage.Report, error)
 	UpsertIssueCache(ctx context.Context, cache *usage.IssueCache) error
 	GetIssueCache(ctx context.Context, repo string, issueNum int) (*usage.IssueCache, error)
-	StartSession(ctx context.Context, repo string, issueNum int) (*usage.Session, error)
+	StartSession(ctx context.Context, repo string, issueNum *int) (*usage.Session, error)
 	EndSession(ctx context.Context, sessionID string) error
 	EndSessionAt(ctx context.Context, sessionID string, at time.Time) error
 	ListSessions(ctx context.Context, repo string, issueNum int) ([]usage.Session, error)
 	ListAllSessions(ctx context.Context) ([]usage.Session, error)
 	ListBudgets(ctx context.Context) ([]usage.IssueBudget, error)
+	ListUnattributed(ctx context.Context, repo string) ([]usage.UnattributedGroup, error)
+	AssignIssue(ctx context.Context, sessionID string, issueNum int) (int, error)
+	UnassignIssue(ctx context.Context, sessionID string) (int, error)
 	UpdateSessionAnnotations(ctx context.Context, sessionID string, note *string, tags []string) error
 	UpdateSessionActivity(ctx context.Context, sessionID string, at time.Time) error
 	ListUsageOverTime(ctx context.Context, filter usage.OverTimeFilter) ([]usage.Point, error)

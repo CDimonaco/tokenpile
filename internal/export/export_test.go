@@ -29,7 +29,7 @@ func testEntries() []usage.Entry {
 		{
 			ID:       "1",
 			Repo:     "o/r",
-			IssueNum: 42,
+			IssueNum: issuePtr(42),
 			Agent:    "claude-code",
 			Model:    "claude-sonnet-4-6",
 			Usage:    usage.Usage{InputFresh: 1000, Output: 500},
@@ -39,7 +39,7 @@ func testEntries() []usage.Entry {
 		{
 			ID:       "2",
 			Repo:     "o/r",
-			IssueNum: 42,
+			IssueNum: issuePtr(42),
 			Agent:    "opencode",
 			Model:    "gpt-4o",
 			Usage:    usage.Usage{InputFresh: 2000, Output: 800},
@@ -185,7 +185,7 @@ func TestBuild_SessionsIncludedInDocument(t *testing.T) {
 		{
 			ID:        "s1",
 			Repo:      "o/r",
-			IssueNum:  42,
+			IssueNum:  issuePtr(42),
 			StartedAt: now,
 			EndedAt:   &end,
 			Note:      "initial spike",
@@ -194,7 +194,7 @@ func TestBuild_SessionsIncludedInDocument(t *testing.T) {
 		{
 			ID:        "s2",
 			Repo:      "o/r",
-			IssueNum:  42,
+			IssueNum:  issuePtr(42),
 			StartedAt: now.Add(time.Hour),
 		},
 	}
@@ -247,7 +247,7 @@ func TestVerify_TamperedSessions(t *testing.T) {
 	priv, _ := newTestKey(t)
 
 	now := time.Date(2026, 7, 1, 10, 0, 0, 0, time.UTC)
-	sessions := []usage.Session{{ID: "s1", Repo: "o/r", IssueNum: 42, StartedAt: now}}
+	sessions := []usage.Session{{ID: "s1", Repo: "o/r", IssueNum: issuePtr(42), StartedAt: now}}
 
 	doc, err := export.Build(testEntries(), sessions, nil, priv, "0.2.0")
 	require.NoError(t, err)
@@ -296,3 +296,6 @@ func TestVerify_UnsupportedSchemaVersion(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "unsupported schema version")
 }
+
+// issuePtr is a test helper: attribution is optional, so IssueNum is a pointer.
+func issuePtr(n int) *int { return &n }

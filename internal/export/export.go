@@ -30,7 +30,7 @@ type VerifyResult struct {
 type entryJSON struct {
 	ID          string   `json:"id"`
 	Repo        string   `json:"repo"`
-	IssueNum    int      `json:"issue_num"`
+	IssueNum    *int     `json:"issue_num,omitempty"`
 	IssueTitle  string   `json:"issue_title,omitempty"`
 	IssueLabels []string `json:"issue_labels,omitempty"`
 	Agent       string   `json:"agent"`
@@ -48,7 +48,7 @@ type entryJSON struct {
 type sessionJSON struct {
 	ID        string   `json:"id"`
 	Repo      string   `json:"repo"`
-	IssueNum  int      `json:"issue_num"`
+	IssueNum  *int     `json:"issue_num,omitempty"`
 	StartedAt string   `json:"started_at"`
 	EndedAt   string   `json:"ended_at,omitempty"`
 	Note      string   `json:"note,omitempty"`

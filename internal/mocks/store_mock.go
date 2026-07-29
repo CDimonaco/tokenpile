@@ -17,6 +17,34 @@ type Store struct {
 	mock.Mock
 }
 
+// AssignIssue provides a mock function with given fields: ctx, sessionID, issueNum
+func (_m *Store) AssignIssue(ctx context.Context, sessionID string, issueNum int) (int, error) {
+	ret := _m.Called(ctx, sessionID, issueNum)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AssignIssue")
+	}
+
+	var r0 int
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, int) (int, error)); ok {
+		return rf(ctx, sessionID, issueNum)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, int) int); ok {
+		r0 = rf(ctx, sessionID, issueNum)
+	} else {
+		r0 = ret.Get(0).(int)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, int) error); ok {
+		r1 = rf(ctx, sessionID, issueNum)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // EndSession provides a mock function with given fields: ctx, sessionID
 func (_m *Store) EndSession(ctx context.Context, sessionID string) error {
 	ret := _m.Called(ctx, sessionID)
@@ -323,6 +351,36 @@ func (_m *Store) ListTrackedIssueRefs(ctx context.Context) ([]usage.TrackedIssue
 	return r0, r1
 }
 
+// ListUnattributed provides a mock function with given fields: ctx, repo
+func (_m *Store) ListUnattributed(ctx context.Context, repo string) ([]usage.UnattributedGroup, error) {
+	ret := _m.Called(ctx, repo)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListUnattributed")
+	}
+
+	var r0 []usage.UnattributedGroup
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]usage.UnattributedGroup, error)); ok {
+		return rf(ctx, repo)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) []usage.UnattributedGroup); ok {
+		r0 = rf(ctx, repo)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]usage.UnattributedGroup)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, repo)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ListUsageOverTime provides a mock function with given fields: ctx, filter
 func (_m *Store) ListUsageOverTime(ctx context.Context, filter usage.OverTimeFilter) ([]usage.Point, error) {
 	ret := _m.Called(ctx, filter)
@@ -390,7 +448,7 @@ func (_m *Store) SetBudget(ctx context.Context, repo string, issueNum int, budge
 }
 
 // StartSession provides a mock function with given fields: ctx, repo, issueNum
-func (_m *Store) StartSession(ctx context.Context, repo string, issueNum int) (*usage.Session, error) {
+func (_m *Store) StartSession(ctx context.Context, repo string, issueNum *int) (*usage.Session, error) {
 	ret := _m.Called(ctx, repo, issueNum)
 
 	if len(ret) == 0 {
@@ -399,10 +457,10 @@ func (_m *Store) StartSession(ctx context.Context, repo string, issueNum int) (*
 
 	var r0 *usage.Session
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, int) (*usage.Session, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, *int) (*usage.Session, error)); ok {
 		return rf(ctx, repo, issueNum)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, int) *usage.Session); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, *int) *usage.Session); ok {
 		r0 = rf(ctx, repo, issueNum)
 	} else {
 		if ret.Get(0) != nil {
@@ -410,8 +468,36 @@ func (_m *Store) StartSession(ctx context.Context, repo string, issueNum int) (*
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, int) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, *int) error); ok {
 		r1 = rf(ctx, repo, issueNum)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// UnassignIssue provides a mock function with given fields: ctx, sessionID
+func (_m *Store) UnassignIssue(ctx context.Context, sessionID string) (int, error) {
+	ret := _m.Called(ctx, sessionID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UnassignIssue")
+	}
+
+	var r0 int
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (int, error)); ok {
+		return rf(ctx, sessionID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) int); ok {
+		r0 = rf(ctx, sessionID)
+	} else {
+		r0 = ret.Get(0).(int)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, sessionID)
 	} else {
 		r1 = ret.Error(1)
 	}

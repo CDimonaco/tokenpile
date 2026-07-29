@@ -58,15 +58,15 @@ func TestLog_NoActiveSession_StartsNew(t *testing.T) {
 	sess := &usage.Session{
 		ID:        "sess-1",
 		Repo:      "owner/repo",
-		IssueNum:  42,
+		IssueNum:  issuePtr(42),
 		StartedAt: time.Now(),
 	}
 
 	s.On("ListSessions", mock.Anything, "owner/repo", 42).Return([]usage.Session{}, nil)
-	s.On("StartSession", mock.Anything, "owner/repo", 42).Return(sess, nil)
+	s.On("StartSession", mock.Anything, "owner/repo", mock.Anything).Return(sess, nil)
 	s.On("UpdateSessionActivity", mock.Anything, "sess-1", mock.AnythingOfType("time.Time")).Return(nil)
 	s.On("LogUsage", mock.Anything, mock.MatchedBy(func(e usage.Entry) bool {
-		return e.Repo == "owner/repo" && e.IssueNum == 42 && e.SessionID == "sess-1"
+		return e.Repo == "owner/repo" && *e.IssueNum == 42 && e.SessionID == "sess-1"
 	})).Return(nil)
 
 	out, err := runLogApp(t, s, ip,
@@ -97,7 +97,7 @@ func TestLog_ReuseActiveSession(t *testing.T) {
 	activeSess := usage.Session{
 		ID:             "sess-active",
 		Repo:           "owner/repo",
-		IssueNum:       7,
+		IssueNum:       issuePtr(7),
 		StartedAt:      recentTime,
 		LastActivityAt: recentTime,
 	}
@@ -134,7 +134,7 @@ func TestLog_ClosesIdleSession_StartsNew(t *testing.T) {
 	idleSess := usage.Session{
 		ID:             "sess-idle",
 		Repo:           "owner/repo",
-		IssueNum:       99,
+		IssueNum:       issuePtr(99),
 		StartedAt:      idleTime,
 		LastActivityAt: idleTime,
 	}
@@ -142,13 +142,13 @@ func TestLog_ClosesIdleSession_StartsNew(t *testing.T) {
 	newSess := &usage.Session{
 		ID:        "sess-new",
 		Repo:      "owner/repo",
-		IssueNum:  99,
+		IssueNum:  issuePtr(99),
 		StartedAt: time.Now(),
 	}
 
 	s.On("ListSessions", mock.Anything, "owner/repo", 99).Return([]usage.Session{idleSess}, nil)
 	s.On("EndSessionAt", mock.Anything, "sess-idle", mock.AnythingOfType("time.Time")).Return(nil)
-	s.On("StartSession", mock.Anything, "owner/repo", 99).Return(newSess, nil)
+	s.On("StartSession", mock.Anything, "owner/repo", mock.Anything).Return(newSess, nil)
 	s.On("UpdateSessionActivity", mock.Anything, "sess-new", mock.AnythingOfType("time.Time")).Return(nil)
 	s.On("LogUsage", mock.Anything, mock.MatchedBy(func(e usage.Entry) bool {
 		return e.SessionID == "sess-new"
@@ -168,3 +168,6 @@ func TestLog_ClosesIdleSession_StartsNew(t *testing.T) {
 	s.AssertExpectations(t)
 	ip.AssertExpectations(t)
 }
+
+// issuePtr is a test helper: attribution is optional, so IssueNum is a pointer.
+func issuePtr(n int) *int { return &n }

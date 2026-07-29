@@ -54,9 +54,12 @@ const (
 )
 
 type Entry struct {
-	ID          string
-	Repo        string
-	IssueNum    int
+	ID   string
+	Repo string
+	// IssueNum is nil when the entry is not attributed to an issue. Capture
+	// must be able to record a turn before the issue is known: an unattributed
+	// measurement can be assigned later, a discarded one is gone.
+	IssueNum    *int
 	Agent       string
 	Model       string
 	Usage       Usage
@@ -68,9 +71,10 @@ type Entry struct {
 }
 
 type Session struct {
-	ID             string
-	Repo           string
-	IssueNum       int
+	ID   string
+	Repo string
+	// IssueNum is nil until the session is attributed to an issue.
+	IssueNum       *int
 	StartedAt      time.Time
 	EndedAt        *time.Time
 	LastActivityAt time.Time
@@ -167,4 +171,20 @@ type OverTimeFilter struct {
 	From        *time.Time
 	To          *time.Time
 	Granularity Granularity
+}
+
+// UnattributedGroup is a batch of usage recorded without an issue, grouped so
+// it can be assigned in one action. A session is many turns, and assigning
+// entries one at a time would make reconciliation unusable.
+type UnattributedGroup struct {
+	Repo      string
+	Branch    string
+	SessionID string
+	Entries   int
+	Usage     Usage
+	Cost      float64
+	First     time.Time
+	Last      time.Time
+	// Suggested is the issue the branch name implies, if any.
+	Suggested *int
 }

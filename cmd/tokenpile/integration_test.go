@@ -186,7 +186,7 @@ func TestIntegration_Log_ClosesIdleSession(t *testing.T) {
 	ctx := context.Background()
 
 	// manually start a session with an old timestamp
-	oldSess, err := s.StartSession(ctx, "owner/repo", 3)
+	oldSess, err := s.StartSession(ctx, "owner/repo", issuePtr(3))
 	require.NoError(t, err)
 
 	// manipulate the session to be 40 minutes old
@@ -509,7 +509,7 @@ func TestIntegration_Export_SchemaV3_IncludesSessions(t *testing.T) {
 
 	assert.Equal(t, "4.0", doc.SchemaVersion)
 	require.Len(t, doc.Sessions, 1)
-	assert.Equal(t, 50, doc.Sessions[0].IssueNum)
+	assert.Equal(t, 50, *doc.Sessions[0].IssueNum)
 	assert.Equal(t, "export test note", doc.Sessions[0].Note)
 	assert.Equal(t, []string{"feature"}, doc.Sessions[0].Tags)
 }
@@ -695,7 +695,7 @@ func TestIntegration_Log_IdleSessionClosed_ByResolveSession(t *testing.T) {
 	ctx := context.Background()
 
 	// start a session and back-date its last_activity_at to simulate 40 min idle
-	sess, err := s.StartSession(ctx, "owner/repo", 60)
+	sess, err := s.StartSession(ctx, "owner/repo", issuePtr(60))
 	require.NoError(t, err)
 
 	idleTime := time.Now().Add(-40 * time.Minute)

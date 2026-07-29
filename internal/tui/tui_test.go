@@ -63,12 +63,12 @@ func seedIssueEntry(t *testing.T, s *store.SQLiteStore, issueNum int) {
 	ctx := context.Background()
 	const repo = "owner/repo"
 
-	sess, err := s.StartSession(ctx, repo, issueNum)
+	sess, err := s.StartSession(ctx, repo, &issueNum)
 	require.NoError(t, err)
 
 	require.NoError(t, s.LogUsage(ctx, usage.Entry{
 		Repo:      repo,
-		IssueNum:  issueNum,
+		IssueNum:  &issueNum,
 		Agent:     "claude-code",
 		Model:     "claude-sonnet-4-6",
 		Usage:     usage.Usage{InputFresh: 1000, Output: 500},
@@ -393,11 +393,11 @@ func TestTUI_DetailView_SessionsTab_ShowsNoteAndTags(t *testing.T) {
 	s := newTUITestStore(t)
 	ctx := context.Background()
 
-	sess, err := s.StartSession(ctx, "owner/repo", 4)
+	sess, err := s.StartSession(ctx, "owner/repo", issuePtr(4))
 	require.NoError(t, err)
 
 	require.NoError(t, s.LogUsage(ctx, usage.Entry{
-		Repo: "owner/repo", IssueNum: 4,
+		Repo: "owner/repo", IssueNum: issuePtr(4),
 		Agent: "claude-code", Model: "claude-sonnet-4-6",
 		Usage: usage.Usage{
 			InputFresh: 500,
@@ -482,3 +482,6 @@ func TestViewHelp_ContainsShortcuts(t *testing.T) {
 	assert.Contains(t, v, "quit")
 	assert.Contains(t, v, "chart")
 }
+
+// issuePtr is a test helper: attribution is optional, so IssueNum is a pointer.
+func issuePtr(n int) *int { return &n }

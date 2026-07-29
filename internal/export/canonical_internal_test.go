@@ -19,7 +19,7 @@ func TestCanonicalJSON_PinnedBytes(t *testing.T) {
 		PublicKey:     "IVL40Zt5HSRFMkLhXy6rbLfP+ntqXtMAl5YOBpiB2xI=",
 		Entries: []entryJSON{
 			{
-				ID: "e1", Repo: "o/r", IssueNum: 42, Agent: "claude-code",
+				ID: "e1", Repo: "o/r", IssueNum: issuePtr(42), Agent: "claude-code",
 				Model: "claude-sonnet-4-6", InputFresh: 1000, Output: 500, Source: "estimated",
 				At: "2026-07-01T10:00:00Z",
 			},
@@ -35,3 +35,6 @@ func TestCanonicalJSON_PinnedBytes(t *testing.T) {
 
 	assert.Equal(t, want, string(got))
 }
+
+// issuePtr is a test helper: attribution is optional, so IssueNum is a pointer.
+func issuePtr(n int) *int { return &n }

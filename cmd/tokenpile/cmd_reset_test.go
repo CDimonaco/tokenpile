@@ -71,12 +71,12 @@ func newResetFixture(t *testing.T) resetFixture {
 
 	ctx := context.Background()
 	require.NoError(t, s.LogUsage(ctx, usage.Entry{
-		Repo: "o/r", IssueNum: 1, Agent: "a", Model: "m",
+		Repo: "o/r", IssueNum: issuePtr(1), Agent: "a", Model: "m",
 		Usage:  usage.Usage{InputFresh: 10, Output: 5},
 		Source: usage.SourceEstimated,
 	}))
 
-	_, err = s.StartSession(ctx, "o/r", 1)
+	_, err = s.StartSession(ctx, "o/r", issuePtr(1))
 	require.NoError(t, err)
 	require.NoError(t, s.SetBudget(ctx, "o/r", 1, 12.5))
 
