@@ -1,3 +1,8 @@
+## Purpose
+
+Define how tokenpile resolves GitHub issues: the provider interface, the GitHub implementation, the accepted repo identifier format, and inference of the repo from the git remote.
+
+## Requirements
 
 ### Requirement: IssueProvider interface
 

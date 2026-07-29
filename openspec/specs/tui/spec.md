@@ -1,4 +1,8 @@
-## MODIFIED Requirements
+## Purpose
+
+Define the terminal UI's views: the issue list, the issue detail view, and the budget indicators shown in them.
+
+## Requirements
 
 ### Requirement: Issue list view
 

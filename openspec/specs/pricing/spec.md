@@ -1,3 +1,8 @@
+## Purpose
+
+Define how token counts become costs: the embedded default pricing, the user override layer, computation at report time rather than at storage, and the commands that manage the configuration.
+
+## Requirements
 
 ### Requirement: Embedded default pricing configuration
 

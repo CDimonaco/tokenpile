@@ -1,4 +1,8 @@
-## MODIFIED Requirements
+## Purpose
+
+Define the skill files tokenpile installs into coding agents (Claude Code, codex, opencode) so an agent logs its own token usage, and how those files are placed, refreshed and removed.
+
+## Requirements
 
 ### Requirement: Skill file content
 

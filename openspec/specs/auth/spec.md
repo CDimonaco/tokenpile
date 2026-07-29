@@ -1,3 +1,8 @@
+## Purpose
+
+Define how tokenpile obtains a GitHub credential and where that credential is kept: the OAuth App flow, the gh CLI as an alternative token source for organizations that never approve the OAuth App, and the signing identity used for exports.
+
+## Requirements
 
 ### Requirement: AuthProvider interface
 

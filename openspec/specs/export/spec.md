@@ -1,3 +1,9 @@
+## Purpose
+
+Define the signed JSON export document: its schema, how the Ed25519 signature is computed and verified, and what verification does and does not prove about a file's origin.
+
+## Requirements
+
 ### Requirement: Signed JSON export format
 
 Export documents SHALL carry `schema_version: "3.0"`. The Ed25519 signature SHALL be computed over the SHA-256 digest of the canonical JSON (recursively key-sorted objects, no insignificant whitespace) of the entire document with the `signature` field set to the empty string. All fields — `schema_version`, `exported_at`, `exported_by`, `public_key`, `entries`, `sessions`, `budgets` — are inside the signed surface.

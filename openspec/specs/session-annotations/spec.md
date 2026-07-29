@@ -1,3 +1,9 @@
+## Purpose
+
+Define the free-text note and tags a session can carry, including how repeated log calls within one session combine or replace them.
+
+## Requirements
+
 ### Requirement: Session note and tags
 
 Each session SHALL carry an optional free-text `note` (max 200 characters) and an optional list of `tags` (each a non-empty string). Both fields default to empty when not provided.

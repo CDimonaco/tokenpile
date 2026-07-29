@@ -1,3 +1,9 @@
+## Purpose
+
+Define which issues the TUI list shows: assigned issues, locally-tracked ones, and the fallbacks used when GitHub is unauthenticated or an issue is inaccessible.
+
+## Requirements
+
 ### Requirement: Issue list shows assigned and locally-tracked issues
 
 The TUI issue list SHALL display the union of:

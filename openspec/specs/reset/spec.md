@@ -1,3 +1,9 @@
+## Purpose
+
+Define `tokenpile reset`: the confirmation it requires, the signed backup it writes before destroying anything, the full scope of local state it removes, and its behaviour on partial failure and repeated runs.
+
+## Requirements
+
 ### Requirement: Reset command with confirmation
 
 The system SHALL provide `tokenpile reset` which removes all local tokenpile state: the SQLite database and its WAL/SHM sidecar files, the Ed25519 identity keypair, the encrypted credentials file, the keychain token, the pricing override file, and installed agent skills. Before doing anything, the command SHALL print the list of items that will be deleted and require the user to type `yes`; any other input SHALL abort with a non-zero exit code and no side effects. A `--yes` flag SHALL skip the prompt for non-interactive use.

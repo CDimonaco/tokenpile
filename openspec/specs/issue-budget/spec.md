@@ -1,3 +1,9 @@
+## Purpose
+
+Define per-issue spend budgets: setting and clearing them, and how they persist so reports and the TUI can show consumption against them.
+
+## Requirements
+
 ### Requirement: Budget set and unset commands
 
 The system SHALL provide `tokenpile budget set --repo owner/repo --issue N --amount X.XX` to store a budget for an issue and `tokenpile budget unset --repo owner/repo --issue N` to remove it. The `--repo` flag SHALL be inferred from git remote when absent.

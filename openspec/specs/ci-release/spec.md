@@ -1,3 +1,8 @@
+## Purpose
+
+Define the project's toolchain and delivery pipeline: pinned tool versions, make as the single task runner, the checks CI enforces on every push, and how tagged releases are built and published.
+
+## Requirements
 
 ### Requirement: asdf-vm version pinning
 

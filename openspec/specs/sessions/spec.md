@@ -1,4 +1,8 @@
-## MODIFIED Requirements
+## Purpose
+
+Define the implicit session: the type that groups usage entries worked on in one sitting, and the idle timeout that closes it.
+
+## Requirements
 
 ### Requirement: Session domain type
 

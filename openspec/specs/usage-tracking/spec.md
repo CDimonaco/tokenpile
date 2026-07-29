@@ -1,4 +1,8 @@
-## MODIFIED Requirements
+## Purpose
+
+Define the `tokenpile log` command that records token usage: its required and optional flags, and the entry it creates.
+
+## Requirements
 
 ### Requirement: log command
 
