@@ -20,6 +20,48 @@ Before modifying more than three files or touching a package for the first time 
 
 Do not run `git push` unless the developer explicitly requests it in that message. Implement and commit freely; the developer decides when to publish.
 
+## OpenSpec
+
+Planning artifacts live in `openspec/`. Two different things get validated, and passing one says nothing about the other:
+
+- `openspec validate <change>` — checks a change's **delta** specs in `openspec/changes/<name>/specs/`
+- `openspec validate --specs` — checks the **main** specs in `openspec/specs/`
+
+Run both. `make check` runs `--specs` via the `spec-check` target, so it gates every commit.
+
+### Main specs vs delta specs have different shapes
+
+They are not interchangeable, and mixing them silently destroys content.
+
+A **delta** spec (inside a change) is organised by operation:
+
+```markdown
+## ADDED Requirements
+### Requirement: ...
+## MODIFIED Requirements
+### Requirement: ...
+```
+
+A **main** spec (in `openspec/specs/<capability>/spec.md`) is a flat document:
+
+```markdown
+## Purpose
+
+[what this capability is for]
+
+## Requirements
+
+### Requirement: ...
+#### Scenario: ...
+```
+
+Rules when syncing a delta into a main spec:
+
+- Never copy `## ADDED Requirements` / `## MODIFIED Requirements` / `## REMOVED Requirements` headers into a main spec. A stray `##` header **truncates the requirements section**: everything below it stops being parsed, so the capability silently reads as having zero requirements. This happened to four specs and went unnoticed for weeks.
+- Every main spec must open with `## Purpose` and `## Requirements`. A sync appends to an existing file and will not create this skeleton for you — check it is there.
+- A `MODIFIED` requirement replaces the one of the same name. Before writing one, read what the main spec already has: scenarios you fail to carry over are scenarios you delete.
+- After any sync or archive, run `openspec validate --specs` and read the output. `Spec must have at least one requirement` on a file that visibly contains requirements means the section is truncated, not empty.
+
 ## Commits
 
 - Conventional commits: `feat:`, `fix:`, `chore:`, `docs:`, `test:`, `refactor:`, `ci:`
@@ -188,7 +230,8 @@ Name packages after what they contain, not architectural layers. No `domain`, `m
 | `make uninstall` | Remove the binary installed by `make install` |
 | `make clean`    | Remove build artifacts              |
 | `make release-check` | Validate goreleaser config     |
-| `make check`    | fmt + lint + test + map (run before commit) |
+| `make check`    | fmt + lint + test + spec-check + map (run before commit) |
+| `make spec-check` | Validate main specs (`openspec validate --specs`) |
 | `make status`   | Branch, uncommitted files, recent commits, OpenSpec changes, CI status |
 | `make map`      | Regenerate `.gograph/` call graph (gograph) |
 | `make pack`     | Compress full source to `.gograph/pack.md` (repomix, on demand) |

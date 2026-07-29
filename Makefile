@@ -40,10 +40,18 @@ map:
 pack:
 	npx --yes repomix@latest --compress --ignore ".gograph/**" --output .gograph/pack.md
 
+spec-check:
+	@command -v openspec >/dev/null 2>&1 || { \
+		echo "WARNING: openspec not on PATH, skipping spec validation"; \
+		exit 0; \
+	}
+	openspec validate --specs
+
 check:
 	$(MAKE) fmt
 	$(MAKE) lint
 	$(MAKE) test
+	$(MAKE) spec-check
 	$(MAKE) map
 
 status:
