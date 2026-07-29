@@ -105,13 +105,16 @@ func main() {
 
 	app.Commands = []*cli.Command{
 		logCommand(sqliteStore, issueProvider),
-		reportCommand(sqliteStore),
+		reportCommand(sqliteStore, paths),
 		authCommands(oauthProvider, ghProvider, provider.ValidateToken, paths.CredentialsPath),
 		pricingCommands(pricingLoader, paths.PricingOverride),
 		exportCommands(sqliteStore, priv, version),
 		skillCommands(),
 		budgetCommands(sqliteStore),
 		resetCommand(sqliteStore, paths, oauthProvider, priv, version),
+		hookCommand(paths),
+		bindCommand(paths),
+		unattributedCommand(sqliteStore, paths),
 	}
 
 	// Override default action to launch TUI, injecting composed deps.

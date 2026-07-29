@@ -62,7 +62,7 @@ func TestInstall_ClaudeCode_WritesFile(t *testing.T) {
 
 	data, err := os.ReadFile(filepath.Join(dir, ".claude", "skills", "tokenpile", "SKILL.md"))
 	require.NoError(t, err)
-	assert.Contains(t, string(data), "tokenpile log")
+	assert.Contains(t, string(data), "tokenpile bind")
 	assert.Contains(t, string(data), "name: tokenpile")
 }
 
@@ -124,7 +124,7 @@ func TestInstall_OpenCode_WritesFile(t *testing.T) {
 	require.NoError(t, err)
 	content := string(data)
 	assert.Contains(t, content, "name: tokenpile")
-	assert.Contains(t, content, "--agent opencode")
+	assert.Contains(t, content, "tokenpile bind")
 }
 
 func TestInstall_OpenCode_RemovesLegacyAgentsBlockButKeepsForeignContent(t *testing.T) {

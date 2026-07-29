@@ -78,7 +78,11 @@ tokenpile skill install --agent claude-code    # writes ~/.claude/skills/tokenpi
 tokenpile skill install --agent opencode       # writes ~/.config/opencode/skills/tokenpile/SKILL.md
 ```
 
-After installation, the agent will automatically call `tokenpile log` at the end of each response where significant work was done.
+Installing a skill also installs that agent's **capture hook**: a `Stop` hook in `~/.claude/settings.json` for Claude Code, or a plugin in `~/.config/opencode/plugin/` for opencode. The hook is what records usage, reading the token counts the provider reported from the agent's own transcript. Existing hooks and settings are preserved — installation merges, it never rewrites.
+
+The skill itself no longer reports token counts. Its only job is to declare which issue the work belongs to, by calling `tokenpile bind`. A model cannot see its own context window or prompt cache, so any figure it produced would be wrong by a wide margin; the counts come from the transcript instead.
+
+If the agent never binds, nothing is lost: usage is still captured with exact counts and recorded as unattributed, ready to be assigned later.
 
 Each agent gets a dedicated `SKILL.md` (name + description frontmatter) at the location it discovers skills natively, following the Agent Skills spec shared by Claude Code and OpenCode. If an older install left a tokenpile block in that agent's `AGENTS.md` (pre-SKILL.md versions of tokenpile), installing removes just that block — the rest of the file is untouched.
 
@@ -234,6 +238,30 @@ Notes on how it behaves:
   of `gh`.
 - `tokenpile auth status` always names the active source, so it is never
   ambiguous which credential produced your data.
+
+### `tokenpile bind`
+
+Declare which issue the current work belongs to. Subsequent captured turns are attributed to it.
+
+```sh
+tokenpile bind --issue 42 --note "borrowing the gh credential" --tag feature
+```
+
+Attribution resolves in order: an explicit binding, then the git branch name (`feat/42-thing`, `issue-7`, `42-fix` are all recognised, offline, with no API call), then nothing — in which case the usage is recorded unattributed rather than dropped.
+
+### `tokenpile unattributed`
+
+List and assign usage that belongs to no issue.
+
+```sh
+tokenpile unattributed                                    # list groups by session
+tokenpile unattributed assign <session-id> --issue 42     # attribute a whole session
+tokenpile unattributed unassign <session-id>              # put it back
+```
+
+Assignment moves the session along with its entries, so wall-clock time follows the tokens. It is reversible: branch-derived attribution is a guess.
+
+Unattributed usage counts toward no budget, so `tokenpile report` calls it out whenever any exists — otherwise it would be invisible spending.
 
 ### `tokenpile pricing`
 

@@ -100,6 +100,8 @@ cmd/tokenpile/
   cmd_auth.go             `auth` command (OAuth login/logout)
   cmd_pricing.go          `pricing` command
   cmd_skill.go            `skill` command
+  cmd_hook.go             `hook` command (agent-invoked) + spool reconciliation
+  cmd_bind.go             `bind` and `unattributed` commands
   cmd_reset.go            `reset` command (signed backup, then full state deletion)
   integration_test.go     CLI integration tests; helpers: newTestStore, runLogCmd, runReportCmd, runBudgetCmd, runExportCmd
 
@@ -122,8 +124,16 @@ internal/
     pricing.defaults.yaml embedded default pricing
   export/
     export.go             JSON export, Ed25519 signing, schema validation
+  capture/
+    capture.go            Turn: one captured unit of work, normalized across agents
+    claudecode.go         Stop-hook payload + JSONL transcript reader
+    opencode.go           session.idle plugin payload reader
+    spool.go              append-only journal so a failing hook loses nothing
+  attribution/
+    attribution.go        issue bindings, offline branch inference, resolution order
   skill/
     skill.go              List, Install, Uninstall, IsInstalled, IsUpToDate
+    hooks.go              capture hook install/removal (settings.json merge, opencode plugin)
     templates/            embedded agent skill files
   tui/
     tui.go                Bubble Tea Model, Update, View; all TUI views
@@ -250,5 +260,8 @@ Name packages after what they contain, not architectural layers. No `domain`, `m
 - Cost: computed at report time from pricing config, never stored
 - Token tiers: usage is recorded as `Usage{InputFresh, CacheWrite, CacheRead, Output, Reasoning}`, not two buckets. Providers bill these very differently (cached reads at ~10% of input, cache writes above it), so two buckets cannot represent the bill. `Reasoning` is a SUBSET of `Output` and must never be added on top of it. Pricing declares four explicit rates per model; a tier with tokens but no rate warns and is excluded from cost rather than being charged at the input rate or an assumed ratio.
 - Entry provenance: every entry carries `source` of `measured` or `estimated`, derived from the command that writes it, never from a flag. An agent cannot observe its own cache tiers, so the distinction is structural.
+- Capture: token counts come from the agent's own transcript, never from a model's estimate. Claude Code fires a `Stop` hook (in `settings.json`, NOT skill frontmatter — frontmatter hooks are scoped to the skill's lifecycle and only run while the model chose to load it, which is the non-determinism capture exists to remove); opencode fires `session.idle` to an installed plugin. No agent payload carries token counts: the hook says when and where, the transcript says how much.
+- Attribution: `issue_num` is nullable on entries and sessions. That constraint was the root cause of the estimates — nothing could be recorded without an issue, only the model knew the issue, so the model had to log and therefore had to invent the numbers. Resolution order is binding, then offline branch-name inference, then none. A missing attribution is an unattributed measurement, never a lost one, and shows in `report` because it counts toward no budget.
+- Spool: capture appends to an append-only journal before any database write, and reconciliation folds it in on later invocations. A hook exiting non-zero merely prints to stderr and continues, so writing straight to SQLite would drop turns silently. Storage is idempotent on the entry id (`INSERT OR IGNORE`), which is what makes clearing the spool safe without a two-phase commit.
 - Sessions: implicit, 30-minute idle auto-close
 - Repo: inferred from `git remote get-url origin` when not passed explicitly; fails with clear error if not inferable

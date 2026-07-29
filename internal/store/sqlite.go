@@ -140,7 +140,10 @@ func (s *SQLiteStore) LogUsage(ctx context.Context, entry usage.Entry) error {
 	}
 
 	_, err := s.db.ExecContext(ctx,
-		`INSERT INTO usage_entries
+		// OR IGNORE makes capture idempotent on the entry id: a re-read
+		// transcript or a replayed spool cannot create duplicates, which is
+		// what lets the spool be cleared without a two-phase commit.
+		`INSERT OR IGNORE INTO usage_entries
 		 (id, repo, issue_num, agent, model, input_fresh, cache_write, cache_read, output, reasoning, source, session_id, at)
 		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		entry.ID, entry.Repo, entry.IssueNum, entry.Agent, entry.Model,

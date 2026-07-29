@@ -13,6 +13,12 @@ type Paths struct {
 	IdentityKeyPath string
 	IdentityPubPath string
 	CredentialsPath string
+	// BindingsPath holds issue bindings: which session or directory belongs to
+	// which issue. Config, not data: it is a small user-set preference.
+	BindingsPath string
+	// SpoolPath is the append-only capture journal awaiting storage. Data, not
+	// config: it holds measurements.
+	SpoolPath string
 }
 
 func Resolve() Paths {
@@ -27,6 +33,8 @@ func Resolve() Paths {
 		IdentityKeyPath: filepath.Join(cfg, "identity.key"),
 		IdentityPubPath: filepath.Join(cfg, "identity.pub"),
 		CredentialsPath: filepath.Join(cfg, "credentials"),
+		BindingsPath:    filepath.Join(cfg, "bindings.json"),
+		SpoolPath:       filepath.Join(data, "capture-spool.jsonl"),
 	}
 }
 

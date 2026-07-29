@@ -9,12 +9,14 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/cdimonaco/tokenpile/internal/capture"
+	"github.com/cdimonaco/tokenpile/internal/config"
 	"github.com/cdimonaco/tokenpile/internal/provider"
 	"github.com/cdimonaco/tokenpile/internal/store"
 	"github.com/cdimonaco/tokenpile/internal/usage"
 )
 
-func reportCommand(s store.Store) *cli.Command {
+func reportCommand(s store.Store, paths config.Paths) *cli.Command {
 	return &cli.Command{
 		Name:  "report",
 		Usage: "show token usage report for a GitHub issue",
@@ -40,6 +42,10 @@ func reportCommand(s store.Store) *cli.Command {
 			},
 		},
 		Action: func(c *cli.Context) error {
+			// Fold anything the capture hooks spooled before reporting, so a
+			// report never silently omits work already measured.
+			reconcileSpool(c, s, paths)
+
 			repo, err := provider.ResolveRepo(c.String("repo"))
 			if err != nil {
 				if errors.Is(err, provider.ErrNoRepo) {
@@ -82,6 +88,8 @@ func reportCommand(s store.Store) *cli.Command {
 			printReportTable(c.App.Writer, report, c.Bool("detail"))
 
 			fmt.Fprintf(c.App.Writer, "\nWall-clock time: %s\n", report.TotalTime.Round(1000000000))
+
+			warnUnattributed(c, s, repo, paths)
 
 			budget, budgetErr := s.GetBudget(ctx, repo, issueNum)
 			if budgetErr != nil && !errors.Is(budgetErr, store.ErrBudgetNotFound) {
@@ -231,5 +239,37 @@ func printReportTable(w io.Writer, report *usage.Report, detail bool) {
 
 	if detail {
 		printTierDetail(w, report)
+	}
+}
+
+// warnUnattributed keeps measured-but-unassigned usage visible.
+//
+// A budget is per issue, so unattributed usage counts toward none. Left
+// unmentioned it would be invisible spending, which is precisely what tokenpile
+// exists to prevent, so every report that touches a repository says how much of
+// its usage belongs to no issue yet.
+func warnUnattributed(c *cli.Context, s store.Store, repo string, paths config.Paths) {
+	groups, err := s.ListUnattributed(c.Context, repo)
+	if err != nil || len(groups) == 0 {
+		return
+	}
+
+	var (
+		entries int
+		cost    float64
+	)
+
+	for _, g := range groups {
+		entries += g.Entries
+		cost += g.Cost
+	}
+
+	fmt.Fprintf(c.App.Writer,
+		"\nUnattributed in %s: %d entries across %d sessions, $%.6f — counts toward no budget\n",
+		repo, entries, len(groups), cost)
+	fmt.Fprintln(c.App.Writer, "Run 'tokenpile unattributed' to assign it.")
+
+	if pending := capture.NewSpool(paths.SpoolPath).Pending(); pending > 0 {
+		fmt.Fprintf(c.App.Writer, "%d captured turns are still spooled.\n", pending)
 	}
 }

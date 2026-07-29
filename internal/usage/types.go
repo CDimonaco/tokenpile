@@ -10,11 +10,11 @@ import "time"
 // Providers that report reasoning tokens report them inside the completion
 // count, so adding the two double-bills every reasoning token.
 type Usage struct {
-	InputFresh int
-	CacheWrite int
-	CacheRead  int
-	Output     int
-	Reasoning  int
+	InputFresh int `json:"input_fresh"`
+	CacheWrite int `json:"cache_write"`
+	CacheRead  int `json:"cache_read"`
+	Output     int `json:"output"`
+	Reasoning  int `json:"reasoning"`
 }
 
 // TotalTokens is every token that passed through, counted once. Reasoning is

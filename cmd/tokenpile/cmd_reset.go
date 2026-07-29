@@ -132,6 +132,9 @@ func resetFilePaths(paths config.Paths) []string {
 		paths.IdentityPubPath,
 		paths.CredentialsPath,
 		paths.PricingOverride,
+		paths.BindingsPath,
+		paths.SpoolPath,
+		paths.SpoolPath + ".raw",
 	}
 }
 

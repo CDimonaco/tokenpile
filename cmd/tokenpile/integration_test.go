@@ -17,6 +17,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/urfave/cli/v2"
 
+	"github.com/cdimonaco/tokenpile/internal/config"
 	"github.com/cdimonaco/tokenpile/internal/export"
 	"github.com/cdimonaco/tokenpile/internal/pricing"
 	"github.com/cdimonaco/tokenpile/internal/provider"
@@ -278,7 +279,7 @@ func TestIntegration_Report_ShowsBreakdown(t *testing.T) {
 
 	app := &cli.App{
 		Writer:   &buf,
-		Commands: []*cli.Command{reportCommand(s)},
+		Commands: []*cli.Command{reportCommand(s, testPaths(t))},
 	}
 
 	err := app.RunContext(context.Background(), []string{"tok", "report", "--issue", "10", "--repo", "owner/repo"})
@@ -297,7 +298,7 @@ func runReportCmd(t *testing.T, s *store.SQLiteStore, args ...string) (string, e
 
 	app := &cli.App{
 		Writer:   &buf,
-		Commands: []*cli.Command{reportCommand(s)},
+		Commands: []*cli.Command{reportCommand(s, testPaths(t))},
 	}
 
 	err := app.RunContext(context.Background(), append([]string{"tok"}, args...))
@@ -725,4 +726,17 @@ func TestIntegration_Log_IdleSessionClosed_ByResolveSession(t *testing.T) {
 
 	assert.Equal(t, 1, closed)
 	assert.Equal(t, 1, active)
+}
+
+// testPaths gives each report test its own binding and spool files, so
+// reconciliation in one test cannot touch another.
+func testPaths(t *testing.T) config.Paths {
+	t.Helper()
+
+	dir := t.TempDir()
+
+	return config.Paths{
+		BindingsPath: filepath.Join(dir, "bindings.json"),
+		SpoolPath:    filepath.Join(dir, "spool.jsonl"),
+	}
 }

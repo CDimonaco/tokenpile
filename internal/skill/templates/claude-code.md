@@ -1,46 +1,39 @@
 ---
 name: tokenpile
-description: Track LLM token usage and cost per GitHub issue. Use after any response where you did meaningful work to log token usage, and whenever the user asks about token usage, cost, sessions, or spending budget for an issue.
+description: Track LLM token usage and cost per GitHub issue. Use to declare which GitHub issue the current work belongs to, and whenever the user asks about token usage, cost, sessions, or spending budget for an issue.
 ---
 
-<!-- tokenpile-skill-version: 5 -->
+<!-- tokenpile-skill-version: 6 -->
 
 # tokenpile
 
-tokenpile tracks LLM token usage and cost per GitHub issue. You have two responsibilities: log your own usage, and answer questions about usage data by running CLI commands.
+tokenpile tracks LLM token usage and cost per GitHub issue. You have two responsibilities: declare which issue the work belongs to, and answer questions about usage data by running CLI commands.
 
-## 1. Logging usage
+**You do not report token counts.** A capture hook reads them from this session's transcript, where the provider recorded what it actually billed. You cannot see your own context window, tool definitions or prompt cache, and the cache alone routinely accounts for the large majority of tokens billed, so any figure you produced would be wrong by a wide margin.
 
-After each response where substantial work was done, log usage:
+## 1. Declaring the issue
+
+As soon as you know which GitHub issue the work belongs to, declare it once:
 
 ```
-tokenpile log \
+tokenpile bind \
   --issue <issue-number> \
-  --agent claude-code \
-  --model <model-id> \
-  --input <input-tokens> \
-  --output <output-tokens> \
-  --note "<one-line summary of what was done>" \
+  --note "<one-line summary of what is being worked on>" \
   --tag <tag> \
   [--repo owner/repo]
 ```
 
 **Parameters:**
 - `--issue`: GitHub issue number for the current task. Ask the user if unknown.
-- `--agent`: always `claude-code`
-- `--model`: current model, e.g. `claude-sonnet-4-6`, `claude-opus-4-8`, `claude-haiku-4-5`
-- `--input` / `--output`: your best rough figure for this turn. These are recorded as **estimated**, and they are known to be unreliable: you cannot see your own context window, tool definitions or prompt cache, and the cache alone routinely accounts for the large majority of tokens actually billed. Do not attempt a character-count estimate of your whole context — pass what you can reasonably state and leave the rest at zero.
-- `--cache-write` / `--cache-read` / `--reasoning`: leave unset. These tiers are not observable from inside a turn.
-- `--note`: one-line description of what was done in this response (max 100 chars). Example: `"refactored auth middleware"`, `"fixed unicode bug in lexer"`. Always include.
+- `--note`: one-line description of the work (max 100 chars). Example: `"refactored auth middleware"`. Always include.
 - `--tag`: one or more tags from this vocabulary (repeat the flag for multiple): `refactor`, `debug`, `feature`, `test`, `docs`, `spike`, `review`. Choose all that apply.
 - `--repo`: optional if running inside a git repo with a GitHub remote
 
-**When to log:**
-- At the end of a response where you used tools, wrote code, or did meaningful analysis
-- Once per user turn, not after every tool call
-- Skip for one-liner answers or trivial replies
+**When to bind:**
+- Once, as soon as the issue is known — not after every response
+- Again only if the work moves to a different issue
 
-**Sessions are automatic:** consecutive logs within 30 minutes of the previous log share the same session. Tags accumulate across log calls in the same session (union); the note is overwritten by the latest call. No action needed from you.
+**If you never bind, nothing is lost.** Usage is still captured with exact token counts; it is simply recorded as unattributed, and can be assigned later with `tokenpile unattributed`. Forgetting costs attribution, never measurement.
 
 ## 2. Answering questions about usage
 

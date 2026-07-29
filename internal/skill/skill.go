@@ -113,6 +113,12 @@ func Install(agentName string) (string, bool, error) {
 
 	cleanupLegacy(agent, target)
 
+	// The skill declares the issue; the hook measures the tokens. Installing
+	// one without the other leaves capture inert, so they go together.
+	if _, err := InstallHook(agentName); err != nil {
+		return "", false, fmt.Errorf("install capture hook: %w", err)
+	}
+
 	return installDedicated(target, agent.TemplateData)
 }
 
@@ -160,6 +166,10 @@ func Uninstall(agentName string) (string, bool, error) {
 	}
 
 	cleanupLegacy(agent, target)
+
+	if _, _, err := UninstallHook(agentName); err != nil {
+		return "", false, fmt.Errorf("remove capture hook: %w", err)
+	}
 
 	return uninstallDedicated(target)
 }

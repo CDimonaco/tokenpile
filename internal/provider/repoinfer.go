@@ -15,7 +15,19 @@ var (
 )
 
 func InferRepo() (string, error) {
-	out, err := exec.Command("git", "remote", "get-url", "origin").Output()
+	return InferRepoIn("")
+}
+
+// InferRepoIn infers the repository from the git remote of a specific
+// directory. Capture reads turns recorded elsewhere, so it cannot rely on the
+// process working directory being the one the work happened in.
+func InferRepoIn(dir string) (string, error) {
+	cmd := exec.Command("git", "remote", "get-url", "origin")
+	if dir != "" {
+		cmd.Dir = dir
+	}
+
+	out, err := cmd.Output()
 	if err != nil {
 		return "", ErrNoRepo
 	}
