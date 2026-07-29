@@ -88,18 +88,30 @@ func main() {
 		clientSecret = v
 	}
 
-	authProvider := provider.NewGitHubAuthProvider(clientID, clientSecret, paths.CredentialsPath)
+	// oauthProvider owns the credential slot: it is what logout and reset must
+	// clear, whichever token source is active. ghProvider borrows gh's own
+	// credential and owns nothing.
+	oauthProvider := provider.NewGitHubAuthProvider(clientID, clientSecret, paths.CredentialsPath)
+	ghProvider := provider.NewGhCliAuthProvider()
+
+	// The token source is a persisted choice, resolved once here rather than
+	// per call, so it is never ambiguous which credential answered.
+	var authProvider provider.AuthProvider = oauthProvider
+	if provider.StoredTokenSource(paths.CredentialsPath) == provider.TokenSourceGhCli {
+		authProvider = ghProvider
+	}
+
 	issueProvider := provider.NewGitHubIssueProvider(authProvider)
 
 	app.Commands = []*cli.Command{
 		logCommand(sqliteStore, issueProvider),
 		reportCommand(sqliteStore),
-		authCommands(authProvider),
+		authCommands(oauthProvider, ghProvider, provider.ValidateToken, paths.CredentialsPath),
 		pricingCommands(pricingLoader, paths.PricingOverride),
 		exportCommands(sqliteStore, priv, version),
 		skillCommands(),
 		budgetCommands(sqliteStore),
-		resetCommand(sqliteStore, paths, authProvider, priv, version),
+		resetCommand(sqliteStore, paths, oauthProvider, priv, version),
 	}
 
 	// Override default action to launch TUI, injecting composed deps.

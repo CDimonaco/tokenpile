@@ -152,13 +152,15 @@ func (p *GitHubAuthProvider) Login(ctx context.Context) error {
 }
 
 func (p *GitHubAuthProvider) Token(_ context.Context) (string, error) {
-	tok, err := keyring.Get(keychainService, keychainKey)
-	if err == nil {
-		return tok, nil
+	tok, err := loadCredential(p.credPath)
+	if err != nil {
+		return "", ErrUnauthenticated
 	}
 
-	tok, err = p.loadEncryptedToken()
-	if err != nil {
+	// The slot holds a token source marker, not an OAuth token. Returning it
+	// would send "Authorization: bearer gh-cli:" to GitHub and surface as a
+	// baffling 401, so treat it as no OAuth token at all.
+	if isTokenSourceSentinel(tok) {
 		return "", ErrUnauthenticated
 	}
 
@@ -185,17 +187,36 @@ func (p *GitHubAuthProvider) Logout(_ context.Context) error {
 }
 
 func (p *GitHubAuthProvider) storeToken(token string) error {
-	err := keyring.Set(keychainService, keychainKey, token)
+	return storeCredential(p.credPath, token)
+}
+
+// storeCredential writes a value to the single credential slot: the OS keychain
+// when available, the encrypted file otherwise. Both OAuth tokens and token
+// source markers go through here, so they share storage semantics and Logout
+// clears either one.
+func storeCredential(credPath, value string) error {
+	err := keyring.Set(keychainService, keychainKey, value)
 	if err == nil {
 		return nil
 	}
 
 	slog.Warn("Secret Service unavailable, using encrypted file fallback", "err", err)
 
-	return p.storeEncryptedToken(token)
+	return storeEncryptedToken(credPath, value)
 }
 
-func (p *GitHubAuthProvider) storeEncryptedToken(token string) error {
+// loadCredential reads the credential slot, preferring the keychain and falling
+// back to the encrypted file on headless systems.
+func loadCredential(credPath string) (string, error) {
+	tok, err := keyring.Get(keychainService, keychainKey)
+	if err == nil {
+		return tok, nil
+	}
+
+	return loadEncryptedToken(credPath)
+}
+
+func storeEncryptedToken(credPath, token string) error {
 	key := machineKey()
 
 	block, err := aes.NewCipher(key)
@@ -215,15 +236,15 @@ func (p *GitHubAuthProvider) storeEncryptedToken(token string) error {
 
 	ciphertext := gcm.Seal(nonce, nonce, []byte(token), nil)
 
-	if err = os.WriteFile(p.credPath, ciphertext, 0o600); err != nil {
+	if err = os.WriteFile(credPath, ciphertext, 0o600); err != nil {
 		return fmt.Errorf("write credentials: %w", err)
 	}
 
 	return nil
 }
 
-func (p *GitHubAuthProvider) loadEncryptedToken() (string, error) {
-	data, err := os.ReadFile(p.credPath)
+func loadEncryptedToken(credPath string) (string, error) {
+	data, err := os.ReadFile(credPath)
 	if err != nil {
 		return "", fmt.Errorf("read credentials: %w", err)
 	}

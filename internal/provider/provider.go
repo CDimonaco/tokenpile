@@ -16,6 +16,17 @@ var (
 	)
 	ErrUnauthenticated = errors.New("not authenticated: run tokenpile auth login")
 	ErrIssueNotFound   = errors.New("issue not found")
+
+	// ErrGhNotFound reports that the gh CLI is not installed. It stays
+	// distinct from ErrUnauthenticated because it names a different remedy:
+	// telling the user to run tokenpile auth login here would be wrong advice.
+	ErrGhNotFound = errors.New(
+		"gh CLI not found on PATH: install it from https://cli.github.com, " +
+			"or run tokenpile auth login --no-gh-cli to use the OAuth flow",
+	)
+	// ErrGhUnauthenticated reports that the gh CLI is installed but holds no
+	// usable credential. Distinct from ErrUnauthenticated for the same reason.
+	ErrGhUnauthenticated = errors.New("gh CLI is not authenticated: run gh auth login")
 )
 
 type Issue struct {

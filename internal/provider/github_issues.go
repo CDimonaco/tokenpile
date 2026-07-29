@@ -49,6 +49,29 @@ func (p *GitHubIssueProvider) client(ctx context.Context) (*github.Client, error
 	return client, nil
 }
 
+// wrapAccessError turns a 403 into advice. A 403 on a repository that exists is
+// the signature of an organization that has not approved the tokenpile OAuth
+// App, which is precisely what borrowing the gh credential solves. The hint is
+// only offered when it is actionable: when gh is already the token source, the
+// problem is gh's own access, not the OAuth App.
+func (p *GitHubIssueProvider) wrapAccessError(op string, err error) error {
+	var ghErr *github.ErrorResponse
+	if !errors.As(err, &ghErr) || ghErr.Response.StatusCode != http.StatusForbidden {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	if _, borrowed := p.auth.(*GhCliAuthProvider); borrowed {
+		return fmt.Errorf("%s: %w (the gh CLI credential does not grant access to this repository)", op, err)
+	}
+
+	return fmt.Errorf(
+		"%s: %w (if this repository belongs to an organization that has not approved the "+
+			"tokenpile OAuth App, run tokenpile auth login --provider github --use-gh-cli "+
+			"to borrow the gh CLI credential instead)",
+		op, err,
+	)
+}
+
 func (p *GitHubIssueProvider) ListIssues(ctx context.Context, filter usage.Filter) ([]Issue, error) {
 	client, err := p.client(ctx)
 	if err != nil {
@@ -77,7 +100,7 @@ func (p *GitHubIssueProvider) ListIssues(ctx context.Context, filter usage.Filte
 	for {
 		ghIssues, resp, listErr := client.Issues.ListByRepo(ctx, owner, repo, opts)
 		if listErr != nil {
-			return nil, fmt.Errorf("list issues: %w", listErr)
+			return nil, p.wrapAccessError("list issues", listErr)
 		}
 
 		for _, gi := range ghIssues {
@@ -130,7 +153,7 @@ func (p *GitHubIssueProvider) GetIssue(ctx context.Context, repo string, number 
 			return nil, ErrIssueNotFound
 		}
 
-		return nil, fmt.Errorf("get issue: %w", err)
+		return nil, p.wrapAccessError("get issue", err)
 	}
 
 	labels := make([]string, 0, len(gi.Labels))

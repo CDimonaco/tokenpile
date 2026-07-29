@@ -15,10 +15,10 @@ import (
 	"github.com/cdimonaco/tokenpile/internal/usage"
 )
 
-func newMockAuthProvider(t *testing.T, token string) *mocks.AuthProvider {
+func newMockAuthProvider(t *testing.T) *mocks.AuthProvider {
 	t.Helper()
 	m := mocks.NewAuthProvider(t)
-	m.On("Token", context.Background()).Return(token, nil)
+	m.On("Token", context.Background()).Return("test-token", nil)
 
 	return m
 }
@@ -36,7 +36,7 @@ func TestGitHubIssueProvider_ListIssues(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	auth := newMockAuthProvider(t, "test-token")
+	auth := newMockAuthProvider(t)
 	p := provider.NewGitHubIssueProviderWithURL(auth, srv.URL)
 
 	got, err := p.ListIssues(context.Background(), usage.Filter{Repo: "o/r", State: "open"})
@@ -70,7 +70,7 @@ func TestGitHubIssueProvider_ListIssues_Paginated(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	auth := newMockAuthProvider(t, "test-token")
+	auth := newMockAuthProvider(t)
 	p := provider.NewGitHubIssueProviderWithURL(auth, srv.URL)
 
 	got, err := p.ListIssues(context.Background(), usage.Filter{Repo: "o/r", State: "open"})
@@ -105,11 +105,50 @@ func TestGitHubIssueProvider_GetIssue(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	auth := newMockAuthProvider(t, "test-token")
+	auth := newMockAuthProvider(t)
 	p := provider.NewGitHubIssueProviderWithURL(auth, srv.URL)
 
 	got, err := p.GetIssue(context.Background(), "o/r", 42)
 	require.NoError(t, err)
 	assert.Equal(t, 42, got.Number)
 	assert.Equal(t, "Critical bug", got.Title)
+}
+
+func forbiddenServer(t *testing.T) *httptest.Server {
+	t.Helper()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusForbidden)
+		_, _ = w.Write([]byte(`{"message":"Resource not accessible by integration"}`))
+	}))
+	t.Cleanup(srv.Close)
+
+	return srv
+}
+
+// A 403 from an OAuth-sourced call is the signature of an org that has not
+// approved the OAuth App, so the error points at the remedy.
+func TestGitHubIssueProvider_ForbiddenSuggestsGhCli(t *testing.T) {
+	srv := forbiddenServer(t)
+	auth := newMockAuthProvider(t)
+	p := provider.NewGitHubIssueProviderWithURL(auth, srv.URL)
+
+	_, err := p.GetIssue(context.Background(), "o/r", 1)
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "--use-gh-cli")
+}
+
+// The same 403 with gh already the token source must not suggest switching to
+// the source already in use.
+func TestGitHubIssueProvider_ForbiddenOnGhCliDoesNotSuggestItself(t *testing.T) {
+	srv := forbiddenServer(t)
+	t.Setenv("PATH", ghStubDir(t, `echo gho_testtoken`))
+	p := provider.NewGitHubIssueProviderWithURL(provider.NewGhCliAuthProvider(), srv.URL)
+
+	_, err := p.GetIssue(context.Background(), "o/r", 1)
+
+	require.Error(t, err)
+	assert.NotContains(t, err.Error(), "--use-gh-cli")
+	assert.Contains(t, err.Error(), "gh CLI credential does not grant access")
 }
