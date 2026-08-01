@@ -76,7 +76,7 @@ func TestIntegration_Log_CreatesSessionAndEntry(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	sessions, err := s.ListSessions(ctx, "owner/repo", 1)
+	sessions, err := s.ListSessions(ctx, "owner/repo", issuePtr(1))
 	require.NoError(t, err)
 	require.Len(t, sessions, 1)
 	assert.Nil(t, sessions[0].EndedAt)
@@ -172,7 +172,7 @@ func TestIntegration_Log_ReuseSession(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	sessions, err := s.ListSessions(ctx, "owner/repo", 2)
+	sessions, err := s.ListSessions(ctx, "owner/repo", issuePtr(2))
 	require.NoError(t, err)
 	assert.Len(t, sessions, 1, "expect one session to be reused")
 
@@ -221,7 +221,7 @@ func TestIntegration_Log_ClosesIdleSession(t *testing.T) {
 		),
 	)
 
-	sessions, err := s.ListSessions(ctx, "owner/repo", 3)
+	sessions, err := s.ListSessions(ctx, "owner/repo", issuePtr(3))
 	require.NoError(t, err)
 
 	// old session (ended) + new session
@@ -383,7 +383,7 @@ func TestIntegration_Log_WithNoteAndTag(t *testing.T) {
 	)
 	require.NoError(t, err)
 
-	sessions, err := s.ListSessions(ctx, "owner/repo", 20)
+	sessions, err := s.ListSessions(ctx, "owner/repo", issuePtr(20))
 	require.NoError(t, err)
 	require.Len(t, sessions, 1)
 	assert.Equal(t, "refactored auth", sessions[0].Note)
@@ -406,7 +406,7 @@ func TestIntegration_Log_NoteTruncatedOnRuneBoundary(t *testing.T) {
 		"--note", longNote,
 	))
 
-	sessions, err := s.ListSessions(context.Background(), "owner/repo", 1)
+	sessions, err := s.ListSessions(context.Background(), "owner/repo", issuePtr(1))
 	require.NoError(t, err)
 	require.Len(t, sessions, 1)
 
@@ -430,7 +430,7 @@ func TestIntegration_Log_TagsAccumulate(t *testing.T) {
 		"--tag", "feature",
 	))
 
-	sessions, err := s.ListSessions(ctx, "owner/repo", 21)
+	sessions, err := s.ListSessions(ctx, "owner/repo", issuePtr(21))
 	require.NoError(t, err)
 	require.Len(t, sessions, 1, "second call should reuse same session")
 	assert.ElementsMatch(t, []string{"debug", "feature"}, sessions[0].Tags)
@@ -708,7 +708,7 @@ func TestIntegration_Log_IdleSessionClosed_ByResolveSession(t *testing.T) {
 		"--input", "100", "--output", "50", "--repo", "owner/repo",
 	))
 
-	sessions, err := s.ListSessions(ctx, "owner/repo", 60)
+	sessions, err := s.ListSessions(ctx, "owner/repo", issuePtr(60))
 	require.NoError(t, err)
 	require.Len(t, sessions, 2)
 

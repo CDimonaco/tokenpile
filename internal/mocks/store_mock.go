@@ -292,7 +292,7 @@ func (_m *Store) ListIssues(ctx context.Context, filter usage.Filter) ([]usage.T
 }
 
 // ListSessions provides a mock function with given fields: ctx, repo, issueNum
-func (_m *Store) ListSessions(ctx context.Context, repo string, issueNum int) ([]usage.Session, error) {
+func (_m *Store) ListSessions(ctx context.Context, repo string, issueNum *int) ([]usage.Session, error) {
 	ret := _m.Called(ctx, repo, issueNum)
 
 	if len(ret) == 0 {
@@ -301,10 +301,10 @@ func (_m *Store) ListSessions(ctx context.Context, repo string, issueNum int) ([
 
 	var r0 []usage.Session
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, int) ([]usage.Session, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, *int) ([]usage.Session, error)); ok {
 		return rf(ctx, repo, issueNum)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, int) []usage.Session); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, *int) []usage.Session); ok {
 		r0 = rf(ctx, repo, issueNum)
 	} else {
 		if ret.Get(0) != nil {
@@ -312,7 +312,7 @@ func (_m *Store) ListSessions(ctx context.Context, repo string, issueNum int) ([
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, int) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, *int) error); ok {
 		r1 = rf(ctx, repo, issueNum)
 	} else {
 		r1 = ret.Error(1)

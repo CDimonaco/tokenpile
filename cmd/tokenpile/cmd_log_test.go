@@ -62,7 +62,7 @@ func TestLog_NoActiveSession_StartsNew(t *testing.T) {
 		StartedAt: time.Now(),
 	}
 
-	s.On("ListSessions", mock.Anything, "owner/repo", 42).Return([]usage.Session{}, nil)
+	s.On("ListSessions", mock.Anything, "owner/repo", mock.Anything).Return([]usage.Session{}, nil)
 	s.On("StartSession", mock.Anything, "owner/repo", mock.Anything).Return(sess, nil)
 	s.On("UpdateSessionActivity", mock.Anything, "sess-1", mock.AnythingOfType("time.Time")).Return(nil)
 	s.On("LogUsage", mock.Anything, mock.MatchedBy(func(e usage.Entry) bool {
@@ -102,7 +102,7 @@ func TestLog_ReuseActiveSession(t *testing.T) {
 		LastActivityAt: recentTime,
 	}
 
-	s.On("ListSessions", mock.Anything, "owner/repo", 7).Return([]usage.Session{activeSess}, nil)
+	s.On("ListSessions", mock.Anything, "owner/repo", mock.Anything).Return([]usage.Session{activeSess}, nil)
 	s.On("UpdateSessionActivity", mock.Anything, "sess-active", mock.AnythingOfType("time.Time")).Return(nil)
 	s.On("LogUsage", mock.Anything, mock.MatchedBy(func(e usage.Entry) bool {
 		return e.SessionID == "sess-active"
@@ -146,7 +146,7 @@ func TestLog_ClosesIdleSession_StartsNew(t *testing.T) {
 		StartedAt: time.Now(),
 	}
 
-	s.On("ListSessions", mock.Anything, "owner/repo", 99).Return([]usage.Session{idleSess}, nil)
+	s.On("ListSessions", mock.Anything, "owner/repo", mock.Anything).Return([]usage.Session{idleSess}, nil)
 	s.On("EndSessionAt", mock.Anything, "sess-idle", mock.AnythingOfType("time.Time")).Return(nil)
 	s.On("StartSession", mock.Anything, "owner/repo", mock.Anything).Return(newSess, nil)
 	s.On("UpdateSessionActivity", mock.Anything, "sess-new", mock.AnythingOfType("time.Time")).Return(nil)

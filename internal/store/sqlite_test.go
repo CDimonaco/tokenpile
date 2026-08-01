@@ -94,7 +94,7 @@ func TestSQLiteStore_Session_StartEnd(t *testing.T) {
 	err = s.EndSession(ctx, sess.ID)
 	require.NoError(t, err)
 
-	sessions, err := s.ListSessions(ctx, "owner/repo", 42)
+	sessions, err := s.ListSessions(ctx, "owner/repo", issuePtr(42))
 	require.NoError(t, err)
 	require.Len(t, sessions, 1)
 	assert.NotNil(t, sessions[0].EndedAt)
@@ -372,7 +372,7 @@ func TestSQLiteStore_UpdateSessionAnnotations_NoteAndTags(t *testing.T) {
 	err = s.UpdateSessionAnnotations(ctx, sess.ID, &note, []string{"refactor", "debug"})
 	require.NoError(t, err)
 
-	sessions, err := s.ListSessions(ctx, "o/r", 1)
+	sessions, err := s.ListSessions(ctx, "o/r", issuePtr(1))
 	require.NoError(t, err)
 	require.Len(t, sessions, 1)
 	assert.Equal(t, "refactored auth flow", sessions[0].Note)
@@ -394,7 +394,7 @@ func TestSQLiteStore_UpdateSessionAnnotations_TagsUnion(t *testing.T) {
 	err = s.UpdateSessionAnnotations(ctx, sess.ID, &note2, []string{"debug"})
 	require.NoError(t, err)
 
-	sessions, err := s.ListSessions(ctx, "o/r", 1)
+	sessions, err := s.ListSessions(ctx, "o/r", issuePtr(1))
 	require.NoError(t, err)
 	require.Len(t, sessions, 1)
 	assert.Equal(t, "second", sessions[0].Note)
@@ -415,7 +415,7 @@ func TestSQLiteStore_UpdateSessionAnnotations_NilNotePreservesExisting(t *testin
 	err = s.UpdateSessionAnnotations(ctx, sess.ID, nil, []string{"test"})
 	require.NoError(t, err)
 
-	sessions, err := s.ListSessions(ctx, "o/r", 1)
+	sessions, err := s.ListSessions(ctx, "o/r", issuePtr(1))
 	require.NoError(t, err)
 	require.Len(t, sessions, 1)
 	assert.Equal(t, "keep me", sessions[0].Note)
@@ -429,7 +429,7 @@ func TestSQLiteStore_ListSessions_EmptyTagsNonNil(t *testing.T) {
 	_, err := s.StartSession(ctx, "o/r", issuePtr(1))
 	require.NoError(t, err)
 
-	sessions, err := s.ListSessions(ctx, "o/r", 1)
+	sessions, err := s.ListSessions(ctx, "o/r", issuePtr(1))
 	require.NoError(t, err)
 	require.Len(t, sessions, 1)
 	assert.NotNil(t, sessions[0].Tags)
@@ -650,7 +650,7 @@ func TestSQLiteStore_AssignIssue_AndReverse(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, entries, 2)
 
-	sessions, err := s.ListSessions(ctx, "o/r", 42)
+	sessions, err := s.ListSessions(ctx, "o/r", issuePtr(42))
 	require.NoError(t, err)
 	require.Len(t, sessions, 1, "the session follows its entries, so wall-clock time does too")
 

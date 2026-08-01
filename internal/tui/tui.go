@@ -856,7 +856,7 @@ func (m Model) loadSessions(repo string, issueNum int) tea.Cmd {
 	return func() tea.Msg {
 		ctx := context.Background()
 
-		sessions, err := m.store.ListSessions(ctx, repo, issueNum)
+		sessions, err := m.store.ListSessions(ctx, repo, &issueNum)
 		if err != nil {
 			return errMsg{err: err}
 		}

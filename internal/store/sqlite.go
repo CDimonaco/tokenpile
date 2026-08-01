@@ -385,14 +385,21 @@ func (s *SQLiteStore) EndSessionAt(ctx context.Context, sessionID string, at tim
 	return nil
 }
 
-func (s *SQLiteStore) ListSessions(ctx context.Context, repo string, issueNum int) ([]usage.Session, error) {
-	rows, err := s.db.QueryContext(
-		ctx,
-		`SELECT id, repo, issue_num, started_at, ended_at, last_activity_at, note, tags
-		 FROM sessions WHERE repo = ? AND issue_num = ? ORDER BY started_at`,
-		repo,
-		issueNum,
-	)
+// ListSessions returns a repository's sessions for one issue, or its
+// unattributed sessions when issueNum is nil. SQL equality never matches NULL,
+// so the two cases need different predicates.
+func (s *SQLiteStore) ListSessions(ctx context.Context, repo string, issueNum *int) ([]usage.Session, error) {
+	query := `SELECT id, repo, issue_num, started_at, ended_at, last_activity_at, note, tags
+		 FROM sessions WHERE repo = ? AND issue_num IS NULL ORDER BY started_at`
+	args := []any{repo}
+
+	if issueNum != nil {
+		query = `SELECT id, repo, issue_num, started_at, ended_at, last_activity_at, note, tags
+		 FROM sessions WHERE repo = ? AND issue_num = ? ORDER BY started_at`
+		args = append(args, *issueNum)
+	}
+
+	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, fmt.Errorf("list sessions: %w", err)
 	}

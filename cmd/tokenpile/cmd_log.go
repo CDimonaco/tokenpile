@@ -23,10 +23,9 @@ func logCommand(s store.Store, ip provider.IssueProvider) *cli.Command {
 		Usage: "record LLM token usage for a GitHub issue",
 		Flags: []cli.Flag{
 			&cli.IntFlag{
-				Name:     "issue",
-				Aliases:  []string{"i"},
-				Usage:    "GitHub issue number",
-				Required: true,
+				Name:    "issue",
+				Aliases: []string{"i"},
+				Usage:   "GitHub issue number (optional: omitted usage is recorded unattributed)",
 			},
 			&cli.StringFlag{
 				Name:     "agent",
@@ -124,29 +123,20 @@ func runLog(c *cli.Context, s store.Store, ip provider.IssueProvider) error {
 		return errors.New("--reasoning cannot exceed --output: reasoning tokens are a subset of output")
 	}
 
-	issue, getErr := ip.GetIssue(ctx, repo, issueNum)
-	if getErr != nil {
-		if errors.Is(getErr, provider.ErrIssueNotFound) {
-			return fmt.Errorf("issue #%d not found in %s", issueNum, repo)
+	// Attribution is optional. Without an issue there is nothing to validate
+	// against GitHub and nothing to cache, and the entry is recorded
+	// unattributed rather than rejected.
+	var issuePtr *int
+
+	if c.IsSet("issue") {
+		if err = validateAndCacheIssue(ctx, s, ip, repo, issueNum); err != nil {
+			return err
 		}
 
-		if errors.Is(getErr, provider.ErrUnauthenticated) {
-			return errors.New("GitHub authentication required to validate issues: run tokenpile auth login")
-		}
-
-		return fmt.Errorf("validate issue: %w", getErr)
+		issuePtr = &issueNum
 	}
 
-	if cacheErr := s.UpsertIssueCache(ctx, &usage.IssueCache{
-		Repo:     repo,
-		IssueNum: issueNum,
-		Title:    issue.Title,
-		Labels:   issue.Labels,
-	}); cacheErr != nil {
-		slog.Warn("upsert issue cache", "err", cacheErr)
-	}
-
-	sessionID, err := resolveSession(ctx, s, repo, issueNum)
+	sessionID, err := resolveSession(ctx, s, repo, issuePtr)
 	if err != nil {
 		return fmt.Errorf("resolve session: %w", err)
 	}
@@ -154,7 +144,7 @@ func runLog(c *cli.Context, s store.Store, ip provider.IssueProvider) error {
 	entry := usage.Entry{
 		ID:       uuid.NewString(),
 		Repo:     repo,
-		IssueNum: &issueNum,
+		IssueNum: issuePtr,
 		Agent:    agent,
 		Model:    model,
 		Usage:    u,
@@ -171,8 +161,52 @@ func runLog(c *cli.Context, s store.Store, ip provider.IssueProvider) error {
 
 	applyAnnotations(ctx, s, sessionID, c.String("note"), c.StringSlice("tag"))
 
-	fmt.Fprintf(c.App.Writer, "Logged: %s #%d  in=%d out=%d  session=%s\n",
-		repo, issueNum, u.TotalInput(), u.Output, sessionID)
+	target := "unattributed"
+	if issuePtr != nil {
+		target = fmt.Sprintf("#%d", *issuePtr)
+	}
+
+	fmt.Fprintf(c.App.Writer, "Logged: %s %s  in=%d out=%d  session=%s\n",
+		repo, target, u.TotalInput(), u.Output, sessionID)
+
+	return nil
+}
+
+// validateAndCacheIssue checks the issue exists before it is attributed to, and
+// refreshes the local cache of its title and labels. A cache failure is a
+// warning: it degrades later reporting, it does not invalidate the measurement.
+func validateAndCacheIssue(
+	ctx context.Context,
+	s store.Store,
+	ip provider.IssueProvider,
+	repo string,
+	issueNum int,
+) error {
+	if issueNum <= 0 {
+		return errors.New("--issue must be a positive issue number")
+	}
+
+	issue, err := ip.GetIssue(ctx, repo, issueNum)
+	if err != nil {
+		if errors.Is(err, provider.ErrIssueNotFound) {
+			return fmt.Errorf("issue #%d not found in %s", issueNum, repo)
+		}
+
+		if errors.Is(err, provider.ErrUnauthenticated) {
+			return errors.New("GitHub authentication required to validate issues: run tokenpile auth login")
+		}
+
+		return fmt.Errorf("validate issue: %w", err)
+	}
+
+	if cacheErr := s.UpsertIssueCache(ctx, &usage.IssueCache{
+		Repo:     repo,
+		IssueNum: issueNum,
+		Title:    issue.Title,
+		Labels:   issue.Labels,
+	}); cacheErr != nil {
+		slog.Warn("upsert issue cache", "err", cacheErr)
+	}
 
 	return nil
 }
@@ -196,7 +230,7 @@ func applyAnnotations(ctx context.Context, s store.Store, sessionID, noteStr str
 	}
 }
 
-func resolveSession(ctx context.Context, s store.Store, repo string, issueNum int) (string, error) {
+func resolveSession(ctx context.Context, s store.Store, repo string, issueNum *int) (string, error) {
 	sessions, err := s.ListSessions(ctx, repo, issueNum)
 	if err != nil {
 		return "", fmt.Errorf("list sessions: %w", err)
@@ -228,7 +262,7 @@ func resolveSession(ctx context.Context, s store.Store, repo string, issueNum in
 		return activeID, nil
 	}
 
-	newSess, err := s.StartSession(ctx, repo, &issueNum)
+	newSess, err := s.StartSession(ctx, repo, issueNum)
 	if err != nil {
 		return "", fmt.Errorf("start session: %w", err)
 	}

@@ -110,7 +110,7 @@ func reportCommand(s store.Store, paths config.Paths) *cli.Command {
 func printSessionsReport(c *cli.Context, s store.Store, repo string, issueNum int) error {
 	ctx := c.Context
 
-	sessions, err := s.ListSessions(ctx, repo, issueNum)
+	sessions, err := s.ListSessions(ctx, repo, &issueNum)
 	if err != nil {
 		return fmt.Errorf("list sessions: %w", err)
 	}
