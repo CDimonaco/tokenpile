@@ -2,7 +2,7 @@
 
 ### Requirement: Unattributed usage view
 
-The TUI SHALL provide a view listing unattributed usage grouped by session and branch, showing repository, branch, time window, entry count, tokens, cost and the suggested issue where one is implied.
+The TUI SHALL provide a view listing unattributed usage grouped by session, showing repository, branch, time window, entry count, tokens, cost and the suggested issue where one is implied.
 
 The view SHALL allow assigning the selected group to an issue, with any suggestion pre-filled and editable before confirmation, and unassigning a group that was assigned. Both SHALL use the same store operations as the CLI, so the two surfaces cannot disagree.
 

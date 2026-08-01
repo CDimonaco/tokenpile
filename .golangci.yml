@@ -187,7 +187,10 @@ linters:
         linters: [ revive ]
       - text: 'exported \S+ \S+ should have comment( \(or a comment on this block\))? or be unexported'
         linters: [ revive ]
-      - path: 'internal/tui/tui_test\.go'
+      # The TUI is tested white-box: Model's state and key handlers are
+      # unexported, and driving them directly is what makes the views testable
+      # without a terminal.
+      - path: 'internal/tui/.*_test\.go'
         linters:
           - testpackage
       - path: '_test\.go'

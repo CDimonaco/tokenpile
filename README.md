@@ -128,9 +128,25 @@ tokenpile
 | `enter` | open issue detail |
 | `o` | open selected issue in browser |
 | `c` | open chart view |
+| `u` | review unattributed usage |
 | `esc` | go back |
 | `?` | toggle help |
 | `q` | quit |
+
+When unattributed usage exists, the list says so above the table. It counts toward no budget, so nothing else on that screen would ever hint that it is there.
+
+**Unattributed usage view** (`u` from the issue list)
+
+| Key | Action |
+|-----|--------|
+| `j` / `k` | navigate up/down |
+| `a` / `enter` | assign the selected session to an issue |
+| `z` | undo the last assignment made here |
+| `esc` | back to the issue list |
+
+Each row is one session: its repository, the branch it was captured on, its time window, entries, tokens, cost, and the suggested issue.
+
+The suggestion comes from the branch name the entries were captured on (`feat/42-thing` suggests 42). It is pre-filled in the assign prompt and editable before you confirm — it is never applied on its own, because a branch is a weak signal and a wrong suggestion invites a careless confirmation. A branch that implies nothing, or entries recorded before branches were stored, show `-` and are assigned by typing the number.
 
 The list shows a clickable `#N` link for each issue. In terminals that support OSC 8 hyperlinks (iTerm2, Kitty, most modern terminals) clicking the link opens the issue in your browser.
 
@@ -256,8 +272,11 @@ List and assign usage that belongs to no issue.
 ```sh
 tokenpile unattributed                                    # list groups by session
 tokenpile unattributed assign <session-id> --issue 42     # attribute a whole session
+tokenpile unattributed assign <session-id>                # accept the suggested issue
 tokenpile unattributed unassign <session-id>              # put it back
 ```
+
+The listing shows the branch each session was captured on and the issue that branch implies. Omitting `--issue` accepts that suggestion; if the branch implies nothing, the command fails rather than picking something. The same reconciliation is available in the TUI under `u`.
 
 Assignment moves the session along with its entries, so wall-clock time follows the tokens. It is reversible: branch-derived attribution is a guess.
 

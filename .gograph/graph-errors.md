@@ -1,7 +1,7 @@
 # Errors & Panics
 
 **Root:** `/Users/cdimonaco/code/github.com/cdimonaco/tokenpile`  
-**Generated:** 2026-08-01 13:44:33 UTC  
+**Generated:** 2026-08-01 13:49:30 UTC  
 
 ---
 
@@ -240,5 +240,6 @@
 | `rows affected: %w` | `(*SQLiteStore).setSessionIssue` | `internal/store/sqlite.go` | 1148 |
 | `update session: %w` | `(*SQLiteStore).setSessionIssue` | `internal/store/sqlite.go` | 1153 |
 | `commit: %w` | `(*SQLiteStore).setSessionIssue` | `internal/store/sqlite.go` | 1157 |
-| `open browser: %w` | `openBrowserCmd` | `internal/tui/tui.go` | 739 |
+| `open browser: %w` | `openBrowserCmd` | `internal/tui/tui.go` | 835 |
+| `enter a positive issue number` | `(Model).handleAssignKey` | `internal/tui/unattributed.go` | 60 |
 

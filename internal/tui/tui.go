@@ -25,6 +25,7 @@ const (
 	viewDetail
 	viewChart
 	viewHelp
+	viewUnattributed
 )
 
 type Model struct {
@@ -48,6 +49,18 @@ type Model struct {
 	sessions       []usage.Session
 	sessionsLoaded bool
 	sessionsOffset int
+
+	// Unattributed usage counts toward no budget, so it is invisible spending
+	// until someone looks. The groups are loaded at startup so the issue list
+	// can say they exist, not only so the view can render them.
+	unattributed       []usage.UnattributedGroup
+	unattributedCursor int
+	assigning          bool
+	assignInput        string
+	assignErr          error
+	// lastAssigned is the session most recently assigned from this view, so the
+	// assignment can be undone without leaving it.
+	lastAssigned string
 
 	granularity usage.Granularity
 	filterAgent string
@@ -75,6 +88,14 @@ type (
 		title    string
 		labels   []string
 		err      error
+	}
+	unattributedLoadedMsg struct{ groups []usage.UnattributedGroup }
+	assignmentDoneMsg     struct {
+		sessionID string
+		// undo is true when the operation returned a session to unattributed,
+		// so the view knows not to offer undoing it again.
+		undo bool
+		err  error
 	}
 	errMsg struct{ err error }
 )
@@ -138,7 +159,7 @@ func New(s store.Store, ip provider.IssueProvider, p *pricing.Loader, authToken 
 }
 
 func (m Model) Init() tea.Cmd {
-	return m.loadIssues()
+	return tea.Batch(m.loadIssues(), m.loadUnattributed())
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
@@ -201,6 +222,32 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		return m, nil
 
+	case unattributedLoadedMsg:
+		m.unattributed = msg.groups
+		if m.unattributedCursor >= len(m.unattributed) {
+			m.unattributedCursor = max(len(m.unattributed)-1, 0)
+		}
+
+		return m, nil
+
+	case assignmentDoneMsg:
+		if msg.err != nil {
+			m.assignErr = msg.err
+
+			return m, nil
+		}
+
+		m.assignErr = nil
+		m.lastAssigned = msg.sessionID
+
+		if msg.undo {
+			m.lastAssigned = ""
+		}
+
+		// Both lists change: entries left or rejoined the unattributed pool,
+		// and the issue they moved to gained or lost them.
+		return m, tea.Batch(m.loadUnattributed(), m.loadIssues())
+
 	case errMsg:
 		m.err = msg.err
 
@@ -211,6 +258,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	// While the assignment prompt is open every key belongs to it, including
+	// "q": typing an issue number must not quit the program.
+	if m.assigning {
+		return m.handleAssignKey(msg)
+	}
+
 	switch msg.String() {
 	case "q", "ctrl+c":
 		return m, tea.Quit
@@ -235,6 +288,11 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.activeView = m.prevView
 
 			return m, nil
+		case viewUnattributed:
+			m.activeView = viewList
+			m.assignErr = nil
+
+			return m, nil
 		case viewList, viewHelp:
 			// nothing to do
 		}
@@ -247,6 +305,8 @@ func (m Model) handleKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m.handleDetailKey(msg)
 	case viewChart:
 		return m.handleChartKey(msg)
+	case viewUnattributed:
+		return m.handleUnattributedKey(msg)
 	case viewHelp:
 		// no key bindings beyond the global ones
 	}
@@ -288,6 +348,11 @@ func (m Model) handleListKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.activeView = viewChart
 
 		return m, m.loadChart(nil)
+	case "u":
+		m.activeView = viewUnattributed
+		m.assignErr = nil
+
+		return m, m.loadUnattributed()
 	}
 
 	return m, nil
@@ -371,6 +436,8 @@ func (m Model) View() string {
 			body = m.viewChart()
 		case viewHelp:
 			body = m.viewHelp()
+		case viewUnattributed:
+			body = m.viewUnattributed()
 		}
 	}
 
@@ -400,9 +467,25 @@ func (m Model) renderFooter() string {
 			keyStyle.Render("enter") + " detail",
 			keyStyle.Render("o") + " open in browser",
 			keyStyle.Render("c") + " chart",
+			keyStyle.Render("u") + " unattributed",
 			keyStyle.Render("?") + " help",
 			keyStyle.Render("q") + " quit",
 		}
+	case viewUnattributed:
+		keys = []string{
+			keyStyle.Render("j/k") + " navigate",
+			keyStyle.Render("a") + " assign",
+		}
+
+		if m.lastAssigned != "" {
+			keys = append(keys, keyStyle.Render("z")+" undo last assign")
+		}
+
+		keys = append(keys,
+			keyStyle.Render("esc")+" back",
+			keyStyle.Render("?")+" help",
+			keyStyle.Render("q")+" quit",
+		)
 	case viewDetail:
 		keys = []string{
 			keyStyle.Render("tab") + " switch tab",
@@ -438,6 +521,13 @@ func (m Model) viewIssueList() string {
 
 	if m.unauthenticated {
 		fmt.Fprintln(&b, errorStyle.Render("not authenticated — run: tokenpile auth login"))
+	}
+
+	// Unattributed usage counts toward no budget, so nothing else on this
+	// screen would ever hint that it exists.
+	if n := len(m.unattributed); n > 0 {
+		fmt.Fprintln(&b, budgetWarnStyle.Render(fmt.Sprintf(
+			"%d unattributed session(s) — press u to review", n)))
 	}
 
 	fmt.Fprintln(
@@ -696,6 +786,12 @@ func (m Model) viewHelp() string {
 
   Issue list
     o           open selected issue in browser
+    u           review unattributed usage
+
+  Unattributed usage
+    a / enter   assign the selected session to an issue
+                the branch-derived suggestion is pre-filled and editable
+    z           undo the last assignment made here
 
   Issue detail
     o           open issue in browser

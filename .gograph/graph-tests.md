@@ -1,7 +1,7 @@
 # Test Coverage Edges
 
 **Root:** `/Users/cdimonaco/code/github.com/cdimonaco/tokenpile`  
-**Generated:** 2026-08-01 13:44:33 UTC  
+**Generated:** 2026-08-01 13:49:30 UTC  
 
 ---
 
@@ -12,6 +12,7 @@
 | `Add` | `TestLog_ClosesIdleSession_StartsNew` | `cmd/tokenpile/cmd_log_test.go` | 133 |
 | `Add` | `TestLog_ReuseActiveSession` | `cmd/tokenpile/cmd_log_test.go` | 96 |
 | `Add` | `TestSQLiteStore_LogUsage_SetsTimestamp` | `internal/store/sqlite_test.go` | 72 |
+| `Add` | `TestUnattributedView_ListsGroups` | `internal/tui/unattributed_test.go` | 45 |
 | `Append` | `TestReconcile_AttributesFromBranch` | `cmd/tokenpile/cmd_hook_test.go` | 154 |
 | `Append` | `TestReconcile_RecordsUnattributed` | `cmd/tokenpile/cmd_hook_test.go` | 209 |
 | `Available` | `TestGhCliAvailable` | `internal/provider/ghcli_auth_test.go` | 140 |
@@ -62,7 +63,9 @@
 | `Usage.TotalInput` | `TestIntegration_Log_CreatesSessionAndEntry` | `cmd/tokenpile/integration_test.go` | 87 |
 | `Usage.TotalInput` | `TestSQLiteStore_ListUsageOverTime_WeekGranularity` | `internal/store/sqlite_test.go` | 279 |
 | `Usage.TotalInput` | `TestSQLiteStore_LogUsage_WithoutIssue` | `internal/store/sqlite_test.go` | 569 |
+| `Usage.TotalTokens` | `TestUnattributedView_UndoReturnsTheGroup` | `internal/tui/unattributed_test.go` | 176 |
 | `Valid` | `TestTurn_ValidRequiresTokens` | `internal/capture/capture_test.go` | 171 |
+| `View` | `TestUnattributedView_EmptyStateSaysSo` | `internal/tui/unattributed_test.go` | 59 |
 | `app.RunContext` | `TestIntegration_Report_ShowsBreakdown` | `cmd/tokenpile/integration_test.go` | 285 |
 | `app.RunContext` | `TestLog_WithoutIssue_RecordsUnattributed` | `cmd/tokenpile/cmd_hook_test.go` | 261 |
 | `append` | `TestIntegration_Log_RejectsNegativeTokens` | `cmd/tokenpile/integration_test.go` | 111 |
@@ -103,6 +106,7 @@
 | `assert.Contains` | `TestIntegration_Reset_ConfirmationAbort` | `cmd/tokenpile/cmd_reset_test.go` | 112 |
 | `assert.Contains` | `TestIntegration_Reset_SecondRunSucceeds` | `cmd/tokenpile/cmd_reset_test.go` | 165 |
 | `assert.Contains` | `TestIntegration_Reset_YesResetsAndBackupVerifies` | `cmd/tokenpile/cmd_reset_test.go` | 126 |
+| `assert.Contains` | `TestIssueList_IndicatesUnattributedUsage` | `internal/tui/unattributed_test.go` | 191 |
 | `assert.Contains` | `TestIssuesLoaded_StubTitleForInaccessible` | `internal/tui/tui_test.go` | 162 |
 | `assert.Contains` | `TestLog_NoActiveSession_StartsNew` | `cmd/tokenpile/cmd_log_test.go` | 83 |
 | `assert.Contains` | `TestLog_WithoutIssue_RecordsUnattributed` | `cmd/tokenpile/cmd_hook_test.go` | 266 |
@@ -116,6 +120,10 @@
 | `assert.Contains` | `TestSmoke_Version` | `cmd/tokenpile/smoke_test.go` | 30 |
 | `assert.Contains` | `TestSpool_RawPreservesUnparseablePayload` | `internal/capture/capture_test.go` | 166 |
 | `assert.Contains` | `TestTemplates_DoNotAskForTokenCounts` | `internal/skill/hooks_test.go` | 162 |
+| `assert.Contains` | `TestUnattributedView_AssignPromptPreFillsSuggestion` | `internal/tui/unattributed_test.go` | 88 |
+| `assert.Contains` | `TestUnattributedView_EmptyStateSaysSo` | `internal/tui/unattributed_test.go` | 61 |
+| `assert.Contains` | `TestUnattributedView_ListsGroups` | `internal/tui/unattributed_test.go` | 52 |
+| `assert.Contains` | `TestUnattributedView_NoSuggestionShowsDash` | `internal/tui/unattributed_test.go` | 74 |
 | `assert.Contains` | `TestUnattributed_AssignAcceptsTheSuggestion` | `cmd/tokenpile/cmd_bind_test.go` | 71 |
 | `assert.Contains` | `TestUnattributed_AssignWithoutSuggestionRequiresIssue` | `cmd/tokenpile/cmd_bind_test.go` | 90 |
 | `assert.Contains` | `TestUnattributed_ListShowsBranchAndSuggestion` | `cmd/tokenpile/cmd_bind_test.go` | 55 |
@@ -135,6 +143,8 @@
 | `assert.ElementsMatch` | `TestSQLiteStore_UpdateSessionAnnotations_NilNotePreservesExisting` | `internal/store/sqlite_test.go` | 422 |
 | `assert.ElementsMatch` | `TestSQLiteStore_UpdateSessionAnnotations_NoteAndTags` | `internal/store/sqlite_test.go` | 379 |
 | `assert.ElementsMatch` | `TestSQLiteStore_UpdateSessionAnnotations_TagsUnion` | `internal/store/sqlite_test.go` | 401 |
+| `assert.Empty` | `TestAssignPrompt_EscCancels` | `internal/tui/unattributed_test.go` | 229 |
+| `assert.Empty` | `TestAssignPrompt_QDoesNotQuit` | `internal/tui/unattributed_test.go` | 217 |
 | `assert.Empty` | `TestBudgetBar_NilBudget_ReturnsEmpty` | `internal/tui/tui_test.go` | 307 |
 | `assert.Empty` | `TestBudgetBar_ZeroBudget_ReturnsEmpty` | `internal/tui/tui_test.go` | 312 |
 | `assert.Empty` | `TestBuild_BudgetsNilProducesEmptyBlock` | `internal/export/export_test.go` | 243 |
@@ -154,6 +164,8 @@
 | `assert.Empty` | `TestSQLiteStore_ListUnattributed_SessionSpanningBranches` | `internal/store/sqlite_test.go` | 708 |
 | `assert.Empty` | `TestSQLiteStore_LogUsage_BranchRoundTrips` | `internal/store/sqlite_test.go` | 655 |
 | `assert.Empty` | `TestSpool_MissingFileIsEmpty` | `internal/capture/capture_test.go` | 145 |
+| `assert.Empty` | `TestUnattributedView_AssigningRemovesTheGroup` | `internal/tui/unattributed_test.go` | 145 |
+| `assert.Empty` | `TestUnattributedView_UndoReturnsTheGroup` | `internal/tui/unattributed_test.go` | 177 |
 | `assert.Equal` | `TestAuthLogin_DetectionPrompt` | `cmd/tokenpile/cmd_auth_test.go` | 181 |
 | `assert.Equal` | `TestAuthLogin_MissingRepoScopeRefused` | `cmd/tokenpile/cmd_auth_test.go` | 196 |
 | `assert.Equal` | `TestAuthLogin_NoGhCliSkipsDetection` | `cmd/tokenpile/cmd_auth_test.go` | 139 |
@@ -244,6 +256,8 @@
 | `assert.Equal` | `TestStoredTokenSource_EmptySlotIsOAuth` | `internal/provider/tokensource_test.go` | 27 |
 | `assert.Equal` | `TestStoredTokenSource_RealTokenIsOAuth` | `internal/provider/tokensource_test.go` | 43 |
 | `assert.Equal` | `TestStoredTokenSource_SentinelRoundTrips` | `internal/provider/tokensource_test.go` | 35 |
+| `assert.Equal` | `TestUnattributedView_AssignPromptPreFillsSuggestion` | `internal/tui/unattributed_test.go` | 87 |
+| `assert.Equal` | `TestUnattributedView_UndoReturnsTheGroup` | `internal/tui/unattributed_test.go` | 176 |
 | `assert.Equal` | `TestUninstallHook_RemovesOnlyTokenpile` | `internal/skill/hooks_test.go` | 99 |
 | `assert.Equal` | `TestUninstall_ClaudeCode_RemovesFile` | `internal/skill/skill_test.go` | 222 |
 | `assert.Equal` | `TestValidateToken_ReadsLoginAndScopes` | `internal/provider/validate_test.go` | 37 |
@@ -267,6 +281,7 @@
 | `assert.ErrorIs` | `TestInstall_UnsupportedAgent` | `internal/skill/skill_test.go` | 27 |
 | `assert.ErrorIs` | `TestSQLiteStore_EndSession_NotFound` | `internal/store/sqlite_test.go` | 108 |
 | `assert.ErrorIs` | `TestUninstall_UnsupportedAgent` | `internal/skill/skill_test.go` | 243 |
+| `assert.False` | `TestAssignPrompt_EscCancels` | `internal/tui/unattributed_test.go` | 228 |
 | `assert.False` | `TestClearRemovesBinding` | `internal/attribution/attribution_test.go` | 121 |
 | `assert.False` | `TestComputeCost_AllFourTiers` | `internal/pricing/pricing_test.go` | 106 |
 | `assert.False` | `TestComputeCost_CompleteRatesDoNotWarn` | `internal/pricing/pricing_test.go` | 155 |
@@ -327,9 +342,12 @@
 | `assert.Len` | `TestReconcile_IsIdempotent` | `cmd/tokenpile/cmd_hook_test.go` | 199 |
 | `assert.Len` | `TestSQLiteStore_ListIssues_MultipleIssues` | `internal/store/sqlite_test.go` | 177 |
 | `assert.Len` | `TestSQLiteStore_ListUsageOverTime_DayGranularity` | `internal/store/sqlite_test.go` | 238 |
+| `assert.Len` | `TestUnattributedView_AssigningRemovesTheGroup` | `internal/tui/unattributed_test.go` | 149 |
+| `assert.Len` | `TestUnattributedView_OpeningThePromptAssignsNothing` | `internal/tui/unattributed_test.go` | 116 |
 | `assert.Len` | `TestUnattributed_AssignAcceptsTheSuggestion` | `cmd/tokenpile/cmd_bind_test.go` | 75 |
 | `assert.Len` | `TestUnattributed_AssignWithoutSuggestionRequiresIssue` | `cmd/tokenpile/cmd_bind_test.go` | 94 |
 | `assert.Less` | `TestIntegration_Log_IdleSessionClosed_ByResolveSession` | `cmd/tokenpile/integration_test.go` | 721 |
+| `assert.Nil` | `TestAssignPrompt_QDoesNotQuit` | `internal/tui/unattributed_test.go` | 215 |
 | `assert.Nil` | `TestIntegration_Log_CreatesSessionAndEntry` | `cmd/tokenpile/integration_test.go` | 82 |
 | `assert.Nil` | `TestLog_WithoutIssue_RecordsUnattributed` | `cmd/tokenpile/cmd_hook_test.go` | 271 |
 | `assert.Nil` | `TestResolve_BindingWithoutIssueStillGivesRepo` | `internal/attribution/attribution_test.go` | 142 |
@@ -353,7 +371,10 @@
 | `assert.NotContains` | `TestInstall_OpenCode_RemovesLegacyAgentsBlockButKeepsForeignContent` | `internal/skill/skill_test.go` | 146 |
 | `assert.NotContains` | `TestIntegration_Reset_BackupFailureAbortsDestruction` | `cmd/tokenpile/cmd_reset_test.go` | 175 |
 | `assert.NotContains` | `TestIntegration_Reset_NoBackupSkipsFile` | `cmd/tokenpile/cmd_reset_test.go` | 153 |
+| `assert.NotContains` | `TestIssueList_NoIndicatorWhenNothingUnattributed` | `internal/tui/unattributed_test.go` | 203 |
 | `assert.NotContains` | `TestTemplates_DoNotAskForTokenCounts` | `internal/skill/hooks_test.go` | 159 |
+| `assert.NotContains` | `TestUnattributedView_EmptyStateSaysSo` | `internal/tui/unattributed_test.go` | 62 |
+| `assert.NotContains` | `TestUnattributedView_NoSuggestionShowsDash` | `internal/tui/unattributed_test.go` | 75 |
 | `assert.NotContains` | `TestViewList_LoadingState` | `internal/tui/tui_test.go` | 291 |
 | `assert.NotContains` | `TestView_Unauthenticated_EmptyDB_ShowsEmptyState` | `internal/tui/tui_test.go` | 113 |
 | `assert.NotEmpty` | `TestBudgetBar_AtWarn_NotEmpty` | `internal/tui/tui_test.go` | 326 |
@@ -371,6 +392,7 @@
 | `assert.NotNil` | `TestSQLiteStore_ListSessions_EmptyTagsNonNil` | `internal/store/sqlite_test.go` | 435 |
 | `assert.NotNil` | `TestSQLiteStore_Session_StartEnd` | `internal/store/sqlite_test.go` | 100 |
 | `assert.Positive` | `TestDefaults_EveryModelDeclaresInputAndOutput` | `internal/pricing/pricing_test.go` | 189 |
+| `assert.True` | `TestAssignPrompt_QDoesNotQuit` | `internal/tui/unattributed_test.go` | 216 |
 | `assert.True` | `TestComputeCost_MissingCacheRateIsExcludedAndReported` | `internal/pricing/pricing_test.go` | 141 |
 | `assert.True` | `TestEnsureDirs_CreatesDirs` | `internal/config/paths_test.go` | 55 |
 | `assert.True` | `TestInstall_ClaudeCode_OverwritesExisting` | `internal/skill/skill_test.go` | 93 |
@@ -467,6 +489,7 @@
 | `capture.ReadClaudeCodeTranscript` | `TestReadClaudeCodeTranscript_SkipsMalformedLine` | `internal/capture/capture_test.go` | 65 |
 | `capture.ReadOpenCodePayload` | `TestReadOpenCodePayload` | `internal/capture/capture_test.go` | 91 |
 | `capture.ReadOpenCodePayload` | `TestReadOpenCodePayload_IgnoresAgentCost` | `internal/capture/capture_test.go` | 110 |
+| `cmd` | `TestUnattributedView_AssigningRemovesTheGroup` | `internal/tui/unattributed_test.go` | 136 |
 | `cmd.CombinedOutput` | `TestSmoke_ExportVerify` | `cmd/tokenpile/smoke_test.go` | 83 |
 | `cmd.Run` | `TestSmoke_LogMissingFlags` | `cmd/tokenpile/smoke_test.go` | 66 |
 | `config.EnsureDirs` | `TestEnsureDirs_CreatesDirs` | `internal/config/paths_test.go` | 50 |
@@ -559,6 +582,8 @@
 | `context.Background` | `TestTUI_DetailView_SessionsTab_ShowsNoteAndTags` | `internal/tui/tui_test.go` | 394 |
 | `context.Background` | `TestTUI_DetailView_SummaryTab_ShowsBudgetBar` | `internal/tui/tui_test.go` | 435 |
 | `context.Background` | `TestTUI_IssueList_ShowsBudgetBar` | `internal/tui/tui_test.go` | 360 |
+| `context.Background` | `TestUnattributedView_AssigningRemovesTheGroup` | `internal/tui/unattributed_test.go` | 147 |
+| `context.Background` | `TestUnattributedView_OpeningThePromptAssignsNothing` | `internal/tui/unattributed_test.go` | 114 |
 | `context.Background` | `TestUnattributed_AssignAcceptsTheSuggestion` | `cmd/tokenpile/cmd_bind_test.go` | 62 |
 | `context.Background` | `TestUnattributed_AssignWithoutSuggestionRequiresIssue` | `cmd/tokenpile/cmd_bind_test.go` | 81 |
 | `context.Background` | `TestUnattributed_ListShowsBranchAndSuggestion` | `cmd/tokenpile/cmd_bind_test.go` | 41 |
@@ -761,6 +786,8 @@
 | `ip.AssertExpectations` | `TestLog_ClosesIdleSession_StartsNew` | `cmd/tokenpile/cmd_log_test.go` | 169 |
 | `ip.AssertExpectations` | `TestLog_NoActiveSession_StartsNew` | `cmd/tokenpile/cmd_log_test.go` | 86 |
 | `ip.AssertExpectations` | `TestLog_ReuseActiveSession` | `cmd/tokenpile/cmd_log_test.go` | 123 |
+| `issueNum` | `TestUnattributedView_AssignPromptPreFillsSuggestion` | `internal/tui/unattributed_test.go` | 80 |
+| `issueNum` | `TestUnattributedView_ListsGroups` | `internal/tui/unattributed_test.go` | 47 |
 | `issuePtr` | `TestBuild_SessionsIncludedInDocument` | `internal/export/export_test.go` | 188 |
 | `issuePtr` | `TestCanonicalJSON_PinnedBytes` | `internal/export/canonical_internal_test.go` | 22 |
 | `issuePtr` | `TestExport_RoundTrip_WithEntries` | `internal/export/export_integration_test.go` | 39 |
@@ -849,7 +876,15 @@
 | `m.Update` | `TestIssuesLoaded_StubTitleForInaccessible` | `internal/tui/tui_test.go` | 158 |
 | `m.Update` | `TestIssuesLoaded_UnauthenticatedFlag` | `internal/tui/tui_test.go` | 129 |
 | `m.Update` | `TestIssuesLoaded_UpdatesModel` | `internal/tui/tui_test.go` | 267 |
+| `m.Update` | `TestUnattributedView_AssigningRemovesTheGroup` | `internal/tui/unattributed_test.go` | 124 |
+| `m.Update` | `TestUnattributedView_OpeningThePromptAssignsNothing` | `internal/tui/unattributed_test.go` | 106 |
+| `m.Update` | `TestUnattributedView_UndoReturnsTheGroup` | `internal/tui/unattributed_test.go` | 159 |
 | `m.Update` | `TestWindowSize_UpdatesDimensions` | `internal/tui/tui_test.go` | 277 |
+| `m.View` | `TestIssueList_IndicatesUnattributedUsage` | `internal/tui/unattributed_test.go` | 189 |
+| `m.View` | `TestIssueList_NoIndicatorWhenNothingUnattributed` | `internal/tui/unattributed_test.go` | 203 |
+| `m.View` | `TestUnattributedView_AssignPromptPreFillsSuggestion` | `internal/tui/unattributed_test.go` | 88 |
+| `m.View` | `TestUnattributedView_ListsGroups` | `internal/tui/unattributed_test.go` | 50 |
+| `m.View` | `TestUnattributedView_NoSuggestionShowsDash` | `internal/tui/unattributed_test.go` | 72 |
 | `m.View` | `TestViewHelp_ContainsShortcuts` | `internal/tui/tui_test.go` | 480 |
 | `m.View` | `TestViewList_EmptyState` | `internal/tui/tui_test.go` | 459 |
 | `m.View` | `TestViewList_LoadingState` | `internal/tui/tui_test.go` | 288 |
@@ -857,6 +892,19 @@
 | `m.View` | `TestView_ErrorMessage` | `internal/tui/tui_test.go` | 120 |
 | `m.View` | `TestView_Unauthenticated_EmptyDB_ShowsEmptyState` | `internal/tui/tui_test.go` | 109 |
 | `m.View` | `TestView_Unauthenticated_ShowsLocalIssues` | `internal/tui/tui_test.go` | 100 |
+| `m.assignCmd` | `TestUnattributedView_UndoReturnsTheGroup` | `internal/tui/unattributed_test.go` | 163 |
+| `m.handleAssignKey` | `TestUnattributedView_AssignPromptPreFillsSuggestion` | `internal/tui/unattributed_test.go` | 91 |
+| `m.handleAssignKey` | `TestUnattributedView_AssigningRemovesTheGroup` | `internal/tui/unattributed_test.go` | 132 |
+| `m.handleKey` | `TestAssignPrompt_EscCancels` | `internal/tui/unattributed_test.go` | 225 |
+| `m.handleKey` | `TestAssignPrompt_QDoesNotQuit` | `internal/tui/unattributed_test.go` | 212 |
+| `m.handleUnattributedKey` | `TestUnattributedView_AssignPromptPreFillsSuggestion` | `internal/tui/unattributed_test.go` | 83 |
+| `m.handleUnattributedKey` | `TestUnattributedView_AssigningRemovesTheGroup` | `internal/tui/unattributed_test.go` | 130 |
+| `m.handleUnattributedKey` | `TestUnattributedView_OpeningThePromptAssignsNothing` | `internal/tui/unattributed_test.go` | 110 |
+| `m.handleUnattributedKey` | `TestUnattributedView_UndoReturnsTheGroup` | `internal/tui/unattributed_test.go` | 167 |
+| `m.loadUnattributed` | `TestUnattributedView_AssigningRemovesTheGroup` | `internal/tui/unattributed_test.go` | 124 |
+| `m.loadUnattributed` | `TestUnattributedView_OpeningThePromptAssignsNothing` | `internal/tui/unattributed_test.go` | 105 |
+| `m.loadUnattributed` | `TestUnattributedView_UndoReturnsTheGroup` | `internal/tui/unattributed_test.go` | 159 |
+| `m.unassignCmd` | `TestUnattributedView_UndoReturnsTheGroup` | `internal/tui/unattributed_test.go` | 170 |
 | `m2.Update` | `TestHandleKey_GranularityToggle` | `internal/tui/tui_test.go` | 258 |
 | `m2.Update` | `TestHandleKey_HelpToggle` | `internal/tui/tui_test.go` | 182 |
 | `m2.Update` | `TestHandleKey_ListNavigation` | `internal/tui/tui_test.go` | 200 |
@@ -916,11 +964,17 @@
 | `newTUIModel` | `TestTUI_DetailView_SummaryTab_ShowsBudgetBar` | `internal/tui/tui_test.go` | 440 |
 | `newTUIModel` | `TestTUI_IssueList_ShowsBudgetBar` | `internal/tui/tui_test.go` | 362 |
 | `newTUIModel` | `TestTUI_IssueList_ShowsTrackedIssues` | `internal/tui/tui_test.go` | 349 |
+| `newTUIModel` | `TestUnattributedView_AssigningRemovesTheGroup` | `internal/tui/unattributed_test.go` | 123 |
+| `newTUIModel` | `TestUnattributedView_OpeningThePromptAssignsNothing` | `internal/tui/unattributed_test.go` | 104 |
+| `newTUIModel` | `TestUnattributedView_UndoReturnsTheGroup` | `internal/tui/unattributed_test.go` | 158 |
 | `newTUITestStore` | `TestTUI_DetailView_SessionsTab_ShowsNoteAndTags` | `internal/tui/tui_test.go` | 393 |
 | `newTUITestStore` | `TestTUI_DetailView_SummaryAndSessionsTabs` | `internal/tui/tui_test.go` | 373 |
 | `newTUITestStore` | `TestTUI_DetailView_SummaryTab_ShowsBudgetBar` | `internal/tui/tui_test.go` | 434 |
 | `newTUITestStore` | `TestTUI_IssueList_ShowsBudgetBar` | `internal/tui/tui_test.go` | 358 |
 | `newTUITestStore` | `TestTUI_IssueList_ShowsTrackedIssues` | `internal/tui/tui_test.go` | 346 |
+| `newTUITestStore` | `TestUnattributedView_AssigningRemovesTheGroup` | `internal/tui/unattributed_test.go` | 120 |
+| `newTUITestStore` | `TestUnattributedView_OpeningThePromptAssignsNothing` | `internal/tui/unattributed_test.go` | 101 |
+| `newTUITestStore` | `TestUnattributedView_UndoReturnsTheGroup` | `internal/tui/unattributed_test.go` | 155 |
 | `newTestKey` | `TestBuild_BudgetsIncludedInDocument` | `internal/export/export_test.go` | 224 |
 | `newTestKey` | `TestBuild_BudgetsNilProducesEmptyBlock` | `internal/export/export_test.go` | 239 |
 | `newTestKey` | `TestBuild_EmptyEntries` | `internal/export/export_test.go` | 120 |
@@ -1129,6 +1183,7 @@
 | `report.TotalUsage.TotalInput` | `TestSQLiteStore_GetReport_EmptyIssue` | `internal/store/sqlite_test.go` | 160 |
 | `reportCommand` | `TestIntegration_Report_ShowsBreakdown` | `cmd/tokenpile/integration_test.go` | 282 |
 | `require.Equal` | `TestLogout_ClearsSentinel` | `internal/provider/tokensource_test.go` | 79 |
+| `require.Equal` | `TestUnattributedView_UndoReturnsTheGroup` | `internal/tui/unattributed_test.go` | 165 |
 | `require.Error` | `TestAuthLogin_MissingRepoScopeRefused` | `cmd/tokenpile/cmd_auth_test.go` | 194 |
 | `require.Error` | `TestAuthLogin_MutuallyExclusiveFlags` | `cmd/tokenpile/cmd_auth_test.go` | 114 |
 | `require.Error` | `TestAuthLogin_OAuthFailure` | `cmd/tokenpile/cmd_auth_test.go` | 105 |
@@ -1214,6 +1269,8 @@
 | `require.Len` | `TestSQLiteStore_UpdateSessionAnnotations_NoteAndTags` | `internal/store/sqlite_test.go` | 377 |
 | `require.Len` | `TestSQLiteStore_UpdateSessionAnnotations_TagsUnion` | `internal/store/sqlite_test.go` | 399 |
 | `require.Len` | `TestSpool_RoundTrip` | `internal/capture/capture_test.go` | 132 |
+| `require.Len` | `TestUnattributedView_AssigningRemovesTheGroup` | `internal/tui/unattributed_test.go` | 127 |
+| `require.Len` | `TestUnattributedView_UndoReturnsTheGroup` | `internal/tui/unattributed_test.go` | 175 |
 | `require.Len` | `TestUninstallHook_RemovesOnlyTokenpile` | `internal/skill/hooks_test.go` | 96 |
 | `require.NoError` | `TestAuthLogin_DetectionPrompt` | `cmd/tokenpile/cmd_auth_test.go` | 179 |
 | `require.NoError` | `TestAuthLogin_GhAbsentRunsOAuthWithoutPrompt` | `cmd/tokenpile/cmd_auth_test.go` | 150 |
@@ -1385,6 +1442,8 @@
 | `require.NoError` | `TestTUI_DetailView_SessionsTab_ShowsNoteAndTags` | `internal/tui/tui_test.go` | 397 |
 | `require.NoError` | `TestTUI_DetailView_SummaryTab_ShowsBudgetBar` | `internal/tui/tui_test.go` | 438 |
 | `require.NoError` | `TestTUI_IssueList_ShowsBudgetBar` | `internal/tui/tui_test.go` | 360 |
+| `require.NoError` | `TestUnattributedView_AssigningRemovesTheGroup` | `internal/tui/unattributed_test.go` | 138 |
+| `require.NoError` | `TestUnattributedView_OpeningThePromptAssignsNothing` | `internal/tui/unattributed_test.go` | 115 |
 | `require.NoError` | `TestUnattributed_AssignAcceptsTheSuggestion` | `cmd/tokenpile/cmd_bind_test.go` | 64 |
 | `require.NoError` | `TestUnattributed_AssignWithoutSuggestionRequiresIssue` | `cmd/tokenpile/cmd_bind_test.go` | 83 |
 | `require.NoError` | `TestUnattributed_ListShowsBranchAndSuggestion` | `cmd/tokenpile/cmd_bind_test.go` | 43 |
@@ -1421,6 +1480,7 @@
 | `require.NotNil` | `TestSQLiteStore_ListUnattributed_Suggestions` | `internal/store/sqlite_test.go` | 682 |
 | `require.NotNil` | `TestSQLiteStore_SetBudget_And_GetBudget` | `internal/store/sqlite_test.go` | 450 |
 | `require.NotNil` | `TestSQLiteStore_SetBudget_Upsert` | `internal/store/sqlite_test.go` | 463 |
+| `require.NotNil` | `TestUnattributedView_AssigningRemovesTheGroup` | `internal/tui/unattributed_test.go` | 134 |
 | `require.True` | `TestBindAndLookupByDirectory` | `internal/attribution/attribution_test.go` | 67 |
 | `require.True` | `TestBindAndLookupBySession` | `internal/attribution/attribution_test.go` | 55 |
 | `require.True` | `TestCacheSavings` | `internal/pricing/pricing_test.go` | 167 |
@@ -1438,6 +1498,9 @@
 | `require.True` | `TestRebindReplaces` | `internal/attribution/attribution_test.go` | 79 |
 | `require.True` | `TestSetOverride_WithCacheRates` | `internal/pricing/pricing_test.go` | 247 |
 | `require.True` | `TestSetOverride_WritesAndUpdates` | `internal/pricing/pricing_test.go` | 223 |
+| `require.True` | `TestUnattributedView_AssignPromptPreFillsSuggestion` | `internal/tui/unattributed_test.go` | 86 |
+| `require.True` | `TestUnattributedView_AssigningRemovesTheGroup` | `internal/tui/unattributed_test.go` | 137 |
+| `require.True` | `TestUnattributedView_OpeningThePromptAssignsNothing` | `internal/tui/unattributed_test.go` | 112 |
 | `res.Incomplete` | `TestComputeCost_AllFourTiers` | `internal/pricing/pricing_test.go` | 106 |
 | `res.Incomplete` | `TestComputeCost_CompleteRatesDoNotWarn` | `internal/pricing/pricing_test.go` | 155 |
 | `res.Incomplete` | `TestComputeCost_MissingCacheRateIsExcludedAndReported` | `internal/pricing/pricing_test.go` | 141 |
@@ -1536,6 +1599,7 @@
 | `s.ListEntries` | `TestSQLiteStore_AssignIssue_AndReverse` | `internal/store/sqlite_test.go` | 731 |
 | `s.ListEntries` | `TestSQLiteStore_LogUsage_BranchRoundTrips` | `internal/store/sqlite_test.go` | 645 |
 | `s.ListEntries` | `TestSQLiteStore_LogUsage_WithoutIssue` | `internal/store/sqlite_test.go` | 565 |
+| `s.ListEntries` | `TestUnattributedView_AssigningRemovesTheGroup` | `internal/tui/unattributed_test.go` | 147 |
 | `s.ListEntries` | `TestUnattributed_AssignAcceptsTheSuggestion` | `cmd/tokenpile/cmd_bind_test.go` | 73 |
 | `s.ListIssues` | `TestIntegration_Log_MultipleIssues` | `cmd/tokenpile/integration_test.go` | 363 |
 | `s.ListIssues` | `TestSQLiteStore_ListIssues_BudgetPopulated` | `internal/store/sqlite_test.go` | 489 |
@@ -1565,6 +1629,7 @@
 | `s.ListUnattributed` | `TestSQLiteStore_ListUnattributed_GroupsBySession` | `internal/store/sqlite_test.go` | 616 |
 | `s.ListUnattributed` | `TestSQLiteStore_ListUnattributed_SessionSpanningBranches` | `internal/store/sqlite_test.go` | 704 |
 | `s.ListUnattributed` | `TestSQLiteStore_ListUnattributed_Suggestions` | `internal/store/sqlite_test.go` | 673 |
+| `s.ListUnattributed` | `TestUnattributedView_OpeningThePromptAssignsNothing` | `internal/tui/unattributed_test.go` | 114 |
 | `s.ListUnattributed` | `TestUnattributed_AssignWithoutSuggestionRequiresIssue` | `cmd/tokenpile/cmd_bind_test.go` | 92 |
 | `s.ListUsageOverTime` | `TestSQLiteStore_ListUsageOverTime_CostPopulated` | `internal/store/sqlite_test.go` | 293 |
 | `s.ListUsageOverTime` | `TestSQLiteStore_ListUsageOverTime_DayGranularity` | `internal/store/sqlite_test.go` | 233 |
@@ -1642,6 +1707,9 @@
 | `seedIssueEntry` | `TestTUI_DetailView_SummaryTab_ShowsBudgetBar` | `internal/tui/tui_test.go` | 437 |
 | `seedIssueEntry` | `TestTUI_IssueList_ShowsBudgetBar` | `internal/tui/tui_test.go` | 359 |
 | `seedIssueEntry` | `TestTUI_IssueList_ShowsTrackedIssues` | `internal/tui/tui_test.go` | 347 |
+| `seedUnattributed` | `TestUnattributedView_AssigningRemovesTheGroup` | `internal/tui/unattributed_test.go` | 121 |
+| `seedUnattributed` | `TestUnattributedView_OpeningThePromptAssignsNothing` | `internal/tui/unattributed_test.go` | 102 |
+| `seedUnattributed` | `TestUnattributedView_UndoReturnsTheGroup` | `internal/tui/unattributed_test.go` | 156 |
 | `skill.Install` | `TestInstall_AlsoInstallsHook` | `internal/skill/hooks_test.go` | 145 |
 | `skill.Install` | `TestInstall_ClaudeCode_OverwritesExisting` | `internal/skill/skill_test.go` | 88 |
 | `skill.Install` | `TestInstall_ClaudeCode_RemovesLegacyFlatFile` | `internal/skill/skill_test.go` | 77 |
@@ -1715,11 +1783,17 @@
 | `strings.Repeat` | `TestIntegration_Log_NoteTruncatedOnRuneBoundary` | `cmd/tokenpile/integration_test.go` | 396 |
 | `strings.Replace` | `TestSmoke_ExportVerify` | `cmd/tokenpile/smoke_test.go` | 104 |
 | `strings.ToLower` | `TestSmoke_SkillList` | `cmd/tokenpile/smoke_test.go` | 59 |
+| `stripANSI` | `TestIssueList_IndicatesUnattributedUsage` | `internal/tui/unattributed_test.go` | 189 |
+| `stripANSI` | `TestIssueList_NoIndicatorWhenNothingUnattributed` | `internal/tui/unattributed_test.go` | 203 |
 | `stripANSI` | `TestTUI_DetailView_SessionsTab_ShowsNoteAndTags` | `internal/tui/tui_test.go` | 416 |
 | `stripANSI` | `TestTUI_DetailView_SummaryAndSessionsTabs` | `internal/tui/tui_test.go` | 380 |
 | `stripANSI` | `TestTUI_DetailView_SummaryTab_ShowsBudgetBar` | `internal/tui/tui_test.go` | 444 |
 | `stripANSI` | `TestTUI_IssueList_ShowsBudgetBar` | `internal/tui/tui_test.go` | 367 |
 | `stripANSI` | `TestTUI_IssueList_ShowsTrackedIssues` | `internal/tui/tui_test.go` | 353 |
+| `stripANSI` | `TestUnattributedView_AssignPromptPreFillsSuggestion` | `internal/tui/unattributed_test.go` | 88 |
+| `stripANSI` | `TestUnattributedView_EmptyStateSaysSo` | `internal/tui/unattributed_test.go` | 59 |
+| `stripANSI` | `TestUnattributedView_ListsGroups` | `internal/tui/unattributed_test.go` | 50 |
+| `stripANSI` | `TestUnattributedView_NoSuggestionShowsDash` | `internal/tui/unattributed_test.go` | 72 |
 | `stubIssue` | `TestLog_ClosesIdleSession_StartsNew` | `cmd/tokenpile/cmd_log_test.go` | 130 |
 | `stubIssue` | `TestLog_NoActiveSession_StartsNew` | `cmd/tokenpile/cmd_log_test.go` | 55 |
 | `stubIssue` | `TestLog_ReuseActiveSession` | `cmd/tokenpile/cmd_log_test.go` | 93 |
@@ -1784,6 +1858,7 @@
 | `time.Now` | `TestSQLiteStore_ListUsageOverTime_DayGranularity` | `internal/store/sqlite_test.go` | 223 |
 | `time.Now` | `TestSQLiteStore_LogUsage_SetsTimestamp` | `internal/store/sqlite_test.go` | 72 |
 | `time.Now` | `TestTUI_DetailView_SessionsTab_ShowsNoteAndTags` | `internal/tui/tui_test.go` | 405 |
+| `time.Now` | `TestUnattributedView_ListsGroups` | `internal/tui/unattributed_test.go` | 45 |
 | `tm.Output` | `TestTUI_DetailView_SessionsTab_ShowsNoteAndTags` | `internal/tui/tui_test.go` | 415 |
 | `tm.Output` | `TestTUI_DetailView_SummaryAndSessionsTabs` | `internal/tui/tui_test.go` | 379 |
 | `tm.Output` | `TestTUI_DetailView_SummaryTab_ShowsBudgetBar` | `internal/tui/tui_test.go` | 443 |
@@ -1798,6 +1873,12 @@
 | `tm.Send` | `TestTUI_DetailView_SummaryAndSessionsTabs` | `internal/tui/tui_test.go` | 383 |
 | `tm.Send` | `TestTUI_DetailView_SummaryTab_ShowsBudgetBar` | `internal/tui/tui_test.go` | 447 |
 | `today.AddDate` | `TestSQLiteStore_ListUsageOverTime_DayGranularity` | `internal/store/sqlite_test.go` | 226 |
+| `unattributedModel` | `TestAssignPrompt_EscCancels` | `internal/tui/unattributed_test.go` | 221 |
+| `unattributedModel` | `TestAssignPrompt_QDoesNotQuit` | `internal/tui/unattributed_test.go` | 209 |
+| `unattributedModel` | `TestUnattributedView_AssignPromptPreFillsSuggestion` | `internal/tui/unattributed_test.go` | 79 |
+| `unattributedModel` | `TestUnattributedView_EmptyStateSaysSo` | `internal/tui/unattributed_test.go` | 59 |
+| `unattributedModel` | `TestUnattributedView_ListsGroups` | `internal/tui/unattributed_test.go` | 38 |
+| `unattributedModel` | `TestUnattributedView_NoSuggestionShowsDash` | `internal/tui/unattributed_test.go` | 68 |
 | `userServer` | `TestValidateToken_AbsentHeaderMeansScopesUnknown` | `internal/provider/validate_test.go` | 56 |
 | `userServer` | `TestValidateToken_EmptyHeaderIsAKnownEmptyScopeSet` | `internal/provider/validate_test.go` | 66 |
 | `userServer` | `TestValidateToken_MissingScopeDetected` | `internal/provider/validate_test.go` | 44 |

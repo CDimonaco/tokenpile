@@ -21,9 +21,11 @@ Entries captured before this requirement SHALL keep an empty branch and offer no
 
 ### Requirement: Reconciliation of unattributed usage
 
-The system SHALL provide a way to list unattributed usage grouped by session and branch, showing its repository, branch, time window, entry count, tokens and cost, and to assign a whole group to an issue in one action. Assignment SHALL be reversible, and SHALL move the session along with its entries so wall-clock time follows the tokens.
+The system SHALL provide a way to list unattributed usage grouped by session, showing its repository, the branch it was captured on, time window, entry count, tokens and cost, and to assign a whole group to an issue in one action. Assignment SHALL be reversible, and SHALL move the session along with its entries so wall-clock time follows the tokens.
 
 Grouping is required rather than convenient: a session is many turns, and per-entry assignment would make reconciliation unusable. The session is also the unit a person reasons about when saying "that stretch of work was issue 42".
+
+The group key SHALL be the session alone. Assignment moves a whole session, so a group narrower than a session could not be assigned on its own: assigning one such group would silently move another's entries too. Where a session's entries span more than one branch, the group SHALL report no branch and offer no suggestion, rather than reporting one of them and suggesting an issue for work only partly done on it.
 
 Where the stored branch implies an issue, the system SHALL offer it as a suggestion. The suggestion SHALL be derived on read rather than stored, so improving the rule does not require a migration, and SHALL NOT be applied automatically: it is shown, editable, and confirmed.
 
@@ -38,6 +40,11 @@ Where the stored branch implies an issue, the system SHALL offer it as a suggest
 #### Scenario: A suggestion is never applied on its own
 - **WHEN** a group carries a suggested issue
 - **THEN** no attribution happens until the assignment is confirmed
+
+#### Scenario: A session spanning two branches stays one group
+- **WHEN** a session's unattributed entries were captured on two different branches
+- **THEN** they are presented as a single group
+- **THEN** that group reports no branch and offers no suggestion
 
 #### Scenario: Bulk assignment
 - **WHEN** a group of unattributed entries is assigned to issue 42
