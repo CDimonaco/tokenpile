@@ -67,6 +67,11 @@ CREATE TABLE IF NOT EXISTS issue_budgets (
     PRIMARY KEY (repo, issue_num)
 );
 
+` + schemaIndexes
+
+// schemaIndexes is separate from the table DDL because rebuilding a table drops
+// its indexes with it, and they have to be put back.
+const schemaIndexes = `
 CREATE INDEX IF NOT EXISTS idx_usage_entries_repo_issue ON usage_entries (repo, issue_num);
 CREATE INDEX IF NOT EXISTS idx_usage_entries_at ON usage_entries (at);
 CREATE INDEX IF NOT EXISTS idx_sessions_repo_issue ON sessions (repo, issue_num);
@@ -84,6 +89,19 @@ var migrations = []string{
 	// branch at capture time is unknowable after the fact, and inventing one
 	// would produce suggestions that look authoritative and are fiction.
 	`ALTER TABLE usage_entries ADD COLUMN branch TEXT NOT NULL DEFAULT ''`,
+	// Billing tiers replaced the original two token buckets. Databases created
+	// before that change have tokens_in/tokens_out and none of these, and every
+	// query selects them by name, so without these columns the tool cannot read
+	// its own older data at all.
+	`ALTER TABLE usage_entries ADD COLUMN input_fresh INTEGER NOT NULL DEFAULT 0`,
+	`ALTER TABLE usage_entries ADD COLUMN cache_write INTEGER NOT NULL DEFAULT 0`,
+	`ALTER TABLE usage_entries ADD COLUMN cache_read INTEGER NOT NULL DEFAULT 0`,
+	`ALTER TABLE usage_entries ADD COLUMN output INTEGER NOT NULL DEFAULT 0`,
+	`ALTER TABLE usage_entries ADD COLUMN reasoning INTEGER NOT NULL DEFAULT 0`,
+	// Everything recorded before capture existed was declared by a model, which
+	// is exactly what "estimated" means. Defaulting to measured would relabel
+	// guesses as measurements.
+	`ALTER TABLE usage_entries ADD COLUMN source TEXT NOT NULL DEFAULT 'estimated'`,
 }
 
 type SQLiteStore struct {
@@ -114,6 +132,18 @@ func NewSQLiteStore(dbPath string, pricer Pricer) (*SQLiteStore, error) {
 		return nil, fmt.Errorf("run migrations: %w", err)
 	}
 
+	// After the columns exist, and before the rebuild drops the legacy ones.
+	if err = backfillLegacyTokenColumns(db); err != nil {
+		_ = db.Close()
+		return nil, fmt.Errorf("backfill token tiers: %w", err)
+	}
+
+	// After the additive migrations, so the rebuild copies the columns they add.
+	if err = relaxIssueNumNotNull(db); err != nil {
+		_ = db.Close()
+		return nil, fmt.Errorf("relax issue_num: %w", err)
+	}
+
 	return &SQLiteStore{db: db, pricing: pricer}, nil
 }
 
@@ -127,6 +157,183 @@ func runMigrations(db *sql.DB) error {
 
 			return fmt.Errorf("migration %q: %w", stmt, err)
 		}
+	}
+
+	return nil
+}
+
+// backfillLegacyTokenColumns moves the original two token buckets into the
+// tiered ones. The old counts cannot be split across tiers after the fact —
+// nothing recorded which of them were cached — so they land in the two tiers
+// that describe them without inventing anything: fresh input and output.
+//
+// The alternative, guessing a cache ratio, would make old entries look cheaper
+// or dearer than they were reported to be, which is worse than a conservative
+// figure that is merely coarse.
+func backfillLegacyTokenColumns(db *sql.DB) error {
+	legacy, err := columnExists(db, "usage_entries", "tokens_in")
+	if err != nil {
+		return err
+	}
+
+	if !legacy {
+		return nil
+	}
+
+	res, err := db.Exec(`UPDATE usage_entries
+		SET input_fresh = tokens_in, output = tokens_out
+		WHERE input_fresh = 0 AND output = 0`)
+	if err != nil {
+		return fmt.Errorf("copy legacy token counts: %w", err)
+	}
+
+	if n, _ := res.RowsAffected(); n > 0 {
+		slog.Info("migrated legacy token counts into billing tiers", "entries", n)
+	}
+
+	return nil
+}
+
+// issueNumRebuilds describes the tables whose issue_num was NOT NULL before
+// attribution became optional. SQLite cannot drop a NOT NULL constraint, so the
+// only way to relax it is to rebuild the table and copy the rows across.
+//
+// This is not cosmetic. On a database created by an earlier version, an
+// unattributed insert hits the constraint — and because capture inserts with
+// OR IGNORE for idempotency, the failure is swallowed and the turn is silently
+// discarded. Left unmigrated, every existing install would quietly lose exactly
+// the measurements that nullable attribution exists to keep.
+var issueNumRebuilds = []struct {
+	table   string
+	columns string
+	create  string
+}{
+	{
+		table: "usage_entries",
+		columns: "id, repo, issue_num, agent, model, input_fresh, cache_write, " +
+			"cache_read, output, reasoning, source, session_id, branch, at",
+		create: `CREATE TABLE usage_entries_new (
+    id          TEXT PRIMARY KEY,
+    repo        TEXT NOT NULL,
+    issue_num   INTEGER,
+    agent       TEXT NOT NULL,
+    model       TEXT NOT NULL,
+    input_fresh INTEGER NOT NULL,
+    cache_write INTEGER NOT NULL,
+    cache_read  INTEGER NOT NULL,
+    output      INTEGER NOT NULL,
+    reasoning   INTEGER NOT NULL,
+    source      TEXT NOT NULL,
+    session_id  TEXT,
+    branch      TEXT NOT NULL DEFAULT '',
+    at          TEXT NOT NULL
+)`,
+	},
+	{
+		table:   "sessions",
+		columns: "id, repo, issue_num, started_at, ended_at, note, tags, last_activity_at",
+		create: `CREATE TABLE sessions_new (
+    id               TEXT PRIMARY KEY,
+    repo             TEXT NOT NULL,
+    issue_num        INTEGER,
+    started_at       TEXT NOT NULL,
+    ended_at         TEXT,
+    note             TEXT,
+    tags             TEXT,
+    last_activity_at TEXT
+)`,
+	},
+}
+
+func relaxIssueNumNotNull(db *sql.DB) error {
+	for _, r := range issueNumRebuilds {
+		notNull, err := columnIsNotNull(db, r.table, "issue_num")
+		if err != nil {
+			return err
+		}
+
+		if !notNull {
+			continue
+		}
+
+		if err = rebuildTable(db, r.table, r.columns, r.create); err != nil {
+			return fmt.Errorf("rebuild %s: %w", r.table, err)
+		}
+
+		slog.Info("migrated table to allow unattributed usage", "table", r.table)
+	}
+
+	return nil
+}
+
+func columnIsNotNull(db *sql.DB, table, column string) (bool, error) {
+	exists, notNull, err := inspectColumn(db, table, column)
+
+	return exists && notNull, err
+}
+
+func columnExists(db *sql.DB, table, column string) (bool, error) {
+	exists, _, err := inspectColumn(db, table, column)
+
+	return exists, err
+}
+
+// inspectColumn reports whether a column is present and, if so, whether it is
+// declared NOT NULL.
+func inspectColumn(db *sql.DB, table, column string) (bool, bool, error) {
+	rows, err := db.Query(`SELECT "notnull" FROM pragma_table_info(?) WHERE name = ?`, table, column)
+	if err != nil {
+		return false, false, fmt.Errorf("inspect %s.%s: %w", table, column, err)
+	}
+	defer rows.Close()
+
+	var exists, notNull bool
+
+	for rows.Next() {
+		if err = rows.Scan(&notNull); err != nil {
+			return false, false, fmt.Errorf("scan %s.%s: %w", table, column, err)
+		}
+
+		exists = true
+	}
+
+	if err = rows.Err(); err != nil {
+		return false, false, fmt.Errorf("iterate %s.%s: %w", table, column, err)
+	}
+
+	return exists, notNull, nil
+}
+
+// rebuildTable copies a table into a newly created one with a relaxed schema
+// and swaps it in. The whole swap runs in one transaction: a rebuild that
+// failed halfway would leave the database with no usage table at all.
+func rebuildTable(db *sql.DB, table, columns, create string) error {
+	tx, err := db.Begin()
+	if err != nil {
+		return fmt.Errorf("begin: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	stmts := []string{
+		create,
+		fmt.Sprintf("INSERT INTO %s_new (%s) SELECT %s FROM %s", table, columns, columns, table),
+		"DROP TABLE " + table,
+		fmt.Sprintf("ALTER TABLE %s_new RENAME TO %s", table, table),
+	}
+
+	for _, stmt := range stmts {
+		if _, err = tx.Exec(stmt); err != nil {
+			return fmt.Errorf("exec %q: %w", stmt, err)
+		}
+	}
+
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("commit: %w", err)
+	}
+
+	// Dropping the old table dropped its indexes with it.
+	if _, err = db.Exec(schemaIndexes); err != nil {
+		return fmt.Errorf("recreate indexes: %w", err)
 	}
 
 	return nil

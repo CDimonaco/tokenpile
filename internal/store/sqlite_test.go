@@ -2,12 +2,14 @@ package store_test
 
 import (
 	"context"
+	"database/sql"
 	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	_ "modernc.org/sqlite" // registers the driver for the upgrade fixture
 
 	"github.com/cdimonaco/tokenpile/internal/pricing"
 	"github.com/cdimonaco/tokenpile/internal/store"
@@ -746,4 +748,138 @@ func TestSQLiteStore_AssignIssue_AndReverse(t *testing.T) {
 	require.Len(t, groups, 1)
 	assert.Equal(t, 2, groups[0].Entries)
 	assert.Equal(t, 200, groups[0].Usage.InputFresh, "token counts survive the round trip")
+}
+
+// A database created by an earlier version has issue_num NOT NULL on both
+// tables. CREATE TABLE IF NOT EXISTS cannot relax that, so an upgrade must
+// rebuild them or unattributed capture — the whole point of the change — fails
+// on every existing install.
+func TestSQLiteStore_UpgradeFromNotNullIssueNum(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "old.db")
+
+	db, err := sql.Open("sqlite", path)
+	require.NoError(t, err)
+
+	_, err = db.Exec(`
+CREATE TABLE usage_entries (
+    id TEXT PRIMARY KEY, repo TEXT NOT NULL, issue_num INTEGER NOT NULL,
+    agent TEXT NOT NULL, model TEXT NOT NULL,
+    input_fresh INTEGER NOT NULL, cache_write INTEGER NOT NULL,
+    cache_read INTEGER NOT NULL, output INTEGER NOT NULL, reasoning INTEGER NOT NULL,
+    source TEXT NOT NULL, session_id TEXT, at TEXT NOT NULL);
+CREATE TABLE sessions (
+    id TEXT PRIMARY KEY, repo TEXT NOT NULL, issue_num INTEGER NOT NULL,
+    started_at TEXT NOT NULL, ended_at TEXT, note TEXT, tags TEXT, last_activity_at TEXT);
+INSERT INTO usage_entries VALUES
+    ('e1','o/r',42,'claude-code','m',10,0,0,5,0,'estimated','s1','2026-07-01T00:00:00Z');
+INSERT INTO sessions VALUES
+    ('s1','o/r',42,'2026-07-01T00:00:00Z',NULL,NULL,NULL,'2026-07-01T00:00:00Z');`)
+	require.NoError(t, err)
+	require.NoError(t, db.Close())
+
+	loader, err := pricing.NewLoader("")
+	require.NoError(t, err)
+
+	s, err := store.NewSQLiteStore(path, loader)
+	require.NoError(t, err)
+
+	t.Cleanup(func() { _ = s.Close() })
+
+	ctx := context.Background()
+
+	entries, err := s.ListEntries(ctx, usage.Filter{Repo: "o/r"})
+	require.NoError(t, err)
+	require.Len(t, entries, 1, "existing usage survives the upgrade")
+	require.NotNil(t, entries[0].IssueNum)
+	assert.Equal(t, 42, *entries[0].IssueNum)
+
+	sessions, err := s.ListSessions(ctx, "o/r", issuePtr(42))
+	require.NoError(t, err)
+	assert.Len(t, sessions, 1, "existing sessions survive the upgrade")
+
+	require.NoError(t, s.LogUsage(ctx, usage.Entry{
+		ID: "e2", Repo: "o/r", Agent: "claude-code", Model: "m", Branch: "feat/7-x",
+		Usage: usage.Usage{InputFresh: 10}, Source: usage.SourceMeasured, SessionID: "s2",
+	}), "unattributed capture works on an upgraded database")
+
+	// INSERT OR IGNORE makes capture idempotent, and would just as happily
+	// swallow a NOT NULL violation: the write has to be confirmed, not assumed.
+	groups, err := s.ListUnattributed(ctx, "o/r")
+	require.NoError(t, err)
+	require.Len(t, groups, 1, "the unattributed entry was actually stored, not silently ignored")
+
+	_, err = s.StartSession(ctx, "o/r", nil)
+	require.NoError(t, err, "unattributed sessions work on an upgraded database")
+
+	// Reopening must not rebuild again, nor lose what the first pass migrated.
+	require.NoError(t, s.Close())
+
+	reopened, err := store.NewSQLiteStore(path, loader)
+	require.NoError(t, err)
+
+	t.Cleanup(func() { _ = reopened.Close() })
+
+	entries, err = reopened.ListEntries(ctx, usage.Filter{Repo: "o/r"})
+	require.NoError(t, err)
+	assert.Len(t, entries, 2, "both the pre-existing and the migrated-in entry survive a reopen")
+}
+
+// The billing-tier change replaced tokens_in/tokens_out with five columns but
+// shipped no migration, so every query broke against a database created before
+// it: "no such column: input_fresh". This is the oldest schema still in the
+// wild — it predates tiers, source, branch and nullable attribution.
+func TestSQLiteStore_UpgradeFromLegacyTokenColumns(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "legacy.db")
+
+	db, err := sql.Open("sqlite", path)
+	require.NoError(t, err)
+
+	_, err = db.Exec(`
+CREATE TABLE usage_entries (
+    id TEXT PRIMARY KEY, repo TEXT NOT NULL, issue_num INTEGER NOT NULL,
+    agent TEXT NOT NULL, model TEXT NOT NULL,
+    tokens_in INTEGER NOT NULL, tokens_out INTEGER NOT NULL,
+    session_id TEXT, at TEXT NOT NULL);
+CREATE TABLE sessions (
+    id TEXT PRIMARY KEY, repo TEXT NOT NULL, issue_num INTEGER NOT NULL,
+    started_at TEXT NOT NULL, ended_at TEXT, note TEXT, tags TEXT, last_activity_at TEXT);
+INSERT INTO usage_entries VALUES
+    ('e1','o/r',42,'claude-code','m',45000,3000,'s1','2026-07-01T00:00:00Z');`)
+	require.NoError(t, err)
+	require.NoError(t, db.Close())
+
+	loader, err := pricing.NewLoader("")
+	require.NoError(t, err)
+
+	s, err := store.NewSQLiteStore(path, loader)
+	require.NoError(t, err)
+
+	t.Cleanup(func() { _ = s.Close() })
+
+	entries, err := s.ListEntries(context.Background(), usage.Filter{Repo: "o/r"})
+	require.NoError(t, err)
+	require.Len(t, entries, 1)
+
+	// The old buckets cannot be split across tiers after the fact, so they land
+	// in the two that describe them without inventing a cache ratio.
+	assert.Equal(t, 45000, entries[0].Usage.InputFresh)
+	assert.Equal(t, 3000, entries[0].Usage.Output)
+	assert.Equal(t, 0, entries[0].Usage.CacheRead)
+	assert.Equal(t, 0, entries[0].Usage.CacheWrite)
+
+	// Counts predating capture were declared by a model, never measured.
+	assert.Equal(t, usage.SourceEstimated, entries[0].Source)
+	assert.Empty(t, entries[0].Branch)
+
+	// And the tiered path works from here on.
+	require.NoError(t, s.LogUsage(context.Background(), usage.Entry{
+		ID: "e2", Repo: "o/r", Agent: "claude-code", Model: "m", Branch: "feat/7-x",
+		Usage:  usage.Usage{InputFresh: 10, CacheRead: 900, Output: 5},
+		Source: usage.SourceMeasured, SessionID: "s2",
+	}))
+
+	groups, err := s.ListUnattributed(context.Background(), "o/r")
+	require.NoError(t, err)
+	require.Len(t, groups, 1)
+	assert.Equal(t, 900, groups[0].Usage.CacheRead)
 }
