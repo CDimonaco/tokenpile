@@ -1,7 +1,7 @@
 # Dependencies & Imports
 
 **Root:** `/Users/cdimonaco/code/github.com/cdimonaco/tokenpile`  
-**Generated:** 2026-07-29 12:38:27 UTC  
+**Generated:** 2026-08-01 13:38:20 UTC  
 
 ---
 
@@ -62,20 +62,24 @@
 
 | Package | Imports |
 |---------|--------|
+| `attribution` | `encoding/json`, `errors`, `fmt`, `os`, `path/filepath`, `regexp`, `strconv`, `time` |
+| `attribution_test` | `github.com/cdimonaco/tokenpile/internal/attribution`, `github.com/stretchr/testify/assert`, `github.com/stretchr/testify/require`, `path/filepath`, `testing` |
+| `capture` | `bufio`, `encoding/json`, `errors`, `fmt`, `github.com/cdimonaco/tokenpile/internal/usage`, `io`, `os`, `path/filepath`, `time` |
+| `capture_test` | `github.com/cdimonaco/tokenpile/internal/capture`, `github.com/cdimonaco/tokenpile/internal/usage`, `github.com/stretchr/testify/assert`, `github.com/stretchr/testify/require`, `os`, `path/filepath`, `strings`, `testing` |
 | `config` | `crypto/ed25519`, `crypto/rand`, `encoding/pem`, `errors`, `fmt`, `log/slog`, `os`, `path/filepath` |
 | `config_test` | `github.com/cdimonaco/tokenpile/internal/config`, `github.com/stretchr/testify/assert`, `github.com/stretchr/testify/require`, `os`, `path/filepath`, `testing` |
-| `export` | `bytes`, `crypto/ed25519`, `crypto/sha256`, `encoding/base64`, `encoding/json`, `errors`, `fmt`, `github.com/cdimonaco/tokenpile/internal/schema`, `github.com/cdimonaco/tokenpile/internal/usage`, `github.com/stretchr/testify/assert`, `github.com/stretchr/testify/require`, `os`, `sort`, `testing`, `time` |
-| `export_test` | `crypto/ed25519`, `crypto/rand`, `encoding/base64`, `encoding/json`, `github.com/cdimonaco/tokenpile/internal/export`, `github.com/cdimonaco/tokenpile/internal/usage`, `github.com/stretchr/testify/assert`, `github.com/stretchr/testify/require`, `os`, `testing`, `time` |
-| `main` | `bufio`, `bytes`, `context`, `crypto/ed25519`, `crypto/subtle`, `encoding/base64`, `encoding/json`, `encoding/pem`, `errors`, `fmt`, `github.com/cdimonaco/tokenpile/internal/config`, `github.com/cdimonaco/tokenpile/internal/export`, `github.com/cdimonaco/tokenpile/internal/mocks`, `github.com/cdimonaco/tokenpile/internal/pricing`, `github.com/cdimonaco/tokenpile/internal/provider`, `github.com/cdimonaco/tokenpile/internal/skill`, `github.com/cdimonaco/tokenpile/internal/store`, `github.com/cdimonaco/tokenpile/internal/tui`, `github.com/cdimonaco/tokenpile/internal/usage`, `github.com/charmbracelet/bubbletea`, `github.com/google/uuid`, `github.com/stretchr/testify/assert`, `github.com/stretchr/testify/mock`, `github.com/stretchr/testify/require`, `github.com/urfave/cli/v2`, `github.com/zalando/go-keyring`, `io`, `log/slog`, `os`, `os/exec`, `path/filepath`, `sort`, `strings`, `testing`, `time`, `unicode/utf8` |
-| `pricing` | `embed`, `fmt`, `gopkg.in/yaml.v3`, `maps`, `os` |
-| `pricing_test` | `github.com/cdimonaco/tokenpile/internal/pricing`, `github.com/stretchr/testify/assert`, `github.com/stretchr/testify/require`, `os`, `path/filepath`, `testing` |
+| `export` | `crypto/ed25519`, `crypto/sha256`, `encoding/base64`, `encoding/json`, `errors`, `fmt`, `github.com/cdimonaco/tokenpile/internal/schema`, `github.com/cdimonaco/tokenpile/internal/usage`, `github.com/stretchr/testify/assert`, `github.com/stretchr/testify/require`, `sort`, `testing`, `time` |
+| `export_test` | `crypto/ed25519`, `crypto/rand`, `encoding/base64`, `encoding/json`, `github.com/cdimonaco/tokenpile/internal/export`, `github.com/cdimonaco/tokenpile/internal/usage`, `github.com/stretchr/testify/assert`, `github.com/stretchr/testify/require`, `testing`, `time` |
+| `main` | `bufio`, `bytes`, `context`, `crypto/ed25519`, `crypto/subtle`, `encoding/base64`, `encoding/json`, `encoding/pem`, `errors`, `fmt`, `github.com/cdimonaco/tokenpile/internal/attribution`, `github.com/cdimonaco/tokenpile/internal/capture`, `github.com/cdimonaco/tokenpile/internal/config`, `github.com/cdimonaco/tokenpile/internal/export`, `github.com/cdimonaco/tokenpile/internal/mocks`, `github.com/cdimonaco/tokenpile/internal/pricing`, `github.com/cdimonaco/tokenpile/internal/provider`, `github.com/cdimonaco/tokenpile/internal/skill`, `github.com/cdimonaco/tokenpile/internal/store`, `github.com/cdimonaco/tokenpile/internal/tui`, `github.com/cdimonaco/tokenpile/internal/usage`, `github.com/charmbracelet/bubbletea`, `github.com/google/uuid`, `github.com/stretchr/testify/assert`, `github.com/stretchr/testify/mock`, `github.com/stretchr/testify/require`, `github.com/urfave/cli/v2`, `github.com/zalando/go-keyring`, `io`, `log/slog`, `os`, `os/exec`, `path/filepath`, `sort`, `strings`, `testing`, `time`, `unicode/utf8` |
+| `pricing` | `embed`, `fmt`, `github.com/cdimonaco/tokenpile/internal/usage`, `gopkg.in/yaml.v3`, `log/slog`, `maps`, `os` |
+| `pricing_test` | `github.com/cdimonaco/tokenpile/internal/pricing`, `github.com/cdimonaco/tokenpile/internal/usage`, `github.com/stretchr/testify/assert`, `github.com/stretchr/testify/require`, `os`, `path/filepath`, `testing` |
 | `provider` | `bytes`, `context`, `crypto/aes`, `crypto/cipher`, `crypto/rand`, `crypto/sha256`, `encoding/hex`, `errors`, `fmt`, `github.com/cdimonaco/tokenpile/internal/usage`, `github.com/google/go-github/v68/github`, `github.com/stretchr/testify/assert`, `github.com/stretchr/testify/require`, `github.com/zalando/go-keyring`, `golang.org/x/oauth2`, `golang.org/x/oauth2/github`, `io`, `log/slog`, `net`, `net/http`, `os`, `os/exec`, `path/filepath`, `regexp`, `runtime`, `slices`, `strconv`, `strings`, `testing`, `time` |
 | `provider_test` | `context`, `encoding/json`, `fmt`, `github.com/cdimonaco/tokenpile/internal/mocks`, `github.com/cdimonaco/tokenpile/internal/provider`, `github.com/cdimonaco/tokenpile/internal/usage`, `github.com/stretchr/testify/assert`, `github.com/stretchr/testify/require`, `github.com/zalando/go-keyring`, `net/http`, `net/http/httptest`, `os`, `path/filepath`, `strings`, `testing` |
 | `schema` | `embed` |
-| `skill` | `embed`, `errors`, `fmt`, `os`, `path/filepath`, `strings` |
-| `skill_test` | `github.com/cdimonaco/tokenpile/internal/skill`, `github.com/stretchr/testify/assert`, `github.com/stretchr/testify/require`, `os`, `path/filepath`, `testing` |
-| `store` | `context`, `database/sql`, `encoding/json`, `errors`, `fmt`, `github.com/cdimonaco/tokenpile/internal/usage`, `github.com/google/uuid`, `log/slog`, `modernc.org/sqlite`, `strings`, `time` |
-| `store_test` | `context`, `github.com/cdimonaco/tokenpile/internal/store`, `github.com/cdimonaco/tokenpile/internal/usage`, `github.com/stretchr/testify/assert`, `github.com/stretchr/testify/require`, `path/filepath`, `testing`, `time` |
+| `skill` | `embed`, `encoding/json`, `errors`, `fmt`, `os`, `path/filepath`, `strings` |
+| `skill_test` | `encoding/json`, `github.com/cdimonaco/tokenpile/internal/skill`, `github.com/stretchr/testify/assert`, `github.com/stretchr/testify/require`, `os`, `path/filepath`, `testing` |
+| `store` | `context`, `database/sql`, `encoding/json`, `errors`, `fmt`, `github.com/cdimonaco/tokenpile/internal/pricing`, `github.com/cdimonaco/tokenpile/internal/usage`, `github.com/google/uuid`, `log/slog`, `modernc.org/sqlite`, `strings`, `time` |
+| `store_test` | `context`, `github.com/cdimonaco/tokenpile/internal/pricing`, `github.com/cdimonaco/tokenpile/internal/store`, `github.com/cdimonaco/tokenpile/internal/usage`, `github.com/stretchr/testify/assert`, `github.com/stretchr/testify/require`, `path/filepath`, `testing`, `time` |
 | `tui` | `context`, `fmt`, `github.com/cdimonaco/tokenpile/internal/pricing`, `github.com/cdimonaco/tokenpile/internal/provider`, `github.com/cdimonaco/tokenpile/internal/store`, `github.com/cdimonaco/tokenpile/internal/usage`, `github.com/charmbracelet/bubbletea`, `github.com/charmbracelet/lipgloss`, `github.com/charmbracelet/x/exp/teatest`, `github.com/stretchr/testify/assert`, `github.com/stretchr/testify/require`, `log/slog`, `os/exec`, `path/filepath`, `regexp`, `runtime`, `strings`, `testing`, `time` |
 | `usage` | `time` |
 

@@ -1,7 +1,7 @@
 # Errors & Panics
 
 **Root:** `/Users/cdimonaco/code/github.com/cdimonaco/tokenpile`  
-**Generated:** 2026-07-29 12:38:27 UTC  
+**Generated:** 2026-08-01 13:38:20 UTC  
 
 ---
 
@@ -17,6 +17,14 @@
 | `oauth failed` | `TestAuthLogin_OAuthFailure` | `cmd/tokenpile/cmd_auth_test.go` | 101 |
 | `401 bad credentials` | `TestAuthLogin_ValidationFailureDoesNotPersist` | `cmd/tokenpile/cmd_auth_test.go` | 217 |
 | `not found` | `TestAuthStatus_NotLoggedIn` | `cmd/tokenpile/cmd_auth_test.go` | 239 |
+| `resolve repo: %w` | `bindCommand` | `cmd/tokenpile/cmd_bind.go` | 54 |
+| `resolve working directory: %w` | `bindCommand` | `cmd/tokenpile/cmd_bind.go` | 59 |
+| `bind issue: %w` | `bindCommand` | `cmd/tokenpile/cmd_bind.go` | 70 |
+| `session id is required` | `unattributedCommand` | `cmd/tokenpile/cmd_bind.go` | 111 |
+| `assign issue: %w` | `unattributedCommand` | `cmd/tokenpile/cmd_bind.go` | 116 |
+| `session id is required` | `unattributedCommand` | `cmd/tokenpile/cmd_bind.go` | 131 |
+| `unassign issue: %w` | `unattributedCommand` | `cmd/tokenpile/cmd_bind.go` | 136 |
+| `list unattributed: %w` | `unattributedCommand` | `cmd/tokenpile/cmd_bind.go` | 150 |
 | `cannot infer repo: pass --repo owner/repo or run from inside a GitHub repository` | `budgetCommands` | `cmd/tokenpile/cmd_budget.go` | 44 |
 | `infer repo: %w` | `budgetCommands` | `cmd/tokenpile/cmd_budget.go` | 49 |
 | `--amount must be greater than zero` | `budgetCommands` | `cmd/tokenpile/cmd_budget.go` | 54 |
@@ -30,54 +38,78 @@
 | `decode document public key: %w` | `runVerify` | `cmd/tokenpile/cmd_export.go` | 104 |
 | `verification failed: document is not signed by the expected key` | `runVerify` | `cmd/tokenpile/cmd_export.go` | 110 |
 | `verification failed: %w` | `runVerify` | `cmd/tokenpile/cmd_export.go` | 120 |
-| `read pubkey file: %w` | `parseExpectedPubKey` | `cmd/tokenpile/cmd_export.go` | 153 |
-| `invalid public key size: got %d, want %d` | `parseExpectedPubKey` | `cmd/tokenpile/cmd_export.go` | 158 |
-| `decode pubkey file: %w` | `parseExpectedPubKey` | `cmd/tokenpile/cmd_export.go` | 166 |
-| `invalid public key size: got %d, want %d` | `parseExpectedPubKey` | `cmd/tokenpile/cmd_export.go` | 170 |
-| `list sessions: %w` | `gatherSessionsAndBudgets` | `cmd/tokenpile/cmd_export.go` | 187 |
-| `list budgets: %w` | `gatherSessionsAndBudgets` | `cmd/tokenpile/cmd_export.go` | 192 |
-| `parse --from: %w` | `runExport` | `cmd/tokenpile/cmd_export.go` | 238 |
-| `parse --to: %w` | `runExport` | `cmd/tokenpile/cmd_export.go` | 247 |
-| `list entries: %w` | `runExport` | `cmd/tokenpile/cmd_export.go` | 255 |
-| `build export: %w` | `runExport` | `cmd/tokenpile/cmd_export.go` | 265 |
-| `marshal export: %w` | `runExport` | `cmd/tokenpile/cmd_export.go` | 270 |
-| `write output: %w` | `runExport` | `cmd/tokenpile/cmd_export.go` | 275 |
-| `cannot infer repo: pass --repo owner/repo or run from inside a GitHub repository` | `runLog` | `cmd/tokenpile/cmd_log.go` | 77 |
-| `infer repo: %w` | `runLog` | `cmd/tokenpile/cmd_log.go` | 82 |
-| `--tokens-in must be zero or greater` | `runLog` | `cmd/tokenpile/cmd_log.go` | 93 |
-| `--tokens-out must be zero or greater` | `runLog` | `cmd/tokenpile/cmd_log.go` | 97 |
-| `issue #%d not found in %s` | `runLog` | `cmd/tokenpile/cmd_log.go` | 103 |
-| `GitHub authentication required to validate issues: run tokenpile auth login` | `runLog` | `cmd/tokenpile/cmd_log.go` | 107 |
-| `validate issue: %w` | `runLog` | `cmd/tokenpile/cmd_log.go` | 110 |
-| `resolve session: %w` | `runLog` | `cmd/tokenpile/cmd_log.go` | 124 |
-| `log usage: %w` | `runLog` | `cmd/tokenpile/cmd_log.go` | 140 |
-| `list sessions: %w` | `resolveSession` | `cmd/tokenpile/cmd_log.go` | 173 |
-| `end idle session: %w` | `resolveSession` | `cmd/tokenpile/cmd_log.go` | 187 |
-| `start session: %w` | `resolveSession` | `cmd/tokenpile/cmd_log.go` | 204 |
-| `model name is required` | `pricingCommands` | `cmd/tokenpile/cmd_pricing.go` | 66 |
-| `set pricing: %w` | `pricingCommands` | `cmd/tokenpile/cmd_pricing.go` | 73 |
-| `cannot infer repo: pass --repo owner/repo or run from inside a GitHub repository` | `reportCommand` | `cmd/tokenpile/cmd_report.go` | 40 |
-| `infer repo: %w` | `reportCommand` | `cmd/tokenpile/cmd_report.go` | 45 |
-| `get report: %w` | `reportCommand` | `cmd/tokenpile/cmd_report.go` | 57 |
-| `get issue cache: %w` | `reportCommand` | `cmd/tokenpile/cmd_report.go` | 62 |
-| `get budget: %w` | `reportCommand` | `cmd/tokenpile/cmd_report.go` | 101 |
-| `list sessions: %w` | `printSessionsReport` | `cmd/tokenpile/cmd_report.go` | 120 |
+| `read pubkey file: %w` | `parseExpectedPubKey` | `cmd/tokenpile/cmd_export.go` | 146 |
+| `invalid public key size: got %d, want %d` | `parseExpectedPubKey` | `cmd/tokenpile/cmd_export.go` | 151 |
+| `decode pubkey file: %w` | `parseExpectedPubKey` | `cmd/tokenpile/cmd_export.go` | 159 |
+| `invalid public key size: got %d, want %d` | `parseExpectedPubKey` | `cmd/tokenpile/cmd_export.go` | 163 |
+| `list sessions: %w` | `gatherSessionsAndBudgets` | `cmd/tokenpile/cmd_export.go` | 180 |
+| `list budgets: %w` | `gatherSessionsAndBudgets` | `cmd/tokenpile/cmd_export.go` | 185 |
+| `parse --from: %w` | `runExport` | `cmd/tokenpile/cmd_export.go` | 242 |
+| `parse --to: %w` | `runExport` | `cmd/tokenpile/cmd_export.go` | 251 |
+| `list entries: %w` | `runExport` | `cmd/tokenpile/cmd_export.go` | 259 |
+| `build export: %w` | `runExport` | `cmd/tokenpile/cmd_export.go` | 269 |
+| `marshal export: %w` | `runExport` | `cmd/tokenpile/cmd_export.go` | 274 |
+| `write output: %w` | `runExport` | `cmd/tokenpile/cmd_export.go` | 279 |
+| `agent name is required: tokenpile hook <agent>` | `hookCommand` | `cmd/tokenpile/cmd_hook.go` | 37 |
+| `read hook payload: %w` | `hookCommand` | `cmd/tokenpile/cmd_hook.go` | 42 |
+| `read %s payload: %w` | `hookCommand` | `cmd/tokenpile/cmd_hook.go` | 59 |
+| `spool turns: %w` | `hookCommand` | `cmd/tokenpile/cmd_hook.go` | 63 |
+| `parse hook payload: %w` | `turnsFromPayload` | `cmd/tokenpile/cmd_hook.go` | 76 |
+| `hook payload carries no transcript_path` | `turnsFromPayload` | `cmd/tokenpile/cmd_hook.go` | 80 |
+| `unsupported agent %q` | `turnsFromPayload` | `cmd/tokenpile/cmd_hook.go` | 87 |
+| `cannot infer repo: pass --repo owner/repo or run from inside a GitHub repository` | `runLog` | `cmd/tokenpile/cmd_log.go` | 86 |
+| `infer repo: %w` | `runLog` | `cmd/tokenpile/cmd_log.go` | 91 |
+| `%s must be zero or greater` | `runLog` | `cmd/tokenpile/cmd_log.go` | 112 |
+| `at least one token count is required: --input, --cache-write, --cache-read or --output` | `runLog` | `cmd/tokenpile/cmd_log.go` | 117 |
+| `--reasoning cannot exceed --output: reasoning tokens are a subset of output` | `runLog` | `cmd/tokenpile/cmd_log.go` | 123 |
+| `resolve session: %w` | `runLog` | `cmd/tokenpile/cmd_log.go` | 141 |
+| `log usage: %w` | `runLog` | `cmd/tokenpile/cmd_log.go` | 159 |
+| `--issue must be a positive issue number` | `validateAndCacheIssue` | `cmd/tokenpile/cmd_log.go` | 186 |
+| `issue #%d not found in %s` | `validateAndCacheIssue` | `cmd/tokenpile/cmd_log.go` | 192 |
+| `GitHub authentication required to validate issues: run tokenpile auth login` | `validateAndCacheIssue` | `cmd/tokenpile/cmd_log.go` | 196 |
+| `validate issue: %w` | `validateAndCacheIssue` | `cmd/tokenpile/cmd_log.go` | 199 |
+| `list sessions: %w` | `resolveSession` | `cmd/tokenpile/cmd_log.go` | 236 |
+| `end idle session: %w` | `resolveSession` | `cmd/tokenpile/cmd_log.go` | 250 |
+| `start session: %w` | `resolveSession` | `cmd/tokenpile/cmd_log.go` | 267 |
+| `model name is required` | `pricingCommands` | `cmd/tokenpile/cmd_pricing.go` | 74 |
+| `set pricing: %w` | `pricingCommands` | `cmd/tokenpile/cmd_pricing.go` | 85 |
+| `cannot infer repo: pass --repo owner/repo or run from inside a GitHub repository` | `reportCommand` | `cmd/tokenpile/cmd_report.go` | 52 |
+| `infer repo: %w` | `reportCommand` | `cmd/tokenpile/cmd_report.go` | 57 |
+| `get report: %w` | `reportCommand` | `cmd/tokenpile/cmd_report.go` | 69 |
+| `get issue cache: %w` | `reportCommand` | `cmd/tokenpile/cmd_report.go` | 74 |
+| `get budget: %w` | `reportCommand` | `cmd/tokenpile/cmd_report.go` | 96 |
+| `list sessions: %w` | `printSessionsReport` | `cmd/tokenpile/cmd_report.go` | 115 |
 | `reset aborted` | `runReset` | `cmd/tokenpile/cmd_reset.go` | 77 |
 | `backup failed, nothing was deleted: %w` | `runReset` | `cmd/tokenpile/cmd_reset.go` | 83 |
 | `reset incomplete: %d item(s) could not be removed` | `runReset` | `cmd/tokenpile/cmd_reset.go` | 95 |
-| `list entries: %w` | `writeResetBackup` | `cmd/tokenpile/cmd_reset.go` | 158 |
-| `list sessions: %w` | `writeResetBackup` | `cmd/tokenpile/cmd_reset.go` | 163 |
-| `list budgets: %w` | `writeResetBackup` | `cmd/tokenpile/cmd_reset.go` | 168 |
-| `build export: %w` | `writeResetBackup` | `cmd/tokenpile/cmd_reset.go` | 178 |
-| `marshal export: %w` | `writeResetBackup` | `cmd/tokenpile/cmd_reset.go` | 183 |
-| `write backup: %w` | `writeResetBackup` | `cmd/tokenpile/cmd_reset.go` | 192 |
-| `logout: %w` | `destroyState` | `cmd/tokenpile/cmd_reset.go` | 207 |
-| `uninstall skill %s: %w` | `destroyState` | `cmd/tokenpile/cmd_reset.go` | 215 |
-| `remove %s: %w` | `destroyState` | `cmd/tokenpile/cmd_reset.go` | 230 |
-| `` | `newResetFixture` | `cmd/tokenpile/cmd_reset_test.go` | 64 |
+| `list entries: %w` | `writeResetBackup` | `cmd/tokenpile/cmd_reset.go` | 161 |
+| `list sessions: %w` | `writeResetBackup` | `cmd/tokenpile/cmd_reset.go` | 166 |
+| `list budgets: %w` | `writeResetBackup` | `cmd/tokenpile/cmd_reset.go` | 171 |
+| `build export: %w` | `writeResetBackup` | `cmd/tokenpile/cmd_reset.go` | 181 |
+| `marshal export: %w` | `writeResetBackup` | `cmd/tokenpile/cmd_reset.go` | 186 |
+| `write backup: %w` | `writeResetBackup` | `cmd/tokenpile/cmd_reset.go` | 195 |
+| `logout: %w` | `destroyState` | `cmd/tokenpile/cmd_reset.go` | 210 |
+| `uninstall skill %s: %w` | `destroyState` | `cmd/tokenpile/cmd_reset.go` | 218 |
+| `remove %s: %w` | `destroyState` | `cmd/tokenpile/cmd_reset.go` | 233 |
 | `install skill: %w` | `skillCommands` | `cmd/tokenpile/cmd_skill.go` | 32 |
-| `` | `newTestStore` | `cmd/tokenpile/integration_test.go` | 42 |
-| `tui: %w` | `main` | `cmd/tokenpile/main.go` | 125 |
+| `tui: %w` | `main` | `cmd/tokenpile/main.go` | 128 |
+| `read bindings: %w` | `(*Store).load` | `internal/attribution/attribution.go` | 54 |
+| `parse bindings: %w` | `(*Store).load` | `internal/attribution/attribution.go` | 58 |
+| `create binding directory: %w` | `(*Store).save` | `internal/attribution/attribution.go` | 74 |
+| `marshal bindings: %w` | `(*Store).save` | `internal/attribution/attribution.go` | 79 |
+| `write bindings: %w` | `(*Store).save` | `internal/attribution/attribution.go` | 83 |
+| `read transcript: %w` | `ReadClaudeCodeTranscript` | `internal/capture/claudecode.go` | 116 |
+| `transcript unparseable: %d malformed lines` | `ReadClaudeCodeTranscript` | `internal/capture/claudecode.go` | 120 |
+| `open transcript: %w` | `ReadClaudeCodeTranscriptFile` | `internal/capture/claudecode.go` | 134 |
+| `decode opencode payload: %w` | `ReadOpenCodePayload` | `internal/capture/opencode.go` | 60 |
+| `create spool directory: %w` | `(*Spool).Append` | `internal/capture/spool.go` | 40 |
+| `open spool: %w` | `(*Spool).Append` | `internal/capture/spool.go` | 45 |
+| `write spool record: %w` | `(*Spool).Append` | `internal/capture/spool.go` | 52 |
+| `create spool directory: %w` | `(*Spool).AppendRaw` | `internal/capture/spool.go` | 63 |
+| `open raw spool: %w` | `(*Spool).AppendRaw` | `internal/capture/spool.go` | 70 |
+| `open spool: %w` | `(*Spool).Read` | `internal/capture/spool.go` | 94 |
+| `read spool: %w` | `(*Spool).Read` | `internal/capture/spool.go` | 113 |
+| `clear spool: %w` | `(*Spool).Clear` | `internal/capture/spool.go` | 124 |
 | `generate ed25519 key: %w` | `generateIdentity` | `internal/config/identity.go` | 24 |
 | `write identity key: %w` | `generateIdentity` | `internal/config/identity.go` | 38 |
 | `write identity pub: %w` | `generateIdentity` | `internal/config/identity.go` | 42 |
@@ -85,26 +117,20 @@
 | `decode identity key PEM` | `loadIdentity` | `internal/config/identity.go` | 58 |
 | `invalid identity key size: got %d, want %d` | `loadIdentity` | `internal/config/identity.go` | 62 |
 | `private key is not ed25519` | `loadIdentity` | `internal/config/identity.go` | 69 |
-| `private key is not ed25519` | `Build` | `internal/export/export.go` | 110 |
-| `canonical JSON: %w` | `documentDigest` | `internal/export/export.go` | 164 |
-| `decode public key: %w` | `Verify` | `internal/export/export.go` | 177 |
-| `invalid public key size: got %d, want %d` | `Verify` | `internal/export/export.go` | 181 |
-| `decode signature: %w` | `Verify` | `internal/export/export.go` | 188 |
-| `canonical JSON: %w` | `Verify` | `internal/export/export.go` | 204 |
-| `unsupported schema version %q` | `Verify` | `internal/export/export.go` | 210 |
-| `signature invalid: entries have been tampered with` | `Verify` | `internal/export/export.go` | 215 |
-| `signature invalid: document has been tampered with` | `Verify` | `internal/export/export.go` | 218 |
-| `parse default pricing: %w` | `NewLoader` | `internal/pricing/pricing.go` | 31 |
-| `read pricing override: %w` | `NewLoader` | `internal/pricing/pricing.go` | 40 |
-| `parse pricing override: %w` | `NewLoader` | `internal/pricing/pricing.go` | 46 |
-| `read pricing override: %w` | `(*Loader).SetOverride` | `internal/pricing/pricing.go` | 78 |
-| `parse pricing override: %w` | `(*Loader).SetOverride` | `internal/pricing/pricing.go` | 84 |
-| `marshal pricing override: %w` | `(*Loader).SetOverride` | `internal/pricing/pricing.go` | 99 |
-| `write pricing override: %w` | `(*Loader).SetOverride` | `internal/pricing/pricing.go` | 103 |
-| `` | `TestNewLoader_DefaultsLoaded` | `internal/pricing/pricing_test.go` | 15 |
-| `` | `TestComputeCost_UnknownModel` | `internal/pricing/pricing_test.go` | 72 |
-| `` | `TestComputeCost_InOutSeparate` | `internal/pricing/pricing_test.go` | 81 |
-| `` | `TestSetOverride_WritesAndUpdates` | `internal/pricing/pricing_test.go` | 93 |
+| `private key is not ed25519` | `Build` | `internal/export/export.go` | 112 |
+| `canonical JSON: %w` | `documentDigest` | `internal/export/export.go` | 166 |
+| `decode public key: %w` | `Verify` | `internal/export/export.go` | 179 |
+| `invalid public key size: got %d, want %d` | `Verify` | `internal/export/export.go` | 183 |
+| `decode signature: %w` | `Verify` | `internal/export/export.go` | 190 |
+| `unsupported schema version %q: only %s can be verified` | `Verify` | `internal/export/export.go` | 208 |
+| `signature invalid: document has been tampered with` | `Verify` | `internal/export/export.go` | 215 |
+| `parse default pricing: %w` | `NewLoader` | `internal/pricing/pricing.go` | 40 |
+| `read pricing override: %w` | `NewLoader` | `internal/pricing/pricing.go` | 49 |
+| `parse pricing override: %w` | `NewLoader` | `internal/pricing/pricing.go` | 55 |
+| `read pricing override: %w` | `(*Loader).SetOverride` | `internal/pricing/pricing.go` | 164 |
+| `parse pricing override: %w` | `(*Loader).SetOverride` | `internal/pricing/pricing.go` | 170 |
+| `marshal pricing override: %w` | `(*Loader).SetOverride` | `internal/pricing/pricing.go` | 182 |
+| `write pricing override: %w` | `(*Loader).SetOverride` | `internal/pricing/pricing.go` | 186 |
 | `run gh %s: %w` | `(*GhCliAuthProvider).run` | `internal/provider/ghcli_auth.go` | 119 |
 | `%w (gh said: %s)` | `withDetail` | `internal/provider/ghcli_auth.go` | 130 |
 | `start callback server: %w` | `(*GitHubAuthProvider).Login` | `internal/provider/github_auth.go` | 60 |
@@ -131,70 +157,85 @@
 | `%s: %w (the gh CLI credential does not grant access to this repository)` | `(*GitHubIssueProvider).wrapAccessError` | `internal/provider/github_issues.go` | 64 |
 | `invalid repo format %q: expected owner/repo` | `(*GitHubIssueProvider).ListIssues` | `internal/provider/github_issues.go` | 83 |
 | `invalid repo format %q: expected owner/repo` | `(*GitHubIssueProvider).GetIssue` | `internal/provider/github_issues.go` | 144 |
-| `cannot infer repo from remote %q: not a GitHub remote; pass --repo owner/repo` | `ParseRemote` | `internal/provider/repoinfer.go` | 46 |
+| `cannot infer repo from remote %q: not a GitHub remote; pass --repo owner/repo` | `ParseRemote` | `internal/provider/repoinfer.go` | 58 |
 | `persist token source: %w` | `PersistGhCliTokenSource` | `internal/provider/tokensource.go` | 49 |
-| `id` | `TestGitHubAuthProvider_SentinelIsNotAToken` | `internal/provider/tokensource_test.go` | 52 |
-| `id` | `TestGitHubAuthProvider_RealTokenIsReturned` | `internal/provider/tokensource_test.go` | 65 |
-| `id` | `TestLogout_ClearsSentinel` | `internal/provider/tokensource_test.go` | 81 |
 | `set base URL: %w` | `ValidateTokenWithURL` | `internal/provider/validate.go` | 52 |
 | `validate token: %w` | `ValidateTokenWithURL` | `internal/provider/validate.go` | 58 |
-| `%w: %s` | `Install` | `internal/skill/skill.go` | 120 |
-| `cannot determine install path for agent %s` | `Install` | `internal/skill/skill.go` | 125 |
-| `create skill directory: %w` | `Install` | `internal/skill/skill.go` | 129 |
-| `write skill file: %w` | `installDedicated` | `internal/skill/skill.go` | 158 |
-| `%w: %s` | `Uninstall` | `internal/skill/skill.go` | 172 |
-| `cannot determine install path for agent %s` | `Uninstall` | `internal/skill/skill.go` | 177 |
-| `remove skill file: %w` | `uninstallDedicated` | `internal/skill/skill.go` | 191 |
-| `read %s: %w` | `uninstallShared` | `internal/skill/skill.go` | 207 |
-| `remove skill file: %w` | `uninstallShared` | `internal/skill/skill.go` | 222 |
-| `update skill file: %w` | `uninstallShared` | `internal/skill/skill.go` | 231 |
-| `open sqlite: %w` | `NewSQLiteStore` | `internal/store/sqlite.go` | 90 |
-| `apply schema: %w` | `NewSQLiteStore` | `internal/store/sqlite.go` | 97 |
-| `run migrations: %w` | `NewSQLiteStore` | `internal/store/sqlite.go` | 102 |
-| `migration %q: %w` | `runMigrations` | `internal/store/sqlite.go` | 116 |
-| `insert usage entry: %w` | `(*SQLiteStore).LogUsage` | `internal/store/sqlite.go` | 143 |
-| `marshal labels: %w` | `(*SQLiteStore).UpsertIssueCache` | `internal/store/sqlite.go` | 157 |
-| `upsert issue cache: %w` | `(*SQLiteStore).UpsertIssueCache` | `internal/store/sqlite.go` | 172 |
-| `get issue cache: %w` | `(*SQLiteStore).GetIssueCache` | `internal/store/sqlite.go` | 193 |
-| `list entries: %w` | `(*SQLiteStore).ListEntries` | `internal/store/sqlite.go` | 249 |
-| `scan entry: %w` | `(*SQLiteStore).ListEntries` | `internal/store/sqlite.go` | 262 |
-| `parse entry at: %w` | `(*SQLiteStore).ListEntries` | `internal/store/sqlite.go` | 267 |
-| `iterate entries: %w` | `(*SQLiteStore).ListEntries` | `internal/store/sqlite.go` | 282 |
-| `insert session: %w` | `(*SQLiteStore).StartSession` | `internal/store/sqlite.go` | 301 |
-| `end session: %w` | `(*SQLiteStore).EndSession` | `internal/store/sqlite.go` | 315 |
-| `end session rows affected: %w` | `(*SQLiteStore).EndSession` | `internal/store/sqlite.go` | 320 |
-| `update session activity: %w` | `(*SQLiteStore).UpdateSessionActivity` | `internal/store/sqlite.go` | 336 |
-| `end session: %w` | `(*SQLiteStore).EndSessionAt` | `internal/store/sqlite.go` | 348 |
-| `end session rows affected: %w` | `(*SQLiteStore).EndSessionAt` | `internal/store/sqlite.go` | 353 |
-| `list sessions: %w` | `(*SQLiteStore).ListSessions` | `internal/store/sqlite.go` | 372 |
-| `list all sessions: %w` | `(*SQLiteStore).ListAllSessions` | `internal/store/sqlite.go` | 386 |
-| `scan session: %w` | `scanSessions` | `internal/store/sqlite.go` | 407 |
-| `parse session started_at: %w` | `scanSessions` | `internal/store/sqlite.go` | 412 |
-| `parse session ended_at: %w` | `scanSessions` | `internal/store/sqlite.go` | 418 |
-| `iterate sessions: %w` | `scanSessions` | `internal/store/sqlite.go` | 453 |
-| `fetch session tags: %w` | `(*SQLiteStore).UpdateSessionAnnotations` | `internal/store/sqlite.go` | 474 |
-| `marshal tags: %w` | `(*SQLiteStore).UpdateSessionAnnotations` | `internal/store/sqlite.go` | 502 |
-| `update session annotations: %w` | `(*SQLiteStore).UpdateSessionAnnotations` | `internal/store/sqlite.go` | 518 |
-| `list issues: %w` | `(*SQLiteStore).ListIssues` | `internal/store/sqlite.go` | 563 |
-| `scan issue: %w` | `(*SQLiteStore).ListIssues` | `internal/store/sqlite.go` | 576 |
-| `iterate issues: %w` | `(*SQLiteStore).ListIssues` | `internal/store/sqlite.go` | 603 |
-| `get report: %w` | `(*SQLiteStore).GetReport` | `internal/store/sqlite.go` | 628 |
-| `scan report row: %w` | `(*SQLiteStore).GetReport` | `internal/store/sqlite.go` | 640 |
-| `iterate report rows: %w` | `(*SQLiteStore).GetReport` | `internal/store/sqlite.go` | 653 |
-| `list usage over time: %w` | `(*SQLiteStore).ListUsageOverTime` | `internal/store/sqlite.go` | 710 |
-| `scan usage point: %w` | `(*SQLiteStore).ListUsageOverTime` | `internal/store/sqlite.go` | 731 |
-| `iterate usage points: %w` | `(*SQLiteStore).ListUsageOverTime` | `internal/store/sqlite.go` | 751 |
-| `list tracked issue refs: %w` | `(*SQLiteStore).ListTrackedIssueRefs` | `internal/store/sqlite.go` | 773 |
-| `scan tracked issue ref: %w` | `(*SQLiteStore).ListTrackedIssueRefs` | `internal/store/sqlite.go` | 782 |
-| `iterate tracked issue refs: %w` | `(*SQLiteStore).ListTrackedIssueRefs` | `internal/store/sqlite.go` | 789 |
-| `set budget: %w` | `(*SQLiteStore).SetBudget` | `internal/store/sqlite.go` | 907 |
-| `unset budget: %w` | `(*SQLiteStore).UnsetBudget` | `internal/store/sqlite.go` | 919 |
-| `list budgets: %w` | `(*SQLiteStore).ListBudgets` | `internal/store/sqlite.go` | 930 |
-| `scan budget: %w` | `(*SQLiteStore).ListBudgets` | `internal/store/sqlite.go` | 939 |
-| `iterate budgets: %w` | `(*SQLiteStore).ListBudgets` | `internal/store/sqlite.go` | 946 |
-| `get budget: %w` | `(*SQLiteStore).GetBudget` | `internal/store/sqlite.go` | 964 |
+| `remove plugin: %w` | `UninstallHook` | `internal/skill/hooks.go` | 81 |
+| `read settings: %w` | `readSettings` | `internal/skill/hooks.go` | 109 |
+| `parse settings: %w` | `readSettings` | `internal/skill/hooks.go` | 118 |
+| `create settings directory: %w` | `writeSettings` | `internal/skill/hooks.go` | 126 |
+| `marshal settings: %w` | `writeSettings` | `internal/skill/hooks.go` | 131 |
+| `write settings: %w` | `writeSettings` | `internal/skill/hooks.go` | 135 |
+| `marshal hook entry: %w` | `toGeneric` | `internal/skill/hooks.go` | 245 |
+| `normalize hook entry: %w` | `toGeneric` | `internal/skill/hooks.go` | 250 |
+| `create plugin directory: %w` | `installOpenCodePlugin` | `internal/skill/hooks.go` | 261 |
+| `write plugin: %w` | `installOpenCodePlugin` | `internal/skill/hooks.go` | 265 |
+| `%w: %s` | `Install` | `internal/skill/skill.go` | 102 |
+| `cannot determine install path for agent %s` | `Install` | `internal/skill/skill.go` | 107 |
+| `create skill directory: %w` | `Install` | `internal/skill/skill.go` | 111 |
+| `install capture hook: %w` | `Install` | `internal/skill/skill.go` | 119 |
+| `write skill file: %w` | `installDedicated` | `internal/skill/skill.go` | 146 |
+| `%w: %s` | `Uninstall` | `internal/skill/skill.go` | 160 |
+| `cannot determine install path for agent %s` | `Uninstall` | `internal/skill/skill.go` | 165 |
+| `remove capture hook: %w` | `Uninstall` | `internal/skill/skill.go` | 171 |
+| `remove skill file: %w` | `uninstallDedicated` | `internal/skill/skill.go` | 183 |
+| `read %s: %w` | `uninstallShared` | `internal/skill/skill.go` | 199 |
+| `remove skill file: %w` | `uninstallShared` | `internal/skill/skill.go` | 214 |
+| `update skill file: %w` | `uninstallShared` | `internal/skill/skill.go` | 223 |
+| `open sqlite: %w` | `NewSQLiteStore` | `internal/store/sqlite.go` | 96 |
+| `apply schema: %w` | `NewSQLiteStore` | `internal/store/sqlite.go` | 103 |
+| `run migrations: %w` | `NewSQLiteStore` | `internal/store/sqlite.go` | 108 |
+| `migration %q: %w` | `runMigrations` | `internal/store/sqlite.go` | 122 |
+| `insert usage entry: %w` | `(*SQLiteStore).LogUsage` | `internal/store/sqlite.go` | 155 |
+| `marshal labels: %w` | `(*SQLiteStore).UpsertIssueCache` | `internal/store/sqlite.go` | 169 |
+| `upsert issue cache: %w` | `(*SQLiteStore).UpsertIssueCache` | `internal/store/sqlite.go` | 184 |
+| `get issue cache: %w` | `(*SQLiteStore).GetIssueCache` | `internal/store/sqlite.go` | 205 |
+| `list entries: %w` | `(*SQLiteStore).ListEntries` | `internal/store/sqlite.go` | 262 |
+| `scan entry: %w` | `(*SQLiteStore).ListEntries` | `internal/store/sqlite.go` | 280 |
+| `parse entry at: %w` | `(*SQLiteStore).ListEntries` | `internal/store/sqlite.go` | 292 |
+| `iterate entries: %w` | `(*SQLiteStore).ListEntries` | `internal/store/sqlite.go` | 307 |
+| `insert session: %w` | `(*SQLiteStore).StartSession` | `internal/store/sqlite.go` | 326 |
+| `end session: %w` | `(*SQLiteStore).EndSession` | `internal/store/sqlite.go` | 340 |
+| `end session rows affected: %w` | `(*SQLiteStore).EndSession` | `internal/store/sqlite.go` | 345 |
+| `update session activity: %w` | `(*SQLiteStore).UpdateSessionActivity` | `internal/store/sqlite.go` | 361 |
+| `end session: %w` | `(*SQLiteStore).EndSessionAt` | `internal/store/sqlite.go` | 373 |
+| `end session rows affected: %w` | `(*SQLiteStore).EndSessionAt` | `internal/store/sqlite.go` | 378 |
+| `list sessions: %w` | `(*SQLiteStore).ListSessions` | `internal/store/sqlite.go` | 404 |
+| `list all sessions: %w` | `(*SQLiteStore).ListAllSessions` | `internal/store/sqlite.go` | 418 |
+| `scan session: %w` | `scanSessions` | `internal/store/sqlite.go` | 439 |
+| `parse session started_at: %w` | `scanSessions` | `internal/store/sqlite.go` | 444 |
+| `parse session ended_at: %w` | `scanSessions` | `internal/store/sqlite.go` | 450 |
+| `iterate sessions: %w` | `scanSessions` | `internal/store/sqlite.go` | 485 |
+| `fetch session tags: %w` | `(*SQLiteStore).UpdateSessionAnnotations` | `internal/store/sqlite.go` | 506 |
+| `marshal tags: %w` | `(*SQLiteStore).UpdateSessionAnnotations` | `internal/store/sqlite.go` | 534 |
+| `update session annotations: %w` | `(*SQLiteStore).UpdateSessionAnnotations` | `internal/store/sqlite.go` | 550 |
+| `list issues: %w` | `(*SQLiteStore).ListIssues` | `internal/store/sqlite.go` | 595 |
+| `scan issue: %w` | `(*SQLiteStore).ListIssues` | `internal/store/sqlite.go` | 611 |
+| `iterate issues: %w` | `(*SQLiteStore).ListIssues` | `internal/store/sqlite.go` | 637 |
+| `get report: %w` | `(*SQLiteStore).GetReport` | `internal/store/sqlite.go` | 662 |
+| `scan report row: %w` | `(*SQLiteStore).GetReport` | `internal/store/sqlite.go` | 676 |
+| `iterate report rows: %w` | `(*SQLiteStore).GetReport` | `internal/store/sqlite.go` | 692 |
+| `list usage over time: %w` | `(*SQLiteStore).ListUsageOverTime` | `internal/store/sqlite.go` | 749 |
+| `scan usage point: %w` | `(*SQLiteStore).ListUsageOverTime` | `internal/store/sqlite.go` | 770 |
+| `iterate usage points: %w` | `(*SQLiteStore).ListUsageOverTime` | `internal/store/sqlite.go` | 789 |
+| `list tracked issue refs: %w` | `(*SQLiteStore).ListTrackedIssueRefs` | `internal/store/sqlite.go` | 810 |
+| `scan tracked issue ref: %w` | `(*SQLiteStore).ListTrackedIssueRefs` | `internal/store/sqlite.go` | 819 |
+| `iterate tracked issue refs: %w` | `(*SQLiteStore).ListTrackedIssueRefs` | `internal/store/sqlite.go` | 826 |
+| `set budget: %w` | `(*SQLiteStore).SetBudget` | `internal/store/sqlite.go` | 944 |
+| `unset budget: %w` | `(*SQLiteStore).UnsetBudget` | `internal/store/sqlite.go` | 956 |
+| `list budgets: %w` | `(*SQLiteStore).ListBudgets` | `internal/store/sqlite.go` | 967 |
+| `scan budget: %w` | `(*SQLiteStore).ListBudgets` | `internal/store/sqlite.go` | 976 |
+| `iterate budgets: %w` | `(*SQLiteStore).ListBudgets` | `internal/store/sqlite.go` | 983 |
+| `get budget: %w` | `(*SQLiteStore).GetBudget` | `internal/store/sqlite.go` | 1001 |
+| `list unattributed: %w` | `(*SQLiteStore).ListUnattributed` | `internal/store/sqlite.go` | 1030 |
+| `scan unattributed: %w` | `(*SQLiteStore).ListUnattributed` | `internal/store/sqlite.go` | 1054 |
+| `iterate unattributed: %w` | `(*SQLiteStore).ListUnattributed` | `internal/store/sqlite.go` | 1081 |
+| `session id is required` | `(*SQLiteStore).setSessionIssue` | `internal/store/sqlite.go` | 1107 |
+| `begin transaction: %w` | `(*SQLiteStore).setSessionIssue` | `internal/store/sqlite.go` | 1112 |
+| `update entries: %w` | `(*SQLiteStore).setSessionIssue` | `internal/store/sqlite.go` | 1119 |
+| `rows affected: %w` | `(*SQLiteStore).setSessionIssue` | `internal/store/sqlite.go` | 1124 |
+| `update session: %w` | `(*SQLiteStore).setSessionIssue` | `internal/store/sqlite.go` | 1129 |
+| `commit: %w` | `(*SQLiteStore).setSessionIssue` | `internal/store/sqlite.go` | 1133 |
 | `open browser: %w` | `openBrowserCmd` | `internal/tui/tui.go` | 739 |
-| `` | `newTUITestStore` | `internal/tui/tui_test.go` | 43 |
-| `` | `newTUIModel` | `internal/tui/tui_test.go` | 55 |
-| `` | `newTUIModel` | `internal/tui/tui_test.go` | 57 |
 
