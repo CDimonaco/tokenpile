@@ -59,10 +59,15 @@ type Entry struct {
 	// IssueNum is nil when the entry is not attributed to an issue. Capture
 	// must be able to record a turn before the issue is known: an unattributed
 	// measurement can be assigned later, a discarded one is gone.
-	IssueNum    *int
-	Agent       string
-	Model       string
-	Usage       Usage
+	IssueNum *int
+	Agent    string
+	Model    string
+	Usage    Usage
+	// Branch is what was checked out when the tokens were spent. It is stored
+	// rather than re-derived: reading the working directory back at listing
+	// time would report today's branch, which is wrong for exactly the old
+	// sessions worth reconciling. Empty when the agent did not report one.
+	Branch      string
 	Source      Source
 	SessionID   string
 	At          time.Time
@@ -179,9 +184,17 @@ type OverTimeFilter struct {
 type UnattributedGroup struct {
 	Repo      string
 	SessionID string
-	Entries   int
-	Usage     Usage
-	Cost      float64
-	First     time.Time
-	Last      time.Time
+	// Branch the group's entries were captured on, empty for entries recorded
+	// before the branch was stored.
+	Branch  string
+	Entries int
+	Usage   Usage
+	Cost    float64
+	First   time.Time
+	Last    time.Time
+	// Suggested is the issue the branch name implies, derived on read rather
+	// than stored: the branch-to-issue mapping is a heuristic that will be
+	// tuned, and a stored guess would freeze an older rule. Nil when the branch
+	// implies nothing.
+	Suggested *int
 }

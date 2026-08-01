@@ -136,6 +136,7 @@ func reconcileSpool(c *cli.Context, s store.Store, paths config.Paths) int {
 			Agent:     turn.Agent,
 			Model:     turn.Model,
 			Usage:     turn.Usage,
+			Branch:    turn.Branch,
 			Source:    usage.SourceMeasured,
 			SessionID: turn.SessionID,
 			At:        turn.At,

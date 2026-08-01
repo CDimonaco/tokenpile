@@ -13,6 +13,7 @@ import (
 	"github.com/google/uuid"
 	_ "modernc.org/sqlite" // registers the sqlite3 driver
 
+	"github.com/cdimonaco/tokenpile/internal/attribution"
 	"github.com/cdimonaco/tokenpile/internal/pricing"
 	"github.com/cdimonaco/tokenpile/internal/usage"
 )
@@ -37,6 +38,7 @@ CREATE TABLE IF NOT EXISTS usage_entries (
     reasoning   INTEGER NOT NULL,
     source      TEXT NOT NULL,
     session_id  TEXT,
+    branch      TEXT NOT NULL DEFAULT '',
     at          TEXT NOT NULL
 );
 
@@ -78,6 +80,10 @@ var migrations = []string{
 	`ALTER TABLE sessions ADD COLUMN note TEXT`,
 	`ALTER TABLE sessions ADD COLUMN tags TEXT`,
 	`ALTER TABLE sessions ADD COLUMN last_activity_at TEXT`,
+	// Entries captured before this column existed keep an empty branch: the
+	// branch at capture time is unknowable after the fact, and inventing one
+	// would produce suggestions that look authoritative and are fiction.
+	`ALTER TABLE usage_entries ADD COLUMN branch TEXT NOT NULL DEFAULT ''`,
 }
 
 type SQLiteStore struct {
@@ -144,12 +150,12 @@ func (s *SQLiteStore) LogUsage(ctx context.Context, entry usage.Entry) error {
 		// transcript or a replayed spool cannot create duplicates, which is
 		// what lets the spool be cleared without a two-phase commit.
 		`INSERT OR IGNORE INTO usage_entries
-		 (id, repo, issue_num, agent, model, input_fresh, cache_write, cache_read, output, reasoning, source, session_id, at)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		 (id, repo, issue_num, agent, model, input_fresh, cache_write, cache_read, output, reasoning, source, session_id, branch, at)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		entry.ID, entry.Repo, entry.IssueNum, entry.Agent, entry.Model,
 		entry.Usage.InputFresh, entry.Usage.CacheWrite, entry.Usage.CacheRead,
 		entry.Usage.Output, entry.Usage.Reasoning, string(entry.Source),
-		entry.SessionID, entry.At.UTC().Format(time.RFC3339),
+		entry.SessionID, entry.Branch, entry.At.UTC().Format(time.RFC3339),
 	)
 	if err != nil {
 		return fmt.Errorf("insert usage entry: %w", err)
@@ -218,7 +224,7 @@ func (s *SQLiteStore) GetIssueCache(ctx context.Context, repo string, issueNum i
 func (s *SQLiteStore) ListEntries(ctx context.Context, filter usage.Filter) ([]usage.Entry, error) {
 	query := `SELECT ue.id, ue.repo, ue.issue_num, ue.agent, ue.model,
 		ue.input_fresh, ue.cache_write, ue.cache_read, ue.output, ue.reasoning, ue.source,
-		ue.session_id, ue.at,
+		ue.session_id, ue.branch, ue.at,
 		COALESCE(ic.title, ''), COALESCE(ic.labels, '[]')
 		FROM usage_entries ue
 		LEFT JOIN issue_cache ic ON ic.repo = ue.repo AND ic.issue_num = ue.issue_num
@@ -276,7 +282,7 @@ func (s *SQLiteStore) ListEntries(ctx context.Context, filter usage.Filter) ([]u
 		if err = rows.Scan(&e.ID, &e.Repo, &issueNum, &e.Agent, &e.Model,
 			&e.Usage.InputFresh, &e.Usage.CacheWrite, &e.Usage.CacheRead,
 			&e.Usage.Output, &e.Usage.Reasoning, &source,
-			&sessionID, &atStr, &e.IssueTitle, &labelsJSON); err != nil {
+			&sessionID, &e.Branch, &atStr, &e.IssueTitle, &labelsJSON); err != nil {
 			return nil, fmt.Errorf("scan entry: %w", err)
 		}
 
@@ -1009,7 +1015,7 @@ func (s *SQLiteStore) GetBudget(ctx context.Context, repo string, issueNum int) 
 // is the unit a user actually reasons about when saying "that was issue 42".
 func (s *SQLiteStore) ListUnattributed(ctx context.Context, repo string) ([]usage.UnattributedGroup, error) {
 	query := `
-		SELECT COALESCE(ue.session_id, ''), ue.repo, ue.model, COUNT(*),
+		SELECT COALESCE(ue.session_id, ''), ue.repo, ue.branch, ue.model, COUNT(*),
 		       SUM(ue.input_fresh), SUM(ue.cache_write), SUM(ue.cache_read),
 		       SUM(ue.output), SUM(ue.reasoning),
 		       MIN(ue.at), MAX(ue.at)
@@ -1023,7 +1029,7 @@ func (s *SQLiteStore) ListUnattributed(ctx context.Context, repo string) ([]usag
 		args = append(args, repo)
 	}
 
-	query += ` GROUP BY ue.session_id, ue.repo, ue.model ORDER BY MAX(ue.at) DESC`
+	query += ` GROUP BY ue.session_id, ue.repo, ue.branch, ue.model ORDER BY MAX(ue.at) DESC`
 
 	rows, err := s.db.QueryContext(ctx, query, args...)
 	if err != nil {
@@ -1042,13 +1048,13 @@ func (s *SQLiteStore) ListUnattributed(ctx context.Context, repo string) ([]usag
 
 	for rows.Next() {
 		var (
-			sessionID, entryRepo, model string
-			count                       int
-			u                           usage.Usage
-			firstAt, lastAt             string
+			sessionID, entryRepo, branch, model string
+			count                               int
+			u                                   usage.Usage
+			firstAt, lastAt                     string
 		)
 
-		if err = rows.Scan(&sessionID, &entryRepo, &model, &count,
+		if err = rows.Scan(&sessionID, &entryRepo, &branch, &model, &count,
 			&u.InputFresh, &u.CacheWrite, &u.CacheRead, &u.Output, &u.Reasoning,
 			&firstAt, &lastAt); err != nil {
 			return nil, fmt.Errorf("scan unattributed: %w", err)
@@ -1056,11 +1062,22 @@ func (s *SQLiteStore) ListUnattributed(ctx context.Context, repo string) ([]usag
 
 		k := groupKey{sessionID, entryRepo}
 		if _, ok := groups[k]; !ok {
-			groups[k] = &usage.UnattributedGroup{Repo: entryRepo, SessionID: sessionID}
+			groups[k] = &usage.UnattributedGroup{Repo: entryRepo, SessionID: sessionID, Branch: branch}
+
 			order = append(order, k)
 		}
 
 		g := groups[k]
+
+		// The session is the assignment unit, so it is also the group key: a
+		// group that could not be assigned on its own would be a lie. When a
+		// session spans a branch switch there is no single branch to report,
+		// and reporting one of them would suggest an issue for work that was
+		// only partly done on it.
+		if g.Branch != branch {
+			g.Branch = ""
+		}
+
 		g.Entries += count
 		g.Usage = g.Usage.Add(u)
 		g.Cost += s.pricing.ComputeCost(model, u).Cost
@@ -1082,8 +1099,15 @@ func (s *SQLiteStore) ListUnattributed(ctx context.Context, repo string) ([]usag
 	}
 
 	out := make([]usage.UnattributedGroup, 0, len(order))
+
 	for _, k := range order {
-		out = append(out, *groups[k])
+		g := *groups[k]
+
+		if n, ok := attribution.InferFromBranch(g.Branch); ok {
+			g.Suggested = &n
+		}
+
+		out = append(out, g)
 	}
 
 	return out, nil

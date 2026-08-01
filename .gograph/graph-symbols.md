@@ -1,7 +1,7 @@
 # Symbols & Packages
 
 **Root:** `/Users/cdimonaco/code/github.com/cdimonaco/tokenpile`  
-**Generated:** 2026-08-01 13:38:20 UTC  
+**Generated:** 2026-08-01 13:44:33 UTC  
 
 ---
 
@@ -9,13 +9,13 @@
 
 | File | Symbols | Calls |
 |------|---------|-------|
-| `internal/store/sqlite_test.go` | 36 | 384 |
+| `internal/store/sqlite_test.go` | 39 | 417 |
 | `cmd/tokenpile/integration_test.go` | 32 | 304 |
-| `internal/store/sqlite.go` | 37 | 282 |
+| `internal/store/sqlite.go` | 37 | 283 |
 | `internal/tui/tui.go` | 53 | 258 |
 | `internal/tui/tui_test.go` | 41 | 228 |
 | `internal/skill/skill_test.go` | 21 | 147 |
-| `cmd/tokenpile/cmd_hook_test.go` | 15 | 151 |
+| `cmd/tokenpile/cmd_hook_test.go` | 15 | 152 |
 | `internal/export/export_test.go` | 21 | 145 |
 | `cmd/tokenpile/cmd_auth_test.go` | 23 | 131 |
 | `internal/pricing/pricing_test.go` | 17 | 122 |
@@ -42,34 +42,34 @@
 | `TestSmoke_ExportVerify` | function | `cmd/tokenpile/smoke_test.go` | 70 | 31 |
 | `(Model).viewIssueList` | method | `internal/tui/tui.go` | 434 | 30 |
 | `reportCommand` | function | `cmd/tokenpile/cmd_report.go` | 19 | 29 |
-| `(*SQLiteStore).ListUsageOverTime` | method | `internal/store/sqlite.go` | 700 | 27 |
-| `unattributedCommand` | function | `cmd/tokenpile/cmd_bind.go` | 84 | 26 |
-| `(*SQLiteStore).ListIssues` | method | `internal/store/sqlite.go` | 556 | 26 |
+| `unattributedCommand` | function | `cmd/tokenpile/cmd_bind.go` | 85 | 28 |
+| `(*SQLiteStore).ListUsageOverTime` | method | `internal/store/sqlite.go` | 706 | 27 |
+| `(*SQLiteStore).ListIssues` | method | `internal/store/sqlite.go` | 562 | 26 |
 | `TestLog_ClosesIdleSession_StartsNew` | function | `cmd/tokenpile/cmd_log_test.go` | 126 | 25 |
 | `Build` | function | `internal/export/export.go` | 82 | 25 |
-| `TestSQLiteStore_AssignIssue_AndReverse` | function | `internal/store/sqlite_test.go` | 630 | 25 |
+| `TestSQLiteStore_AssignIssue_AndReverse` | function | `internal/store/sqlite_test.go` | 712 | 25 |
 | `(Model).viewIssueDetail` | method | `internal/tui/tui.go` | 493 | 25 |
 | `runExport` | function | `cmd/tokenpile/cmd_export.go` | 230 | 24 |
-| `(*SQLiteStore).ListEntries` | method | `internal/store/sqlite.go` | 218 | 24 |
+| `(*SQLiteStore).ListEntries` | method | `internal/store/sqlite.go` | 224 | 24 |
 | `(Model).renderFooter` | method | `internal/tui/tui.go` | 391 | 24 |
 | `TestGitHubIssueProvider_ListIssues_Paginated` | function | `internal/provider/github_issues_test.go` | 49 | 23 |
 | `TestSQLiteStore_ListTrackedIssueRefs` | function | `internal/store/sqlite_test.go` | 318 | 23 |
 | `TestSQLiteStore_ListUsageOverTime_WeekGranularity` | function | `internal/store/sqlite_test.go` | 246 | 23 |
 | `runVerify` | function | `cmd/tokenpile/cmd_export.go` | 83 | 22 |
+| `(*SQLiteStore).ListUnattributed` | method | `internal/store/sqlite.go` | 1016 | 22 |
 | `(Model).renderSessionsTab` | method | `internal/tui/tui.go` | 591 | 22 |
 | `TestTUI_DetailView_SummaryTab_ShowsBudgetBar` | function | `internal/tui/tui_test.go` | 433 | 22 |
 | `TestLog_NoActiveSession_StartsNew` | function | `cmd/tokenpile/cmd_log_test.go` | 51 | 21 |
-| `TestReconcile_UnattributableTurnDoesNotStallTheSpool` | function | `cmd/tokenpile/cmd_hook_test.go` | 224 | 21 |
+| `TestReconcile_UnattributableTurnDoesNotStallTheSpool` | function | `cmd/tokenpile/cmd_hook_test.go` | 226 | 21 |
 | `writeResetBackup` | function | `cmd/tokenpile/cmd_reset.go` | 152 | 21 |
-| `(*SQLiteStore).ListUnattributed` | method | `internal/store/sqlite.go` | 1010 | 21 |
+| `TestReconcile_AttributesFromBranch` | function | `cmd/tokenpile/cmd_hook_test.go` | 151 | 20 |
 | `budgetCommands` | function | `cmd/tokenpile/cmd_budget.go` | 13 | 20 |
-| `TestIntegration_Log_IdleSessionClosed_ByResolveSession` | function | `cmd/tokenpile/integration_test.go` | 694 | 19 |
 
 ## Packages
 
 | Package | Dir | Files | Symbols |
 |---------|-----|-------|---------|
-| `main` | `cmd/tokenpile` | 18 | 149 |
+| `main` | `cmd/tokenpile` | 19 | 157 |
 | `attribution` | `internal/attribution` | 2 | 12 |
 | `capture` | `internal/capture` | 5 | 20 |
 | `config` | `internal/config` | 3 | 8 |

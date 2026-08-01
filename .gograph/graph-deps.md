@@ -1,7 +1,7 @@
 # Dependencies & Imports
 
 **Root:** `/Users/cdimonaco/code/github.com/cdimonaco/tokenpile`  
-**Generated:** 2026-08-01 13:38:20 UTC  
+**Generated:** 2026-08-01 13:44:33 UTC  
 
 ---
 
@@ -78,7 +78,7 @@
 | `schema` | `embed` |
 | `skill` | `embed`, `encoding/json`, `errors`, `fmt`, `os`, `path/filepath`, `strings` |
 | `skill_test` | `encoding/json`, `github.com/cdimonaco/tokenpile/internal/skill`, `github.com/stretchr/testify/assert`, `github.com/stretchr/testify/require`, `os`, `path/filepath`, `testing` |
-| `store` | `context`, `database/sql`, `encoding/json`, `errors`, `fmt`, `github.com/cdimonaco/tokenpile/internal/pricing`, `github.com/cdimonaco/tokenpile/internal/usage`, `github.com/google/uuid`, `log/slog`, `modernc.org/sqlite`, `strings`, `time` |
+| `store` | `context`, `database/sql`, `encoding/json`, `errors`, `fmt`, `github.com/cdimonaco/tokenpile/internal/attribution`, `github.com/cdimonaco/tokenpile/internal/pricing`, `github.com/cdimonaco/tokenpile/internal/usage`, `github.com/google/uuid`, `log/slog`, `modernc.org/sqlite`, `strings`, `time` |
 | `store_test` | `context`, `github.com/cdimonaco/tokenpile/internal/pricing`, `github.com/cdimonaco/tokenpile/internal/store`, `github.com/cdimonaco/tokenpile/internal/usage`, `github.com/stretchr/testify/assert`, `github.com/stretchr/testify/require`, `path/filepath`, `testing`, `time` |
 | `tui` | `context`, `fmt`, `github.com/cdimonaco/tokenpile/internal/pricing`, `github.com/cdimonaco/tokenpile/internal/provider`, `github.com/cdimonaco/tokenpile/internal/store`, `github.com/cdimonaco/tokenpile/internal/usage`, `github.com/charmbracelet/bubbletea`, `github.com/charmbracelet/lipgloss`, `github.com/charmbracelet/x/exp/teatest`, `github.com/stretchr/testify/assert`, `github.com/stretchr/testify/require`, `log/slog`, `os/exec`, `path/filepath`, `regexp`, `runtime`, `strings`, `testing`, `time` |
 | `usage` | `time` |

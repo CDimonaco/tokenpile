@@ -1,7 +1,7 @@
 # GoGraph Report Index
 
 **Root:** `/Users/cdimonaco/code/github.com/cdimonaco/tokenpile`  
-**Generated:** 2026-08-01 13:38:20 UTC  
+**Generated:** 2026-08-01 13:44:33 UTC  
 
 ---
 
@@ -10,13 +10,13 @@
 | Metric | Count |
 |--------|-------|
 | Packages | 12 |
-| Files | 58 |
-| Symbols | 652 |
-| Functions | 427 |
+| Files | 59 |
+| Symbols | 663 |
+| Functions | 438 |
 | Methods | 91 |
 | Structs | 56 |
 | Interfaces | 5 |
-| Call edges | 4169 |
+| Call edges | 4257 |
 | Env var reads | 6 |
 
 ## 2. Structural Index
@@ -41,6 +41,7 @@ To save token context, the full graph report has been split into targeted files.
 - `cmd/tokenpile/cmd_auth.go` (package `main`)
 - `cmd/tokenpile/cmd_auth_test.go` (package `main`)
 - `cmd/tokenpile/cmd_bind.go` (package `main`)
+- `cmd/tokenpile/cmd_bind_test.go` (package `main`)
 - `cmd/tokenpile/cmd_budget.go` (package `main`)
 - `cmd/tokenpile/cmd_budget_test.go` (package `main`)
 - `cmd/tokenpile/cmd_export.go` (package `main`)

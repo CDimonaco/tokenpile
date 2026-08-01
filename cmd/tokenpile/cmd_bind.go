@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/urfave/cli/v2"
 
@@ -99,10 +100,9 @@ func unattributedCommand(s store.Store, paths config.Paths) *cli.Command {
 				ArgsUsage: "<session-id>",
 				Flags: []cli.Flag{
 					&cli.IntFlag{
-						Name:     "issue",
-						Aliases:  []string{"i"},
-						Usage:    "GitHub issue number",
-						Required: true,
+						Name:    "issue",
+						Aliases: []string{"i"},
+						Usage:   "GitHub issue number (defaults to the branch-derived suggestion)",
 					},
 				},
 				Action: func(c *cli.Context) error {
@@ -111,12 +111,17 @@ func unattributedCommand(s store.Store, paths config.Paths) *cli.Command {
 						return errors.New("session id is required")
 					}
 
-					n, err := s.AssignIssue(c.Context, sessionID, c.Int("issue"))
+					issueNum, err := resolveAssignIssue(c, s, sessionID)
+					if err != nil {
+						return err
+					}
+
+					n, err := s.AssignIssue(c.Context, sessionID, issueNum)
 					if err != nil {
 						return fmt.Errorf("assign issue: %w", err)
 					}
 
-					fmt.Fprintf(c.App.Writer, "Assigned %d entries to #%d\n", n, c.Int("issue"))
+					fmt.Fprintf(c.App.Writer, "Assigned %d entries to #%d\n", n, issueNum)
 
 					return nil
 				},
@@ -156,29 +161,79 @@ func unattributedCommand(s store.Store, paths config.Paths) *cli.Command {
 				return nil
 			}
 
-			fmt.Fprintf(c.App.Writer, "%-38s %-22s %-8s %-12s %s\n",
-				"Session", "Repo", "Entries", "Tokens", "Cost")
-			fmt.Fprintln(c.App.Writer,
-				"----------------------------------------------------------------------------------------")
+			fmt.Fprintf(c.App.Writer, "%-38s %-22s %-24s %-8s %-12s %-12s %s\n",
+				"Session", "Repo", "Branch", "Entries", "Tokens", "Cost", "Suggested")
+			fmt.Fprintln(c.App.Writer, strings.Repeat("-", 130))
 
 			for _, g := range groups {
-				fmt.Fprintf(c.App.Writer, "%-38s %-22s %-8d %-12d $%.6f\n",
-					g.SessionID, truncateRepo(g.Repo), g.Entries, g.Usage.TotalTokens(), g.Cost)
+				fmt.Fprintf(c.App.Writer, "%-38s %-22s %-24s %-8d %-12d $%-11.6f %s\n",
+					g.SessionID, truncateRepo(g.Repo), truncateBranch(g.Branch),
+					g.Entries, g.Usage.TotalTokens(), g.Cost, suggestionLabel(g.Suggested))
 			}
 
 			fmt.Fprintln(c.App.Writer,
-				"\nAssign with: tokenpile unattributed assign <session-id> --issue <n>")
+				"\nAssign with: tokenpile unattributed assign <session-id> --issue <n>"+
+					"\nOmit --issue to accept the suggested issue.")
 
 			return nil
 		},
 	}
 }
 
-func truncateRepo(repo string) string {
-	const maxLen = 22
-	if len(repo) <= maxLen {
-		return repo
+// resolveAssignIssue takes the issue from the flag, or falls back to the
+// suggestion the group's branch implies. The fallback exists so accepting a
+// suggestion does not mean retyping a number that was just displayed; it is
+// never silent, because the number is printed back on success.
+func resolveAssignIssue(c *cli.Context, s store.Store, sessionID string) (int, error) {
+	if c.IsSet("issue") {
+		if c.Int("issue") <= 0 {
+			return 0, errors.New("--issue must be a positive issue number")
+		}
+
+		return c.Int("issue"), nil
 	}
 
-	return repo[:maxLen-1] + "…"
+	groups, err := s.ListUnattributed(c.Context, "")
+	if err != nil {
+		return 0, fmt.Errorf("list unattributed: %w", err)
+	}
+
+	for _, g := range groups {
+		if g.SessionID == sessionID && g.Suggested != nil {
+			return *g.Suggested, nil
+		}
+	}
+
+	return 0, errors.New("no issue suggested for this session: pass --issue")
+}
+
+func truncateRepo(repo string) string {
+	return truncate(repo, 22)
+}
+
+func truncateBranch(branch string) string {
+	if branch == "" {
+		return "-"
+	}
+
+	return truncate(branch, 24)
+}
+
+func truncate(s string, maxLen int) string {
+	if len(s) <= maxLen {
+		return s
+	}
+
+	return s[:maxLen-1] + "…"
+}
+
+// suggestionLabel renders the branch-derived suggestion. A dash rather than a
+// number is the honest output for a branch that implies nothing: a wrong
+// suggestion invites a careless confirmation.
+func suggestionLabel(suggested *int) string {
+	if suggested == nil {
+		return "-"
+	}
+
+	return fmt.Sprintf("#%d", *suggested)
 }

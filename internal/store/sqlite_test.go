@@ -627,6 +627,88 @@ func TestSQLiteStore_ListUnattributed_GroupsBySession(t *testing.T) {
 	assert.Equal(t, 1, bySession["sess-2"].Entries)
 }
 
+// The branch is what was checked out when the tokens were spent, so it has to
+// survive storage: re-deriving it later would report today's branch.
+func TestSQLiteStore_LogUsage_BranchRoundTrips(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	require.NoError(t, s.LogUsage(ctx, usage.Entry{
+		Repo: "o/r", Agent: "a", Model: "m", SessionID: "sess-1", Branch: "feat/42-thing",
+		Usage: usage.Usage{InputFresh: 10}, Source: usage.SourceMeasured,
+	}))
+	require.NoError(t, s.LogUsage(ctx, usage.Entry{
+		Repo: "o/r", Agent: "a", Model: "m", SessionID: "sess-2",
+		Usage: usage.Usage{InputFresh: 10}, Source: usage.SourceMeasured,
+	}))
+
+	entries, err := s.ListEntries(ctx, usage.Filter{Repo: "o/r"})
+	require.NoError(t, err)
+	require.Len(t, entries, 2)
+
+	bySession := map[string]usage.Entry{}
+	for _, e := range entries {
+		bySession[e.SessionID] = e
+	}
+
+	assert.Equal(t, "feat/42-thing", bySession["sess-1"].Branch)
+	assert.Empty(t, bySession["sess-2"].Branch, "an absent branch reads back empty, never invented")
+}
+
+func TestSQLiteStore_ListUnattributed_Suggestions(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	for session, branch := range map[string]string{
+		"sess-suggests": "feat/42-x",
+		"sess-main":     "main",
+		"sess-nobranch": "",
+	} {
+		require.NoError(t, s.LogUsage(ctx, usage.Entry{
+			Repo: "o/r", Agent: "a", Model: "m", SessionID: session, Branch: branch,
+			Usage: usage.Usage{InputFresh: 10}, Source: usage.SourceMeasured,
+		}))
+	}
+
+	groups, err := s.ListUnattributed(ctx, "o/r")
+	require.NoError(t, err)
+	require.Len(t, groups, 3)
+
+	bySession := map[string]usage.UnattributedGroup{}
+	for _, g := range groups {
+		bySession[g.SessionID] = g
+	}
+
+	require.NotNil(t, bySession["sess-suggests"].Suggested)
+	assert.Equal(t, 42, *bySession["sess-suggests"].Suggested)
+	assert.Equal(t, "feat/42-x", bySession["sess-suggests"].Branch)
+
+	assert.Nil(t, bySession["sess-main"].Suggested, "a branch that implies nothing suggests nothing")
+	assert.Nil(t, bySession["sess-nobranch"].Suggested, "entries stored before the branch column suggest nothing")
+}
+
+// A session is the assignment unit, so it must stay one group even when it
+// spans a branch switch: two groups would mean assigning one silently moves
+// the other's entries too.
+func TestSQLiteStore_ListUnattributed_SessionSpanningBranches(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	for _, branch := range []string{"feat/42-x", "feat/43-y"} {
+		require.NoError(t, s.LogUsage(ctx, usage.Entry{
+			Repo: "o/r", Agent: "a", Model: "m", SessionID: "sess-1", Branch: branch,
+			Usage: usage.Usage{InputFresh: 10}, Source: usage.SourceMeasured,
+		}))
+	}
+
+	groups, err := s.ListUnattributed(ctx, "o/r")
+	require.NoError(t, err)
+	require.Len(t, groups, 1)
+	assert.Equal(t, 2, groups[0].Entries)
+	assert.Empty(t, groups[0].Branch, "no single branch describes the session")
+	assert.Nil(t, groups[0].Suggested, "and so nothing is suggested")
+}
+
 func TestSQLiteStore_AssignIssue_AndReverse(t *testing.T) {
 	s := newTestStore(t)
 	ctx := context.Background()

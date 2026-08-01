@@ -170,6 +170,8 @@ func TestReconcile_AttributesFromBranch(t *testing.T) {
 	assert.Equal(t, 42, *entries[0].IssueNum)
 	assert.Equal(t, usage.SourceMeasured, entries[0].Source, "captured turns are measured, never estimated")
 	assert.Equal(t, 900, entries[0].Usage.CacheRead)
+	assert.Equal(t, "feat/42-thing", entries[0].Branch,
+		"the branch is stored, not merely used to infer the issue and dropped")
 }
 
 // Draining twice must not double-count: storage is idempotent on the turn id.
