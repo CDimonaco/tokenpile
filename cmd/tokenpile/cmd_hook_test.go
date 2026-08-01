@@ -158,9 +158,6 @@ func TestReconcile_AttributesFromBranch(t *testing.T) {
 		At:    time.Now().UTC(),
 	}}))
 
-	// Without a repo the turn stays spooled: there is nothing to attribute to.
-	assert.Equal(t, 0, runReconcile(t, s, paths))
-
 	bindings := attribution.NewStore(paths.BindingsPath)
 	require.NoError(t, bindings.Bind("s1", "", attribution.Binding{Repo: "o/r", IssueNum: 42}))
 
@@ -219,4 +216,56 @@ func TestReconcile_RecordsUnattributed(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, groups, 1)
 	assert.Equal(t, 42, groups[0].Usage.Output)
+}
+
+// A turn whose working directory is not a git checkout can never gain a
+// repository. Leaving it spooled would stall every later turn behind it and
+// grow the file without bound, so it is quarantined and the spool drains.
+func TestReconcile_UnattributableTurnDoesNotStallTheSpool(t *testing.T) {
+	s, paths := reconcileFixture(t)
+	spool := capture.NewSpool(paths.SpoolPath)
+
+	bindings := attribution.NewStore(paths.BindingsPath)
+	require.NoError(t, bindings.Bind("good", "", attribution.Binding{Repo: "o/r", IssueNum: 1}))
+
+	require.NoError(t, spool.Append([]capture.Turn{
+		{ID: "bad", Agent: "claude-code", Model: "m", SessionID: "nowhere",
+			Cwd:   filepath.Join(t.TempDir(), "not-a-repo"),
+			Usage: usage.Usage{Output: 5}, At: time.Now().UTC()},
+		{ID: "good1", Agent: "claude-code", Model: "m", SessionID: "good",
+			Usage: usage.Usage{Output: 10}, At: time.Now().UTC()},
+	}))
+
+	assert.Equal(t, 1, runReconcile(t, s, paths), "the usable turn is recorded")
+	assert.Equal(t, 0, spool.Pending(), "the spool drains rather than stalling")
+
+	raw, err := os.ReadFile(paths.SpoolPath + ".raw")
+	require.NoError(t, err)
+	assert.Contains(t, string(raw), "bad", "the unusable turn is preserved, not discarded")
+}
+
+// The spec says --issue is optional. It was required, which made the synced
+// spec claim a behaviour the code did not have.
+func TestLog_WithoutIssue_RecordsUnattributed(t *testing.T) {
+	s, _ := reconcileFixture(t)
+
+	var buf bytes.Buffer
+
+	app := &cli.App{
+		Writer:   &buf,
+		Commands: []*cli.Command{logCommand(s, nil)},
+	}
+
+	err := app.RunContext(context.Background(), []string{
+		"tok", "log", "--repo", "owner/repo", "--agent", "claude-code",
+		"--model", "claude-opus-5", "--input", "100", "--output", "50",
+	})
+	require.NoError(t, err)
+	assert.Contains(t, buf.String(), "unattributed")
+
+	entries, err := s.ListEntries(context.Background(), usage.Filter{Repo: "owner/repo"})
+	require.NoError(t, err)
+	require.Len(t, entries, 1)
+	assert.Nil(t, entries[0].IssueNum)
+	assert.Equal(t, usage.SourceEstimated, entries[0].Source)
 }

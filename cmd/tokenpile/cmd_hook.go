@@ -104,7 +104,12 @@ func reconcileSpool(c *cli.Context, s store.Store, paths config.Paths) int {
 	}
 
 	bindings := attribution.NewStore(paths.BindingsPath)
-	recorded := 0
+
+	var (
+		recorded int
+		handled  int
+		unusable []capture.Turn
+	)
 
 	for _, turn := range turns {
 		repo, issueNum := attribution.Resolve(bindings, turn.SessionID, turn.Cwd, turn.Branch)
@@ -113,8 +118,14 @@ func reconcileSpool(c *cli.Context, s store.Store, paths config.Paths) int {
 		}
 
 		if repo == "" {
-			// Without a repository there is nothing to attribute to at all,
-			// so the turn stays spooled rather than being recorded wrongly.
+			// No repository can ever be derived for this turn: its working
+			// directory is not a git checkout with an origin remote, and that
+			// will not change. Quarantining it keeps the spool draining —
+			// leaving it in place would stall every later turn behind it and
+			// grow the file without bound — while still preserving the record.
+			unusable = append(unusable, turn)
+			handled++
+
 			continue
 		}
 
@@ -137,9 +148,21 @@ func reconcileSpool(c *cli.Context, s store.Store, paths config.Paths) int {
 		}
 
 		recorded++
+		handled++
 	}
 
-	if recorded == len(turns) {
+	for _, turn := range unusable {
+		payload, marshalErr := json.Marshal(turn)
+		if marshalErr != nil {
+			continue
+		}
+
+		if rawErr := spool.AppendRaw(turn.Agent, payload, errNoRepo); rawErr != nil {
+			slog.Warn("quarantine unattributable turn", "id", turn.ID, "err", rawErr)
+		}
+	}
+
+	if handled == len(turns) {
 		if err = spool.Clear(); err != nil {
 			slog.Warn("clear spool", "err", err)
 		}
@@ -147,6 +170,9 @@ func reconcileSpool(c *cli.Context, s store.Store, paths config.Paths) int {
 
 	return recorded
 }
+
+// errNoRepo explains why a turn was quarantined rather than recorded.
+var errNoRepo = errors.New("no repository could be derived from the turn's working directory")
 
 func newBytesReader(b []byte) io.Reader { return bytes.NewReader(b) }
 
