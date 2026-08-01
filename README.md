@@ -19,14 +19,18 @@ Track LLM token usage and cost per GitHub issue. Any agent (Claude Code, OpenCod
 
 ## Features
 
-- Log token usage from any LLM agent via a single CLI call
+- Token counts captured from the agent's own transcript, not estimated by a model: a `Stop` hook for Claude Code, a `session.idle` plugin for opencode
+- Every entry records whether its counts were `measured` (read from a transcript) or `estimated` (declared to `tokenpile log`)
+- Capture never fails for want of an issue: usage without one is recorded unattributed and assigned later, never dropped
+- Reconcile unattributed usage from the CLI or the TUI, with the issue suggested from the branch it was captured on
+- Log token usage manually from any LLM agent via a single CLI call
 - Validates the GitHub issue exists before logging — no phantom entries
 - Track by agent name and model separately (e.g. `claude-code` running `claude-sonnet-4-6`)
 - Sessions with 30-minute idle auto-close for wall-clock time tracking
 - Annotate sessions with a `--note` and one or more `--tag` labels per log call; tags accumulate across calls in the same session
 - Per-issue spending budget with `tokenpile budget set`; report shows consumed vs. total percentage
 - GitHub issue metadata (title, labels, URL) cached in the local DB at log time
-- TUI: issue list with clickable `#N` OSC 8 hyperlinks, per-issue detail with Summary and Sessions tabs, budget progress bar (green/yellow/red), token usage chart over time
+- TUI: issue list with clickable `#N` OSC 8 hyperlinks, per-issue detail with Summary and Sessions tabs, budget progress bar (green/yellow/red), token usage chart over time, and an unattributed usage view for reconciliation
 - Open issues in the browser with `o`, refresh cached metadata with `r`
 - Report and export include issue title and labels
 - Ed25519-signed JSON export (schema v4) with sessions and budgets blocks; the signature covers the whole document
@@ -166,22 +170,28 @@ The list shows a clickable `#N` link for each issue. In terminals that support O
 
 ### `tokenpile log`
 
-Record token usage for an issue.
+Record token usage manually. Most usage arrives through the capture hook instead — this is the path for tooling that has counts of its own.
 
 ```sh
-tokenpile log --issue <num> --agent <name> --model <model> \
+tokenpile log --agent <name> --model <model> \
+  [--issue <num>] \
   [--input <n>] [--cache-write <n>] [--cache-read <n>] [--output <n>] [--reasoning <n>] \
   [--repo owner/repo] [--note "description"] [--tag <tag> ...]
 ```
 
 | Flag | Description |
 |------|-------------|
+| `--issue` | Optional. Without it the entry is recorded unattributed and can be assigned later. |
 | `--note` | Short description of what was done in this call (last-write-wins per session) |
 | `--tag` | Label for the call; repeatable. Tags accumulate across calls in the same session (union). |
 
-Sessions are managed automatically. The first call for an `(issue, repo)` pair starts a session; subsequent calls within 30 minutes of the previous log reuse it. After 30 minutes of inactivity since the last log call the session is closed and a new one starts on the next call.
+Entries written here are marked `estimated`, entries written by the capture hook are marked `measured`. The distinction comes from the command, never from a flag: an agent cannot observe its own cache tiers, so it is structural rather than a claim anyone makes.
 
-The log command validates that the issue exists on GitHub before inserting the entry. If the issue is not found, the command fails with an error. Issue title and labels are cached in the local DB for use in reports, exports, and the TUI.
+`--reasoning` is a subset of `--output`, not a sixth bucket added to it, and the command rejects a reasoning count larger than the output count.
+
+Sessions are managed automatically. The first call for an `(issue, repo)` pair starts a session; subsequent calls within 30 minutes of the previous log reuse it. After 30 minutes of inactivity since the last log call the session is closed and a new one starts on the next call. Unattributed entries share a session of their own per repository, on the same idle rule.
+
+When `--issue` is given, the command validates that the issue exists on GitHub before inserting the entry and fails if it does not. Issue title and labels are cached in the local DB for use in reports, exports, and the TUI.
 
 ### `tokenpile report`
 
@@ -254,6 +264,14 @@ Notes on how it behaves:
   of `gh`.
 - `tokenpile auth status` always names the active source, so it is never
   ambiguous which credential produced your data.
+
+### `tokenpile hook`
+
+Invoked by the agent, not by you. It reads the hook payload on stdin, finds the turn's token counts in the agent's transcript, and appends it to an append-only spool. It does not touch the database: a busy or locked SQLite file would delay recording, and delay inside a hook is the one thing that must not happen.
+
+The spool exists because a hook that exits non-zero only prints to stderr and the agent carries on, so writing straight to the database would drop turns silently. Storage is idempotent on the turn id, which is what makes clearing the spool safe without a two-phase commit. A turn whose working directory yields no repository is quarantined with the reason attached rather than left to stall the queue behind it.
+
+`tokenpile report` and `tokenpile unattributed` also reconcile the spool before they read, so a turn spooled during a failure lands the next time you look at your data.
 
 ### `tokenpile bind`
 
@@ -401,7 +419,9 @@ internal/
   provider/           AuthProvider, IssueProvider, Issue type, GitHub implementations
   pricing/            two-layer pricing config and cost computation
   export/             Ed25519-signed canonical JSON export
-  skill/              embedded agent skill templates
+  capture/            agent transcript readers and the append-only spool
+  attribution/        issue bindings and offline branch inference
+  skill/              embedded agent skill templates and capture hook install
   tui/                Bubble Tea TUI
   config/             XDG path resolution and Ed25519 identity management
   mocks/              generated mocks for unit tests
