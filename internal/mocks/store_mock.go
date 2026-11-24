@@ -477,6 +477,24 @@ func (_m *Store) StartSession(ctx context.Context, repo string, issueNum *int) (
 	return r0, r1
 }
 
+// TouchCapturedSession provides a mock function with given fields: ctx, id, repo, issueNum, at
+func (_m *Store) TouchCapturedSession(ctx context.Context, id string, repo string, issueNum *int, at time.Time) error {
+	ret := _m.Called(ctx, id, repo, issueNum, at)
+
+	if len(ret) == 0 {
+		panic("no return value specified for TouchCapturedSession")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, *int, time.Time) error); ok {
+		r0 = rf(ctx, id, repo, issueNum, at)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // UnassignIssue provides a mock function with given fields: ctx, sessionID
 func (_m *Store) UnassignIssue(ctx context.Context, sessionID string) (int, error) {
 	ret := _m.Called(ctx, sessionID)
