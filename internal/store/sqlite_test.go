@@ -883,3 +883,75 @@ INSERT INTO usage_entries VALUES
 	require.Len(t, groups, 1)
 	assert.Equal(t, 900, groups[0].Usage.CacheRead)
 }
+
+func TestSQLiteStore_LogUsage_RecordsSession(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+	t0 := time.Date(2026, 7, 1, 10, 0, 0, 0, time.UTC)
+
+	for i, at := range []time.Time{t0.Add(10 * time.Minute), t0, t0.Add(20 * time.Minute)} {
+		require.NoError(t, s.LogUsage(ctx, usage.Entry{
+			ID: string(rune('a' + i)), Repo: "o/r", IssueNum: issuePtr(7), Agent: "a", Model: "m",
+			SessionID: "sess-1", At: at, Usage: usage.Usage{InputFresh: 10}, Source: usage.SourceMeasured,
+		}))
+	}
+
+	// A replayed entry must not move the session.
+	require.NoError(t, s.LogUsage(ctx, usage.Entry{
+		ID: "a", Repo: "o/r", IssueNum: issuePtr(7), Agent: "a", Model: "m",
+		SessionID: "sess-1", At: t0.Add(5 * time.Hour), Source: usage.SourceMeasured,
+	}))
+
+	sessions, err := s.ListSessions(ctx, "o/r", issuePtr(7))
+	require.NoError(t, err)
+	require.Len(t, sessions, 1)
+	assert.Equal(t, "sess-1", sessions[0].ID)
+	assert.True(t, t0.Equal(sessions[0].StartedAt))
+	assert.True(t, t0.Add(20*time.Minute).Equal(sessions[0].LastActivityAt))
+	require.NotNil(t, sessions[0].EndedAt)
+	assert.True(t, t0.Add(20*time.Minute).Equal(*sessions[0].EndedAt))
+}
+
+func TestSQLiteStore_LogUsage_NoSessionIDRecordsNoSession(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	require.NoError(t, s.LogUsage(ctx, usage.Entry{
+		Repo: "o/r", Agent: "a", Model: "m", Usage: usage.Usage{InputFresh: 10}, Source: usage.SourceMeasured,
+	}))
+
+	sessions, err := s.ListAllSessions(ctx)
+	require.NoError(t, err)
+	assert.Empty(t, sessions)
+}
+
+func TestSQLiteStore_BackfillsSessionsFromEntries(t *testing.T) {
+	dbPath := filepath.Join(t.TempDir(), "test.db")
+	pricer := fixedPricer{pricePerMIn: 3.0, pricePerMOut: 15.0}
+
+	s, err := store.NewSQLiteStore(dbPath, pricer)
+	require.NoError(t, err)
+
+	ctx := context.Background()
+	require.NoError(t, s.LogUsage(ctx, usage.Entry{
+		ID: "e1", Repo: "o/r", IssueNum: issuePtr(3), Agent: "a", Model: "m", SessionID: "sess-1",
+		At: time.Date(2026, 7, 1, 10, 0, 0, 0, time.UTC), Source: usage.SourceMeasured,
+	}))
+	require.NoError(t, s.Close())
+
+	// Reproduce a database written before capture recorded sessions.
+	db, err := sql.Open("sqlite", dbPath)
+	require.NoError(t, err)
+	_, err = db.Exec(`DELETE FROM sessions`)
+	require.NoError(t, err)
+	require.NoError(t, db.Close())
+
+	s, err = store.NewSQLiteStore(dbPath, pricer)
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = s.Close() })
+
+	sessions, err := s.ListSessions(ctx, "o/r", issuePtr(3))
+	require.NoError(t, err)
+	require.Len(t, sessions, 1)
+	assert.Equal(t, "sess-1", sessions[0].ID)
+}

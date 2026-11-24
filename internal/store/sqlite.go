@@ -144,7 +144,29 @@ func NewSQLiteStore(dbPath string, pricer Pricer) (*SQLiteStore, error) {
 		return nil, fmt.Errorf("relax issue_num: %w", err)
 	}
 
+	if err = backfillSessions(db); err != nil {
+		_ = db.Close()
+		return nil, fmt.Errorf("backfill sessions: %w", err)
+	}
+
 	return &SQLiteStore{db: db, pricing: pricer}, nil
+}
+
+// backfillSessions creates the sessions rows that capture never wrote before it
+// started recording them. Entries carry the session id, repo and timestamps, so
+// nothing is invented. It only inserts missing rows, so it is safe on every
+// startup.
+func backfillSessions(db *sql.DB) error {
+	_, err := db.Exec(`INSERT OR IGNORE INTO sessions (id, repo, issue_num, started_at, ended_at, last_activity_at)
+		SELECT session_id, MIN(repo), MAX(issue_num), MIN(at), MAX(at), MAX(at)
+		FROM usage_entries
+		WHERE session_id IS NOT NULL AND session_id != ''
+		GROUP BY session_id`)
+	if err != nil {
+		return fmt.Errorf("insert missing sessions: %w", err)
+	}
+
+	return nil
 }
 
 func runMigrations(db *sql.DB) error {
@@ -352,7 +374,13 @@ func (s *SQLiteStore) LogUsage(ctx context.Context, entry usage.Entry) error {
 		entry.At = time.Now().UTC()
 	}
 
-	_, err := s.db.ExecContext(ctx,
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("begin transaction: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	res, err := tx.ExecContext(ctx,
 		// OR IGNORE makes capture idempotent on the entry id: a re-read
 		// transcript or a replayed spool cannot create duplicates, which is
 		// what lets the spool be cleared without a two-phase commit.
@@ -366,6 +394,44 @@ func (s *SQLiteStore) LogUsage(ctx context.Context, entry usage.Entry) error {
 	)
 	if err != nil {
 		return fmt.Errorf("insert usage entry: %w", err)
+	}
+
+	// Only a newly stored entry touches the session, so a replayed spool stays
+	// a no-op here too.
+	if n, _ := res.RowsAffected(); n > 0 && entry.SessionID != "" {
+		if err = recordSessionActivity(ctx, tx, entry); err != nil {
+			return err
+		}
+	}
+
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("commit: %w", err)
+	}
+
+	return nil
+}
+
+// recordSessionActivity keeps the sessions row for an entry's session in step
+// with its usage. Capture hooks only ever see turns, never a session start or
+// end, so the row is derived from them: it spans the first to the last entry.
+// A session created here is recorded as ended at its last activity because an
+// open one would count wall-clock time up to now; one that `log` opened and
+// still holds open stays open.
+func recordSessionActivity(ctx context.Context, tx *sql.Tx, entry usage.Entry) error {
+	at := entry.At.UTC().Format(time.RFC3339)
+
+	_, err := tx.ExecContext(ctx,
+		`INSERT INTO sessions (id, repo, issue_num, started_at, ended_at, last_activity_at)
+		 VALUES (?, ?, ?, ?, ?, ?)
+		 ON CONFLICT(id) DO UPDATE SET
+		   issue_num = COALESCE(sessions.issue_num, excluded.issue_num),
+		   started_at = MIN(sessions.started_at, excluded.started_at),
+		   ended_at = CASE WHEN sessions.ended_at IS NULL THEN NULL ELSE MAX(sessions.ended_at, excluded.ended_at) END,
+		   last_activity_at = MAX(COALESCE(sessions.last_activity_at, excluded.last_activity_at), excluded.last_activity_at)`,
+		entry.SessionID, entry.Repo, entry.IssueNum, at, at, at,
+	)
+	if err != nil {
+		return fmt.Errorf("record session activity: %w", err)
 	}
 
 	return nil
