@@ -144,6 +144,13 @@ func NewSQLiteStore(dbPath string, pricer Pricer) (*SQLiteStore, error) {
 		return nil, fmt.Errorf("relax issue_num: %w", err)
 	}
 
+	// Captured usage predates session rows; derive them so existing installs
+	// report sessions without waiting for new turns.
+	if err = backfillCapturedSessions(db); err != nil {
+		_ = db.Close()
+		return nil, fmt.Errorf("backfill captured sessions: %w", err)
+	}
+
 	return &SQLiteStore{db: db, pricing: pricer}, nil
 }
 
@@ -261,6 +268,26 @@ func relaxIssueNumNotNull(db *sql.DB) error {
 		}
 
 		slog.Info("migrated table to allow unattributed usage", "table", r.table)
+	}
+
+	return nil
+}
+
+// backfillCapturedSessions creates a session row for every session id that has
+// usage but no row. It is idempotent and leaves existing rows untouched.
+func backfillCapturedSessions(db *sql.DB) error {
+	res, err := db.Exec(`
+INSERT OR IGNORE INTO sessions (id, repo, issue_num, started_at, ended_at, last_activity_at)
+SELECT session_id, MAX(repo), MAX(issue_num), MIN(at), MAX(at), MAX(at)
+FROM usage_entries
+WHERE session_id IS NOT NULL AND session_id <> ''
+GROUP BY session_id`)
+	if err != nil {
+		return fmt.Errorf("insert captured sessions: %w", err)
+	}
+
+	if n, rowsErr := res.RowsAffected(); rowsErr == nil && n > 0 {
+		slog.Info("backfilled sessions from captured usage", "sessions", n)
 	}
 
 	return nil
@@ -540,6 +567,30 @@ func (s *SQLiteStore) StartSession(ctx context.Context, repo string, issueNum *i
 	}
 
 	return &sess, nil
+}
+
+// TouchCapturedSession records that an agent session had activity at the given
+// time, creating its row on first sight. Captured sessions have no end event, so
+// ended_at tracks the latest turn; otherwise open sessions would count as running
+// until now. Replays and out-of-order turns only ever widen the time range.
+func (s *SQLiteStore) TouchCapturedSession(ctx context.Context, id, repo string, issueNum *int, at time.Time) error {
+	ts := at.UTC().Format(time.RFC3339)
+
+	_, err := s.db.ExecContext(ctx, `
+INSERT INTO sessions (id, repo, issue_num, started_at, ended_at, last_activity_at)
+VALUES (?, ?, ?, ?, ?, ?)
+ON CONFLICT(id) DO UPDATE SET
+  started_at       = MIN(started_at, excluded.started_at),
+  ended_at         = MAX(COALESCE(ended_at, excluded.ended_at), excluded.ended_at),
+  last_activity_at = MAX(COALESCE(last_activity_at, excluded.last_activity_at), excluded.last_activity_at),
+  issue_num        = COALESCE(excluded.issue_num, issue_num)`,
+		id, repo, issueNum, ts, ts, ts,
+	)
+	if err != nil {
+		return fmt.Errorf("touch captured session: %w", err)
+	}
+
+	return nil
 }
 
 func (s *SQLiteStore) EndSession(ctx context.Context, sessionID string) error {

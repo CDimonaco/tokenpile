@@ -159,9 +159,18 @@ func TestReconcile_AttributesFromBranch(t *testing.T) {
 	}}))
 
 	bindings := attribution.NewStore(paths.BindingsPath)
-	require.NoError(t, bindings.Bind("s1", "", attribution.Binding{Repo: "o/r", IssueNum: 42}))
+	require.NoError(t, bindings.Bind("s1", "", attribution.Binding{
+		Repo: "o/r", IssueNum: 42, Note: "the note", Tags: []string{"x"},
+	}))
 
 	assert.Equal(t, 1, runReconcile(t, s, paths))
+
+	sessions, err := s.ListSessions(context.Background(), "o/r", issuePtr(42))
+	require.NoError(t, err)
+	require.Len(t, sessions, 1)
+	assert.Equal(t, "s1", sessions[0].ID)
+	assert.Equal(t, "the note", sessions[0].Note)
+	assert.Equal(t, []string{"x"}, sessions[0].Tags)
 
 	entries, err := s.ListEntries(context.Background(), usage.Filter{Repo: "o/r"})
 	require.NoError(t, err)
@@ -197,6 +206,10 @@ func TestReconcile_IsIdempotent(t *testing.T) {
 	entries, err := s.ListEntries(context.Background(), usage.Filter{Repo: "o/r"})
 	require.NoError(t, err)
 	assert.Len(t, entries, 1)
+
+	all, err := s.ListAllSessions(context.Background())
+	require.NoError(t, err)
+	assert.Len(t, all, 1, "replaying a turn must not duplicate its session")
 }
 
 // Capture never depends on knowing the issue.
@@ -218,6 +231,11 @@ func TestReconcile_RecordsUnattributed(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, groups, 1)
 	assert.Equal(t, 42, groups[0].Usage.Output)
+
+	sessions, err := s.ListSessions(context.Background(), "o/r", nil)
+	require.NoError(t, err)
+	require.Len(t, sessions, 1)
+	assert.Equal(t, "sX", sessions[0].ID)
 }
 
 // A turn whose working directory is not a git checkout can never gain a
