@@ -559,6 +559,24 @@ func (_m *Store) UpdateSessionAnnotations(ctx context.Context, sessionID string,
 	return r0
 }
 
+// UpsertCapturedSession provides a mock function with given fields: ctx, id, repo, issueNum, first, last
+func (_m *Store) UpsertCapturedSession(ctx context.Context, id string, repo string, issueNum *int, first time.Time, last time.Time) error {
+	ret := _m.Called(ctx, id, repo, issueNum, first, last)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpsertCapturedSession")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, *int, time.Time, time.Time) error); ok {
+		r0 = rf(ctx, id, repo, issueNum, first, last)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // UpsertIssueCache provides a mock function with given fields: ctx, cache
 func (_m *Store) UpsertIssueCache(ctx context.Context, cache *usage.IssueCache) error {
 	ret := _m.Called(ctx, cache)

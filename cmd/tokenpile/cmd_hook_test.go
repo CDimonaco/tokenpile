@@ -271,3 +271,97 @@ func TestLog_WithoutIssue_RecordsUnattributed(t *testing.T) {
 	assert.Nil(t, entries[0].IssueNum)
 	assert.Equal(t, usage.SourceEstimated, entries[0].Source)
 }
+
+func sessionTurn(id string, at time.Time) capture.Turn {
+	return capture.Turn{
+		ID: id, Agent: "claude-code", Model: "m", SessionID: "s1",
+		Cwd: "/nonexistent", Usage: usage.Usage{Output: 10}, At: at,
+	}
+}
+
+func TestReconcile_CreatesSession(t *testing.T) {
+	s, paths := reconcileFixture(t)
+
+	t0 := time.Date(2026, 7, 1, 10, 0, 0, 0, time.UTC)
+	require.NoError(t, attribution.NewStore(paths.BindingsPath).
+		Bind("s1", "", attribution.Binding{Repo: "o/r", IssueNum: 42}))
+	require.NoError(t, capture.NewSpool(paths.SpoolPath).Append([]capture.Turn{
+		sessionTurn("a1", t0.Add(10*time.Minute)),
+		sessionTurn("a2", t0),
+	}))
+
+	runReconcile(t, s, paths)
+
+	issue := 42
+	sessions, err := s.ListSessions(context.Background(), "o/r", &issue)
+	require.NoError(t, err)
+	require.Len(t, sessions, 1)
+	assert.Equal(t, "s1", sessions[0].ID)
+	assert.Equal(t, t0, sessions[0].StartedAt)
+	require.NotNil(t, sessions[0].EndedAt)
+	assert.Equal(t, t0.Add(10*time.Minute), *sessions[0].EndedAt)
+}
+
+func TestReconcile_AppliesBindingNoteAndTags(t *testing.T) {
+	s, paths := reconcileFixture(t)
+
+	require.NoError(t, attribution.NewStore(paths.BindingsPath).Bind("s1", "", attribution.Binding{
+		Repo: "o/r", IssueNum: 42, Note: "review pass", Tags: []string{"review"},
+	}))
+	require.NoError(t, capture.NewSpool(paths.SpoolPath).Append([]capture.Turn{
+		sessionTurn("a1", time.Now().UTC()),
+	}))
+
+	runReconcile(t, s, paths)
+
+	sessions, err := s.ListAllSessions(context.Background())
+	require.NoError(t, err)
+	require.Len(t, sessions, 1)
+	assert.Equal(t, "review pass", sessions[0].Note)
+	assert.Equal(t, []string{"review"}, sessions[0].Tags)
+}
+
+func TestReconcile_ReplayDoesNotDuplicateSession(t *testing.T) {
+	s, paths := reconcileFixture(t)
+
+	require.NoError(t, attribution.NewStore(paths.BindingsPath).
+		Bind("s1", "", attribution.Binding{Repo: "o/r", IssueNum: 1}))
+
+	turn := sessionTurn("a1", time.Now().UTC())
+	spool := capture.NewSpool(paths.SpoolPath)
+
+	require.NoError(t, spool.Append([]capture.Turn{turn}))
+	runReconcile(t, s, paths)
+	require.NoError(t, spool.Append([]capture.Turn{turn}))
+	runReconcile(t, s, paths)
+
+	sessions, err := s.ListAllSessions(context.Background())
+	require.NoError(t, err)
+	assert.Len(t, sessions, 1)
+}
+
+func TestReconcile_UnattributedSessionCanBeAssigned(t *testing.T) {
+	s, paths := reconcileFixture(t)
+	ctx := context.Background()
+
+	require.NoError(t, attribution.NewStore(paths.BindingsPath).
+		Bind("s1", "", attribution.Binding{Repo: "o/r"}))
+	require.NoError(t, capture.NewSpool(paths.SpoolPath).Append([]capture.Turn{
+		sessionTurn("a1", time.Now().UTC()),
+	}))
+
+	runReconcile(t, s, paths)
+
+	sessions, err := s.ListAllSessions(ctx)
+	require.NoError(t, err)
+	require.Len(t, sessions, 1)
+	assert.Nil(t, sessions[0].IssueNum)
+
+	_, err = s.AssignIssue(ctx, "s1", 42)
+	require.NoError(t, err)
+
+	issue := 42
+	sessions, err = s.ListSessions(ctx, "o/r", &issue)
+	require.NoError(t, err)
+	assert.Len(t, sessions, 1)
+}

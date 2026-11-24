@@ -75,6 +75,7 @@ const schemaIndexes = `
 CREATE INDEX IF NOT EXISTS idx_usage_entries_repo_issue ON usage_entries (repo, issue_num);
 CREATE INDEX IF NOT EXISTS idx_usage_entries_at ON usage_entries (at);
 CREATE INDEX IF NOT EXISTS idx_sessions_repo_issue ON sessions (repo, issue_num);
+CREATE INDEX IF NOT EXISTS idx_usage_entries_session ON usage_entries (session_id);
 `
 
 // migrations holds ALTER TABLE statements for additive schema changes.
@@ -144,7 +145,32 @@ func NewSQLiteStore(dbPath string, pricer Pricer) (*SQLiteStore, error) {
 		return nil, fmt.Errorf("relax issue_num: %w", err)
 	}
 
+	// After the rebuild, so it reads the final usage_entries table.
+	if err = backfillCapturedSessions(db); err != nil {
+		_ = db.Close()
+		return nil, fmt.Errorf("backfill sessions: %w", err)
+	}
+
 	return &SQLiteStore{db: db, pricing: pricer}, nil
+}
+
+// backfillCapturedSessions creates a session row for every session id that has
+// usage entries but no session. Captured turns used to be stored without one,
+// so per-session reporting and wall-clock time came back empty. It is
+// idempotent and skips sessions that already exist.
+func backfillCapturedSessions(db *sql.DB) error {
+	_, err := db.Exec(`
+INSERT OR IGNORE INTO sessions (id, repo, issue_num, started_at, last_activity_at, ended_at)
+SELECT session_id, repo, MAX(issue_num), MIN(at), MAX(at), MAX(at)
+FROM usage_entries
+WHERE session_id IS NOT NULL AND session_id != ''
+  AND session_id NOT IN (SELECT id FROM sessions)
+GROUP BY session_id, repo`)
+	if err != nil {
+		return fmt.Errorf("insert missing sessions: %w", err)
+	}
+
+	return nil
 }
 
 func runMigrations(db *sql.DB) error {
@@ -540,6 +566,36 @@ func (s *SQLiteStore) StartSession(ctx context.Context, repo string, issueNum *i
 	}
 
 	return &sess, nil
+}
+
+// UpsertCapturedSession records a session reconstructed from captured turns.
+// The time range only ever widens, and a known issue is never replaced by an
+// unknown one. ended_at is the last turn's time so the duration is first to
+// last turn rather than counting up to now.
+func (s *SQLiteStore) UpsertCapturedSession(
+	ctx context.Context,
+	id, repo string,
+	issueNum *int,
+	first, last time.Time,
+) error {
+	_, err := s.db.ExecContext(ctx, `
+INSERT INTO sessions (id, repo, issue_num, started_at, last_activity_at, ended_at)
+VALUES (?, ?, ?, ?, ?, ?)
+ON CONFLICT(id) DO UPDATE SET
+    started_at = MIN(sessions.started_at, excluded.started_at),
+    last_activity_at = MAX(COALESCE(sessions.last_activity_at, excluded.last_activity_at), excluded.last_activity_at),
+    ended_at = MAX(COALESCE(sessions.ended_at, excluded.ended_at), excluded.ended_at),
+    issue_num = COALESCE(excluded.issue_num, sessions.issue_num)`,
+		id, repo, issueNum,
+		first.UTC().Format(time.RFC3339),
+		last.UTC().Format(time.RFC3339),
+		last.UTC().Format(time.RFC3339),
+	)
+	if err != nil {
+		return fmt.Errorf("upsert captured session: %w", err)
+	}
+
+	return nil
 }
 
 func (s *SQLiteStore) EndSession(ctx context.Context, sessionID string) error {

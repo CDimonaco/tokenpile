@@ -2,11 +2,13 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"log/slog"
+	"time"
 
 	"github.com/urfave/cli/v2"
 
@@ -109,6 +111,8 @@ func reconcileSpool(c *cli.Context, s store.Store, paths config.Paths) int {
 		recorded int
 		handled  int
 		unusable []capture.Turn
+		spans    = map[string]*sessionSpan{}
+		order    []string
 	)
 
 	for _, turn := range turns {
@@ -150,6 +154,14 @@ func reconcileSpool(c *cli.Context, s store.Store, paths config.Paths) int {
 
 		recorded++
 		handled++
+
+		trackSession(spans, &order, turn, repo, issueNum)
+	}
+
+	// Entries are the source of truth: a failed session write only warns and
+	// never keeps the spool from being cleared.
+	for _, id := range order {
+		recordSession(c.Context, s, bindings, id, spans[id])
 	}
 
 	for _, turn := range unusable {
@@ -170,6 +182,57 @@ func reconcileSpool(c *cli.Context, s store.Store, paths config.Paths) int {
 	}
 
 	return recorded
+}
+
+// sessionSpan accumulates what reconcileSpool learns about one agent session.
+type sessionSpan struct {
+	repo     string
+	cwd      string
+	issueNum *int
+	first    time.Time
+	last     time.Time
+}
+
+func trackSession(spans map[string]*sessionSpan, order *[]string, turn capture.Turn, repo string, issueNum *int) {
+	if turn.SessionID == "" {
+		return
+	}
+
+	span, ok := spans[turn.SessionID]
+	if !ok {
+		spans[turn.SessionID] = &sessionSpan{
+			repo: repo, cwd: turn.Cwd, issueNum: issueNum, first: turn.At, last: turn.At,
+		}
+		*order = append(*order, turn.SessionID)
+
+		return
+	}
+
+	if turn.At.Before(span.first) {
+		span.first = turn.At
+	}
+
+	if turn.At.After(span.last) {
+		span.last = turn.At
+	}
+
+	if issueNum != nil {
+		span.issueNum = issueNum
+	}
+}
+
+// recordSession upserts the session row and copies the binding's note and tags
+// onto it.
+func recordSession(ctx context.Context, s store.Store, bindings *attribution.Store, id string, span *sessionSpan) {
+	if err := s.UpsertCapturedSession(ctx, id, span.repo, span.issueNum, span.first, span.last); err != nil {
+		slog.Warn("record session", "session", id, "err", err)
+
+		return
+	}
+
+	if binding, ok := bindings.Lookup(id, span.cwd); ok {
+		applyAnnotations(ctx, s, id, binding.Note, binding.Tags)
+	}
 }
 
 // errNoRepo explains why a turn was quarantined rather than recorded.

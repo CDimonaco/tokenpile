@@ -17,6 +17,7 @@ type Store interface {
 	UpsertIssueCache(ctx context.Context, cache *usage.IssueCache) error
 	GetIssueCache(ctx context.Context, repo string, issueNum int) (*usage.IssueCache, error)
 	StartSession(ctx context.Context, repo string, issueNum *int) (*usage.Session, error)
+	UpsertCapturedSession(ctx context.Context, id, repo string, issueNum *int, first, last time.Time) error
 	EndSession(ctx context.Context, sessionID string) error
 	EndSessionAt(ctx context.Context, sessionID string, at time.Time) error
 	ListSessions(ctx context.Context, repo string, issueNum *int) ([]usage.Session, error)
