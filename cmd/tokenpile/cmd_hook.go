@@ -105,6 +105,8 @@ func reconcileSpool(c *cli.Context, s store.Store, paths config.Paths) int {
 
 	bindings := attribution.NewStore(paths.BindingsPath)
 
+	annotated := map[string]bool{}
+
 	var (
 		recorded int
 		handled  int
@@ -150,6 +152,26 @@ func reconcileSpool(c *cli.Context, s store.Store, paths config.Paths) int {
 
 		recorded++
 		handled++
+
+		if turn.SessionID == "" {
+			continue
+		}
+
+		// The measurement is already stored, so a session-row failure must not
+		// stop the spool from draining.
+		if err = s.TouchCapturedSession(c.Context, turn.SessionID, repo, issueNum, turn.At); err != nil {
+			slog.Warn("record captured session", "session", turn.SessionID, "err", err)
+
+			continue
+		}
+
+		if !annotated[turn.SessionID] {
+			annotated[turn.SessionID] = true
+
+			if b, ok := bindings.Lookup(turn.SessionID, turn.Cwd); ok {
+				applyAnnotations(c.Context, s, turn.SessionID, b.Note, b.Tags)
+			}
+		}
 	}
 
 	for _, turn := range unusable {
