@@ -371,6 +371,21 @@ XDG base directories (`XDG_CONFIG_HOME`, `XDG_DATA_HOME`) are respected when the
 
 On first run, an Ed25519 signing keypair is generated at `~/.config/tokenpile/identity.{key,pub}` (permissions 0600/0644).
 
+## Development
+
+Main `make` targets:
+
+| Target | Description |
+|---|---|
+| `make build` | Build the binary to `./tokenpile` |
+| `make test` | Run all tests with the race detector |
+| `make lint` | Run golangci-lint |
+| `make fmt` | Format all Go files with gofmt |
+| `make generate` | Regenerate mocks |
+| `make install` | Install the binary with `go install` |
+| `make check` | Run fmt, lint, test, spec-check and map in sequence |
+| `make clean` | Remove build artifacts |
+
 ## Contributing
 
 ### Prerequisites
