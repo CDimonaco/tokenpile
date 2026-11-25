@@ -883,3 +883,112 @@ INSERT INTO usage_entries VALUES
 	require.Len(t, groups, 1)
 	assert.Equal(t, 900, groups[0].Usage.CacheRead)
 }
+
+func TestSQLiteStore_UpsertCapturedSession_WidensSpan(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	t0 := time.Date(2026, 7, 1, 10, 0, 0, 0, time.UTC)
+	first := usage.Session{
+		ID:             "s1",
+		Repo:           "o/r",
+		IssueNum:       issuePtr(7),
+		StartedAt:      t0.Add(time.Minute),
+		LastActivityAt: t0.Add(2 * time.Minute),
+	}
+	require.NoError(t, s.UpsertCapturedSession(ctx, first))
+
+	second := usage.Session{
+		ID:             "s1",
+		Repo:           "o/r",
+		IssueNum:       issuePtr(7),
+		StartedAt:      t0,
+		LastActivityAt: t0.Add(10 * time.Minute),
+	}
+	require.NoError(t, s.UpsertCapturedSession(ctx, second))
+
+	sessions, err := s.ListSessions(ctx, "o/r", issuePtr(7))
+	require.NoError(t, err)
+	require.Len(t, sessions, 1)
+	assert.True(t, sessions[0].StartedAt.Equal(t0))
+	assert.True(t, sessions[0].LastActivityAt.Equal(t0.Add(10*time.Minute)))
+	require.NotNil(t, sessions[0].EndedAt)
+	assert.True(t, sessions[0].EndedAt.Equal(t0.Add(10*time.Minute)))
+}
+
+func TestSQLiteStore_UpsertCapturedSession_NilIssueKeepsAssigned(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	now := time.Now().UTC()
+	require.NoError(
+		t,
+		s.UpsertCapturedSession(ctx, usage.Session{ID: "s1", Repo: "o/r", StartedAt: now, LastActivityAt: now}),
+	)
+
+	_, err := s.AssignIssue(ctx, "s1", 9)
+	require.NoError(t, err)
+
+	require.NoError(
+		t,
+		s.UpsertCapturedSession(
+			ctx,
+			usage.Session{ID: "s1", Repo: "o/r", StartedAt: now, LastActivityAt: now.Add(time.Minute)},
+		),
+	)
+
+	sessions, err := s.ListSessions(ctx, "o/r", issuePtr(9))
+	require.NoError(t, err)
+	assert.Len(t, sessions, 1)
+}
+
+func TestSQLiteStore_UpsertCapturedSession_ReportTotalTime(t *testing.T) {
+	s := newTestStore(t)
+	ctx := context.Background()
+
+	t0 := time.Date(2026, 7, 1, 10, 0, 0, 0, time.UTC)
+	require.NoError(t, s.LogUsage(ctx, usage.Entry{
+		Repo: "o/r", IssueNum: issuePtr(3), Agent: "claude-code", Model: "m",
+		Usage: usage.Usage{Output: 1}, Source: usage.SourceMeasured, SessionID: "s1", At: t0,
+	}))
+	require.NoError(t, s.UpsertCapturedSession(ctx, usage.Session{
+		ID: "s1", Repo: "o/r", IssueNum: issuePtr(3), StartedAt: t0, LastActivityAt: t0.Add(25 * time.Minute),
+	}))
+
+	report, err := s.GetReport(ctx, "o/r", 3)
+	require.NoError(t, err)
+	assert.Equal(t, 25*time.Minute, report.TotalTime)
+}
+
+func TestSQLiteStore_BackfillsCapturedSessions(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "test.db")
+	ctx := context.Background()
+	t0 := time.Date(2026, 7, 1, 10, 0, 0, 0, time.UTC)
+
+	open := func() *store.SQLiteStore {
+		s, err := store.NewSQLiteStore(path, fixedPricer{})
+		require.NoError(t, err)
+
+		return s
+	}
+
+	s := open()
+	for i, at := range []time.Time{t0, t0.Add(time.Hour)} {
+		require.NoError(t, s.LogUsage(ctx, usage.Entry{
+			ID: string(rune('a' + i)), Repo: "o/r", IssueNum: issuePtr(5), Agent: "claude-code", Model: "m",
+			Usage: usage.Usage{Output: 1}, Source: usage.SourceMeasured, SessionID: "s1", At: at,
+		}))
+	}
+	require.NoError(t, s.Close())
+
+	for range 2 {
+		s = open()
+		sessions, err := s.ListSessions(ctx, "o/r", issuePtr(5))
+		require.NoError(t, err)
+		require.Len(t, sessions, 1)
+		assert.True(t, sessions[0].StartedAt.Equal(t0))
+		require.NotNil(t, sessions[0].EndedAt)
+		assert.True(t, sessions[0].EndedAt.Equal(t0.Add(time.Hour)))
+		require.NoError(t, s.Close())
+	}
+}

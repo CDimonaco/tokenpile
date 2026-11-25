@@ -144,7 +144,28 @@ func NewSQLiteStore(dbPath string, pricer Pricer) (*SQLiteStore, error) {
 		return nil, fmt.Errorf("relax issue_num: %w", err)
 	}
 
+	// After the rebuild, so the insert sees the final sessions shape.
+	if err = backfillCapturedSessions(db); err != nil {
+		_ = db.Close()
+		return nil, fmt.Errorf("backfill captured sessions: %w", err)
+	}
+
 	return &SQLiteStore{db: db, pricing: pricer}, nil
+}
+
+// backfillCapturedSessions creates the session rows that hook capture never
+// wrote for usage recorded before it did. OR IGNORE leaves sessions created by
+// `log` untouched, and the statement is a no-op once every session has a row.
+func backfillCapturedSessions(db *sql.DB) error {
+	_, err := db.Exec(`INSERT OR IGNORE INTO sessions (id, repo, issue_num, started_at, ended_at, last_activity_at)
+		SELECT session_id, MIN(repo), MAX(issue_num), MIN(at), MAX(at), MAX(at)
+		FROM usage_entries WHERE session_id IS NOT NULL AND session_id <> ''
+		GROUP BY session_id`)
+	if err != nil {
+		return fmt.Errorf("insert sessions from usage entries: %w", err)
+	}
+
+	return nil
 }
 
 func runMigrations(db *sql.DB) error {
@@ -540,6 +561,31 @@ func (s *SQLiteStore) StartSession(ctx context.Context, repo string, issueNum *i
 	}
 
 	return &sess, nil
+}
+
+// UpsertCapturedSession records a session that an agent created, widening the
+// stored time span rather than replacing it. There is no session-end event, so
+// ended_at tracks the last activity; left NULL, the session would count as
+// running until now and its wall-clock time would grow forever.
+func (s *SQLiteStore) UpsertCapturedSession(ctx context.Context, sess usage.Session) error {
+	started := sess.StartedAt.UTC().Format(time.RFC3339)
+	last := sess.LastActivityAt.UTC().Format(time.RFC3339)
+
+	_, err := s.db.ExecContext(ctx,
+		`INSERT INTO sessions (id, repo, issue_num, started_at, ended_at, last_activity_at)
+		 VALUES (?, ?, ?, ?, ?, ?)
+		 ON CONFLICT(id) DO UPDATE SET
+		   started_at       = MIN(sessions.started_at, excluded.started_at),
+		   last_activity_at = MAX(COALESCE(sessions.last_activity_at, excluded.last_activity_at), excluded.last_activity_at),
+		   ended_at         = MAX(COALESCE(sessions.ended_at, excluded.ended_at), excluded.ended_at),
+		   issue_num        = COALESCE(excluded.issue_num, sessions.issue_num)`,
+		sess.ID, sess.Repo, sess.IssueNum, started, last, last,
+	)
+	if err != nil {
+		return fmt.Errorf("upsert captured session: %w", err)
+	}
+
+	return nil
 }
 
 func (s *SQLiteStore) EndSession(ctx context.Context, sessionID string) error {
