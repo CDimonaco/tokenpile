@@ -197,6 +197,41 @@ func TestReconcile_IsIdempotent(t *testing.T) {
 	entries, err := s.ListEntries(context.Background(), usage.Filter{Repo: "o/r"})
 	require.NoError(t, err)
 	assert.Len(t, entries, 1)
+
+	sessions, err := s.ListSessions(context.Background(), "o/r", issuePtr(1))
+	require.NoError(t, err)
+	assert.Len(t, sessions, 1)
+}
+
+// Captured turns must produce the session row that `report --sessions` reads,
+// carrying the annotations that only exist in the bindings file.
+func TestReconcile_CreatesSessionFromCapturedTurns(t *testing.T) {
+	s, paths := reconcileFixture(t)
+
+	bindings := attribution.NewStore(paths.BindingsPath)
+	require.NoError(t, bindings.Bind("s1", "", attribution.Binding{
+		Repo: "o/r", IssueNum: 42, Note: "review pass", Tags: []string{"review"},
+	}))
+
+	t0 := time.Date(2026, 7, 1, 10, 0, 0, 0, time.UTC)
+	t1 := t0.Add(20 * time.Minute)
+
+	require.NoError(t, capture.NewSpool(paths.SpoolPath).Append([]capture.Turn{
+		{ID: "a2", Agent: "claude-code", Model: "m", SessionID: "s1", Usage: usage.Usage{Output: 2}, At: t1},
+		{ID: "a1", Agent: "claude-code", Model: "m", SessionID: "s1", Usage: usage.Usage{Output: 1}, At: t0},
+	}))
+
+	assert.Equal(t, 2, runReconcile(t, s, paths))
+
+	sessions, err := s.ListSessions(context.Background(), "o/r", issuePtr(42))
+	require.NoError(t, err)
+	require.Len(t, sessions, 1)
+	assert.Equal(t, "s1", sessions[0].ID)
+	assert.True(t, sessions[0].StartedAt.Equal(t0))
+	require.NotNil(t, sessions[0].EndedAt)
+	assert.True(t, sessions[0].EndedAt.Equal(t1))
+	assert.Equal(t, "review pass", sessions[0].Note)
+	assert.Equal(t, []string{"review"}, sessions[0].Tags)
 }
 
 // Capture never depends on knowing the issue.

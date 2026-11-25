@@ -109,6 +109,8 @@ func reconcileSpool(c *cli.Context, s store.Store, paths config.Paths) int {
 		recorded int
 		handled  int
 		unusable []capture.Turn
+		captured = make(map[sessionKey]*usage.Session)
+		cwds     = make(map[sessionKey]string)
 	)
 
 	for _, turn := range turns {
@@ -150,7 +152,11 @@ func reconcileSpool(c *cli.Context, s store.Store, paths config.Paths) int {
 
 		recorded++
 		handled++
+
+		trackSession(captured, cwds, turn, repo, issueNum)
 	}
+
+	recordSessions(c, s, bindings, captured, cwds)
 
 	for _, turn := range unusable {
 		payload, marshalErr := json.Marshal(turn)
@@ -170,6 +176,83 @@ func reconcileSpool(c *cli.Context, s store.Store, paths config.Paths) int {
 	}
 
 	return recorded
+}
+
+type sessionKey struct{ id, repo string }
+
+// trackSession widens the span of the captured session a turn belongs to.
+// Turns without a session id cannot be grouped and get no session row.
+func trackSession(
+	captured map[sessionKey]*usage.Session,
+	cwds map[sessionKey]string,
+	turn capture.Turn,
+	repo string,
+	issueNum *int,
+) {
+	if turn.SessionID == "" {
+		return
+	}
+
+	key := sessionKey{id: turn.SessionID, repo: repo}
+
+	sess, ok := captured[key]
+	if !ok {
+		captured[key] = &usage.Session{
+			ID:             turn.SessionID,
+			Repo:           repo,
+			IssueNum:       issueNum,
+			StartedAt:      turn.At,
+			LastActivityAt: turn.At,
+		}
+		cwds[key] = turn.Cwd
+
+		return
+	}
+
+	if turn.At.Before(sess.StartedAt) {
+		sess.StartedAt = turn.At
+	}
+
+	if turn.At.After(sess.LastActivityAt) {
+		sess.LastActivityAt = turn.At
+	}
+
+	if issueNum != nil {
+		sess.IssueNum = issueNum
+	}
+}
+
+// recordSessions writes one session row per captured session, not per turn:
+// every Stop re-reads the whole transcript. Failures are logged and skipped,
+// since a session row must never block recording usage.
+func recordSessions(
+	c *cli.Context,
+	s store.Store,
+	bindings *attribution.Store,
+	captured map[sessionKey]*usage.Session,
+	cwds map[sessionKey]string,
+) {
+	for key, sess := range captured {
+		if err := s.UpsertCapturedSession(c.Context, *sess); err != nil {
+			slog.Warn("record captured session", "id", sess.ID, "err", err)
+
+			continue
+		}
+
+		binding, ok := bindings.Lookup(sess.ID, cwds[key])
+		if !ok || (binding.Note == "" && len(binding.Tags) == 0) {
+			continue
+		}
+
+		var note *string
+		if binding.Note != "" {
+			note = &binding.Note
+		}
+
+		if err := s.UpdateSessionAnnotations(c.Context, sess.ID, note, binding.Tags); err != nil {
+			slog.Warn("copy binding annotations", "id", sess.ID, "err", err)
+		}
+	}
 }
 
 // errNoRepo explains why a turn was quarantined rather than recorded.
